@@ -1,0 +1,8 @@
+#ifndef _PIPESTAGE_DEFINED_
+#define _PIPESTAGE_DEFINED_
+
+enum pipestage {
+    FETCH, DECODE, EXECUTE, MEMORYACCESS, WRITEBACK
+};
+
+#endif
