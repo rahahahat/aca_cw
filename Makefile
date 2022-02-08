@@ -23,5 +23,4 @@ $(TARGET_EXEC): $(OBJS)
 clean:
 	$(RM) -r $(BUILD_DIR)/*
 
-
 MKDIR_P := mkdir $(BUILD_DIR)

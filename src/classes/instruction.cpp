@@ -2,17 +2,22 @@
 #include <string>
 
 #include "instruction.h"
+#include "pipeline.h"
 #include "pipestage.h"
 
-using namespace std;
 using namespace Instructions;
 
-Instruction::Instruction(string instr) {
+Instruction::Instruction() {
+    instrString = "";
+    stage = INIT;
+};
+
+Instruction::Instruction(std::string instr) {
     instrString = instr;
     stage = FETCH;
 };
 
-void Instruction::advancePipeStage() {
+void Instruction::nextPipeStage() {
     switch (stage) {
         case FETCH:
             stage = DECODE;
@@ -25,6 +30,10 @@ void Instruction::advancePipeStage() {
         case WRITEBACK:
             stage = DONE;
         default:
-            cerr << "Instruction: " << instrString <<" has been completed" << endl;
+            std::cerr << "Instruction has been completed" << std::endl;
     };
+};
+
+pipestage Instruction::getCurrentPipeStage() {
+    return stage;
 };

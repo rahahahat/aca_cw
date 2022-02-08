@@ -1,23 +1,25 @@
 #include <string>
 #include <iostream>
-
+#include "isa.h"
 #include "pipestage.h"
 
 #ifndef _INSTRUCTION_DEFINED_
 #define _INSTRUCTION_DEFINED_
 
 namespace Instructions {
-    enum opcodes {
-        ADD, ADD_I, ADD_UI, SUB, SUB_U, MUL, MULT, DIVIDE
+    enum instructionType {
+        R_Type, I_Type, J_Type
     };
     class Instruction {
         private:
-            string instrString;
-        public:
             pipestage stage;
-            opcodes opcode;
-            Instruction(string instrString);
-            void advancePipeStage();
+        public:
+            instructionType type;
+            std::string instrString;
+            Instruction();
+            Instruction(std::string instr);
+            void nextPipeStage();
+            pipestage getCurrentPipeStage();
     };
 }
 

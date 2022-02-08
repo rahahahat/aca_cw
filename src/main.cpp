@@ -1,10 +1,12 @@
 #include "parser.h"
 #include "constants.h"
+#include "processor.h"
+#include "pipeline.h"
+#include "isa.h"
 #include <iostream>
+#include <string>
 
-using namespace std;
 
 int main(int argc, char* argv[]) {
-    Parser parse = Parser();
-    parse.loadProgram("");
+    return 0;
 }

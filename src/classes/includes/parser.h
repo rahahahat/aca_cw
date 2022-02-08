@@ -2,15 +2,26 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <tuple>
 
-using namespace std;
+#include "constants.h"
+#include "instruction.h"
+#include "processor.h"
+
+
+#ifndef _PARSER_INCLUDED_
+#define _PARSER_INCLUDED_
 
 class Parser
 {
     public:
         int totalPrograms;
-        void loadProgram(string filename);
+        void loadProgramIntoCPU(std::string filename);
         void readProgramsFromCL(int num, char* filenames[]);
+        void attachToProcessor(Processor *procPtr);
+        Processor *processor;
     private:
-        vector<string> programList;
+        std::vector<std::string> programList;     
 };
+
+#endif

@@ -3,6 +3,6 @@
 #ifndef _CONSTANTS_DEFINED_
 #define _CONSTANTS_DEFINED_
 
-const string PROGRAM_LIST = "-programlist";
+const std::string PROGRAM_LIST = "-programlist";
 
 #endif
