@@ -9,7 +9,7 @@ OBJS := $(addsuffix .o, $(basename $(SRCS)))
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -Wall
+CPPFLAGS ?= $(INC_FLAGS) -Wall -std=c++11
 CXX=g++
 
 $(TARGET_EXEC): $(OBJS)

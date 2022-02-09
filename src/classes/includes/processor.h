@@ -2,9 +2,13 @@
 #include <string>
 #include "instruction.h"
 #include "pipeline.h"
+#include "util.h"
 
 #ifndef _PROCESSOR_INCLUDED_
 #define _PROCESSOR_INCLUDED_
+
+class DecodeUnit;
+class FetchUnit;
 
 class Processor{
     private:
@@ -13,24 +17,17 @@ class Processor{
         FetchUnit *fUnit;
         DecodeUnit *dUnit;
     public:
-        Processor(Pipeline *pipe, pipelineType type);
         int32_t registers[32];
         int32_t PC = 0;
         int32_t DataMemory[1024];
         std::string instructionMemory[512];
         int32_t instrMemSize = 0;
+        Processor(Pipeline *pipe, pipelineType type);
         void loadInstructionIntoMemory(std::string instruction);
         void attachPipeline(Pipeline *pipe, pipelineType type);
+        void runProgram();
     private:
         void nonPipelinedExecution();
-        void makeInstructionOnFetch();
-        void decodeCurrentInstruction(Instructions::Instruction instruction);
-
-        void fetch();
-        void decode();
-        void execute();
-        void memref();
-        void writeback();
 };
 
 class FetchUnit {
@@ -46,16 +43,17 @@ class FetchUnit {
 class DecodeUnit {
     private:
         pipelineType pipeType;
-        void decodeRTypeInstruction();
-        void decodeITypeInstruction();
-        void decodeJTypeInstruction();
-        Instructions::instructionType getInstrType(Instructions::Instruction *instrPtr);
+        void decodeRTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr);
+        void decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr);
+        void decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr);
+        InstructionType getInstrType(Instructions::Instruction *instrPtr);
     public:
         DecodeUnit(pipelineType pipeType);
-        Instructions::Instruction* decode(Instructions::Instruction *instrPtr);
+        void decode(Instructions::Instruction *instrPtr);
 };
 
 void printInstructionMemory(Processor processor);
 void printInstructionMemoryAtIndex(Processor processor, int index);
+void printClock(int clock);
 
 #endif

@@ -7,14 +7,17 @@
 #define _INSTRUCTION_DEFINED_
 
 namespace Instructions {
-    enum instructionType {
-        R_Type, I_Type, J_Type
-    };
+
     class Instruction {
         private:
             pipestage stage;
         public:
-            instructionType type;
+            Registers rs;
+            Registers rt;
+            Registers rd;
+            int immediateOrAddress;
+            InstructionType type;
+            Opcodes opcode;
             std::string instrString;
             Instruction();
             Instruction(std::string instr);
