@@ -13,6 +13,9 @@ Instruction::Instruction() {
 };
 
 Instruction::Instruction(std::string instr) {
+    rd = $noreg;
+    rs = $noreg;
+    rt = $noreg;
     instrString = instr;
     stage = FETCH;
 };

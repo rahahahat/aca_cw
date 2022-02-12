@@ -6,22 +6,22 @@
 
 #include "constants.h"
 #include "instruction.h"
-#include "processor.h"
-
 
 #ifndef _PARSER_INCLUDED_
 #define _PARSER_INCLUDED_
+#include "processor.h"
+class Processor;
 
 class Parser
 {
+    private:
+        std::vector<std::string> programList; 
     public:
         int totalPrograms;
-        void loadProgramIntoCPU(std::string filename);
+        Parser(Processor *processor);
+        std::vector<std::string> parseProgram(std::string filename);
         void readProgramsFromCL(int num, char* filenames[]);
-        void attachToProcessor(Processor *procPtr);
         Processor *processor;
-    private:
-        std::vector<std::string> programList;     
 };
 
 #endif

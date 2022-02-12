@@ -11,19 +11,24 @@
 
 using namespace Instructions;
 
-void Parser::loadProgramIntoCPU(std::string filename) {
+Parser::Parser(Processor *proc)
+{
+    this->processor = proc;
+}
+std::vector<std::string> Parser::parseProgram(std::string filename) {
     std::string programLine;
     std::ifstream programFile;
+    std::vector<std::string> program;
     programFile.open(filename);
     if (!programFile.is_open()) {
         std::cerr << "File not found at path: " << filename << std::endl;
-        return;
+        return program;
     }
     while (!programFile.eof()) {
         std::getline(programFile, programLine);
-        processor->loadInstructionIntoMemory(programLine);
+        program.push_back(programLine);
     }
-    return;
+    return program;
 };
 
 void Parser::readProgramsFromCL(int num, char* filenames[]) {
@@ -38,8 +43,3 @@ void Parser::readProgramsFromCL(int num, char* filenames[]) {
         }
     };
 };
-
-void Parser::attachToProcessor(Processor *procPtr) {
-    processor = procPtr;
-    return;
-}

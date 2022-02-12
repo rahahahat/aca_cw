@@ -11,14 +11,14 @@ enum Registers: int {
     $r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7, 
     $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
     $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
-    $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31
+    $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31,
+    $noreg = -1,
 };
 
 enum Opcodes {
     ADD, ADDI, ADDIU, ADDU, SUB, SUBU, MULT, MULTU, 
-    AND, ANDI, OR, ORI, NOR, XOR, LB, LBU, 
-    LW, SB, SW, BEQ, BLEZ,  BNE, BGTZ, DIV, 
-    DIVU, J, JAL, JR
+    AND, ANDI, OR, ORI, NOR, XOR, LW, SW, BEQ, 
+    BLEZ, BNE, BGTZ, DIV, DIVU, J, JAL, JR
 };
 
 static std::map<std::string, Registers> RegisterMap = 
@@ -73,10 +73,7 @@ static std::map<std::string, std::pair<Opcodes, InstructionType>> InstructionPai
     {"ori",   std::pair<Opcodes, InstructionType>(ORI, IType)},
     {"nor",   std::pair<Opcodes, InstructionType>(NOR, RType)},
     {"xor",   std::pair<Opcodes, InstructionType>(XOR, RType)},
-    {"lb",    std::pair<Opcodes, InstructionType>(LB, IType)},
-    {"lbu",   std::pair<Opcodes, InstructionType>(LBU, IType)},
     {"lw",    std::pair<Opcodes, InstructionType>(LW, IType)},
-    {"sb",    std::pair<Opcodes, InstructionType>(SB, IType)},
     {"sw",    std::pair<Opcodes, InstructionType>(SW, IType)},
     {"beq",   std::pair<Opcodes, InstructionType>(BEQ, IType)},
     {"blez",  std::pair<Opcodes, InstructionType>(BLEZ, IType)},
