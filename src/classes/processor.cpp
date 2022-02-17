@@ -4,8 +4,8 @@
 /*---------------------------------------------------*/
 Processor::Processor(Pipeline *pipe, pipelineType type)
 {
-    FetchUnit fn = FetchUnit(this, type);
-    DecodeUnit dn = DecodeUnit(type);
+    FetchUnit fn = FetchUnit(this, pipe, type);
+    DecodeUnit dn = DecodeUnit(this, pipe, type);
     Parser pn = Parser(this);
     this->pipeline = pipe;
     this->pipeType = type;
@@ -25,6 +25,12 @@ void Processor::loadProgram(std::string fn)
 
 void Processor::loadInstructionIntoMemory(std::string instruction)
 {
+    const char ch = instruction.back();
+    if (ch == ':') {
+        instruction.pop_back();
+        this->labelMap.insert(std::pair<std::string, int>(instruction, instrMemSize));
+        return;
+    }
     instructionMemory[instrMemSize] = instruction;
     instrMemSize++;
     return;
@@ -50,180 +56,91 @@ void Processor::nonPipelinedExecution()
     };
 };
 
-/*---------------------------------------------------*/
-/*---------------------FetchUnit---------------------*/
-/*---------------------------------------------------*/
-FetchUnit::FetchUnit(Processor *proc, pipelineType type)
+/*-----------------------------------------------------*/
+/*----------------------MemRefUnit---------------------*/
+/*-----------------------------------------------------*/
+MemRefUnit::MemRefUnit(Processor *proc, Pipeline *pl, pipelineType tp) 
 {
     processor = proc;
-    pipeType = type;
-    return;
-};
-
-Instructions::Instruction* FetchUnit::fetch()
-{
-    switch(pipeType) {
-        case Scalar:
-            return NULL;
-        default:
-           Instructions::Instruction *ptr = NULL;
-           nonPipelinedFetch(ptr);
-           return ptr;
-    }
-    return NULL;
-};
-
-void FetchUnit::nonPipelinedFetch(Instructions::Instruction *instrPtr)
-{
-    std::string instr = processor->instructionMemory[processor->PC];
-    Instructions::Instruction instruction = Instructions::Instruction(instr);
-    instrPtr = &instruction;
-    processor->PC++;
-    return;
-};
-
-/*----------------------------------------------------*/
-/*---------------------DecodeUnit---------------------*/
-/*----------------------------------------------------*/
-DecodeUnit::DecodeUnit(pipelineType tp) 
-{
     pipeType = tp;
+    pipeline = pl;
     return;
 };
 
-void DecodeUnit::decodeRTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr) 
+void MemRefUnit::ref(Instructions::Instruction *instrPtr) 
 {
-    // Instruction format: opcode dest src1 src2
-    instrPtr->rt = RegisterMap.at(splitInstr.back()); // src2
-    splitInstr.pop_back();
-    instrPtr->rs = RegisterMap.at(splitInstr.back()); // src1
-    splitInstr.pop_back();
-    instrPtr->rd = RegisterMap.at(splitInstr.back()); // dest
-    splitInstr.pop_back();
-};
-
-void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr)
-{
-    // Instruction format: opcode r1 r2 immediate
-    instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // immediate
-    splitInstr.pop_back();
-    instrPtr->rt = RegisterMap.at(splitInstr.back()); // r2
-    splitInstr.pop_back();
-    instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
-    splitInstr.pop_back();
-    return;
-};
-
-void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr) 
-{
-    // Instruction format: opcode address
-    instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // address
-    splitInstr.pop_back();
-    return;
-};
-
-void DecodeUnit::decode(Instructions::Instruction *instrPtr)
-{
-    std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
-    std::pair<Opcodes, InstructionType> InsPair = InstructionPairMap.at(splitInstr.front());
-    instrPtr->opcode = InsPair.first;
-    instrPtr->type = InsPair.second;
-    switch(InsPair.second)
-    {
-        case RType:
-            decodeRTypeInstruction(instrPtr, splitInstr);
-            return;
-        case IType:
-            decodeITypeInstruction(instrPtr, splitInstr);
-            return;
-        case JType:
-            decodeJTypeInstruction(instrPtr, splitInstr);
-            return;
-    };
-};
-
-/*---------------------------------------------------*/
-/*---------------------ExecuteUnit---------------------*/
-/*---------------------------------------------------*/
-ExecuteUnit::ExecuteUnit(Processor *procPtr, pipelineType type)
-{   
-    processor = procPtr;
-    pipeType = type;
-    return;
-};
-
-void ExecuteUnit::execute(Instructions::Instruction *instrPtr)
-{
-    switch(instrPtr->type)
-    {
-        case RType:
-            return;
-        case IType:
-            return;
-        case JType:
-            return;
-    };
-};
-
-void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr) {};
-void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
-{
-    Registers r1 = instrPtr->rs;
-    Registers r2 = instrPtr->rt;
-    int immediate = instrPtr->immediateOrAddress;
-    int memAddr;
     switch (instrPtr->opcode)
     {
-    case ADDIU:
-        processor->registers[r1] = processor->registers[r2] + immediate;
-        break;
     case LW:
-        memAddr = processor->registers[r1] + immediate;
-        processor->registers[r2] = processor->DataMemory[memAddr];
+        instrPtr->temp = processor->DataMemory[instrPtr->temp];
         break;
     case SW:
-        memAddr = processor->registers[r1] + immediate;
-        processor->DataMemory[memAddr] = processor->registers[r2];
+        processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
         break;
     }
-}
-void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
+};
+
+/*-----------------------------------------------------*/
+/*----------------------WriteBackUnit------------------*/
+/*-----------------------------------------------------*/
+WriteBackUnit::WriteBackUnit(Processor *proc, Pipeline *pl ,pipelineType tp)
 {
-    Registers dest_rd = instrPtr->rd;
-    Registers src1_rs = instrPtr->rs;
-    Registers src2_rt = instrPtr->rt;
+    processor = proc;
+    pipeType = tp;
+    pipeline = pl;
+    return;
+}
+
+void WriteBackUnit::writeBack(Instructions::Instruction *instrPtr)
+{
     switch (instrPtr->opcode)
     {
+    case ADD:
     case ADDU:
-        processor->registers[dest_rd] = processor->registers[src1_rs] + processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
         break;
+    case ADDI:
+    case ADDIU:
+        processor->registers[instrPtr->rt] = instrPtr->temp;
+        break;
+    case SUB:
     case SUBU:
-        processor->registers[dest_rd] = processor->registers[src1_rs] - processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
         break;
+    case MULT:
     case MULTU:
-        // Ask about hi/lo 
-        processor->registers[dest_rd] = processor->registers[src1_rs] * processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
         break;
+    case DIV:
     case DIVU:
-        // Ask about hi/lo
-        processor->registers[dest_rd] = processor->registers[src1_rs] / processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
         break;
     case AND:
-        processor->registers[dest_rd] = processor->registers[src1_rs] & processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
+        break;
+    case ANDI:
+        processor->registers[instrPtr->rt] = instrPtr->temp;
         break;
     case OR:
-        processor->registers[dest_rd] = processor->registers[src1_rs] | processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
+        break;
+    case ORI:
+        processor->registers[instrPtr->rt] = instrPtr->temp;
         break;
     case NOR:
-        processor->registers[dest_rd] = ~(processor->registers[src1_rs] | processor->registers[src2_rt]);
+        processor->registers[instrPtr->rd] = instrPtr->temp;
         break;
     case XOR:
-        processor->registers[dest_rd] = processor->registers[src1_rs] ^ processor->registers[src2_rt];
+        processor->registers[instrPtr->rd] = instrPtr->temp;
+        break;
+    case LW:
+        processor->registers[instrPtr->rt] = instrPtr->temp;
         break;
     default:
         break;
     }
 }
+
 /*---------------------------------------------------*/
 /*---------------------Extras------------------------*/
 /*---------------------------------------------------*/

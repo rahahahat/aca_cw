@@ -17,8 +17,8 @@ enum Registers: int {
 
 enum Opcodes {
     ADD, ADDI, ADDIU, ADDU, SUB, SUBU, MULT, MULTU, 
-    AND, ANDI, OR, ORI, NOR, XOR, LW, SW, BEQ, 
-    BLEZ, BNE, BGTZ, DIV, DIVU, J, JAL, JR
+    DIV, DIVU, AND, ANDI, OR, ORI, NOR, XOR, LW, 
+    SW, BEQ, BLEZ, BNE, BGTZ, J, JAL, JR
 };
 
 static std::map<std::string, Registers> RegisterMap = 

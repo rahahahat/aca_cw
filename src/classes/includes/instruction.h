@@ -16,6 +16,7 @@ namespace Instructions {
             Registers rt;
             Registers rd;
             int immediateOrAddress;
+            int temp;
             InstructionType type;
             Opcodes opcode;
             std::string instrString;
@@ -24,6 +25,6 @@ namespace Instructions {
             void nextPipeStage();
             pipestage getCurrentPipeStage();
     };
-}
+} 
 
 #endif
