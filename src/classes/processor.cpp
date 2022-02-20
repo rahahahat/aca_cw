@@ -2,16 +2,13 @@
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
 /*---------------------------------------------------*/
-Processor::Processor(Pipeline *pipe, pipelineType type)
+Processor::Processor(Pipeline *pipe, Scoreboard *sb, ResultForwarder *rf)
 {
-    FetchUnit fn = FetchUnit(this, pipe, type);
-    DecodeUnit dn = DecodeUnit(this, pipe, type);
     Parser pn = Parser(this);
     this->pipeline = pipe;
-    this->pipeType = type;
-    this->fUnit = &fn;
-    this->dUnit = &dn;
     this->parser = &pn;
+    this->scoreboard = sb;
+    this->resultForwarder = rf;
 };
 
 void Processor::loadProgram(std::string fn)
@@ -36,109 +33,103 @@ void Processor::loadInstructionIntoMemory(std::string instruction)
     return;
 };
 
-void Processor::attachPipeline(Pipeline *pipe, pipelineType type)
+void Processor::attachProcUnit(FetchUnit *pu) 
 {
-    pipeline = pipe;
-    pipeType = type;
-    return;
-};
-
-void Processor::nonPipelinedExecution()
-{
-    int clock = 0;
-    while(PC != instrMemSize) {
-        Instructions::Instruction *instr = this->fUnit->fetch();
-        printClock(clock++);
-        // decode
-        // execute
-        // mem
-        // writeback
-    };
-};
-
-/*-----------------------------------------------------*/
-/*----------------------MemRefUnit---------------------*/
-/*-----------------------------------------------------*/
-MemRefUnit::MemRefUnit(Processor *proc, Pipeline *pl, pipelineType tp) 
-{
-    processor = proc;
-    pipeType = tp;
-    pipeline = pl;
-    return;
-};
-
-void MemRefUnit::ref(Instructions::Instruction *instrPtr) 
-{
-    switch (instrPtr->opcode)
-    {
-    case LW:
-        instrPtr->temp = processor->DataMemory[instrPtr->temp];
-        break;
-    case SW:
-        processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
-        break;
-    }
-};
-
-/*-----------------------------------------------------*/
-/*----------------------WriteBackUnit------------------*/
-/*-----------------------------------------------------*/
-WriteBackUnit::WriteBackUnit(Processor *proc, Pipeline *pl ,pipelineType tp)
-{
-    processor = proc;
-    pipeType = tp;
-    pipeline = pl;
+    fUnit = pu;
+    fUnit->attachToProcessor(this);
     return;
 }
 
-void WriteBackUnit::writeBack(Instructions::Instruction *instrPtr)
+void Processor::attachProcUnit(DecodeUnit *pu)
 {
-    switch (instrPtr->opcode)
+    dUnit = pu;
+    dUnit->attachToProcessor(this);
+    return;
+}
+
+void Processor::attachProcUnit(ExecuteUnit *pu)
+{
+    eUnit = pu;
+    eUnit->attachToProcessor(this);
+    return;
+}
+void Processor::attachProcUnit(MemRefUnit *pu) {
+    mrUnit = pu;
+    mrUnit->attachToProcessor(this);
+    return;
+}
+
+void Processor::attachProcUnit(WriteBackUnit *pu)
+{
+    wbUnit = pu;
+    wbUnit->attachToProcessor(this);
+    return;
+};
+
+void Processor::attachPipeline(Pipeline *pipe)
+{
+    pipeline = pipe;
+    return;
+};
+
+void Processor::fetch(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Starting Fetch" << std::endl;
+    fUnit->fetch(instrPtr);
+    return;
+}
+
+void Processor::decode(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Starting Decode" << std::endl;
+    dUnit->decode(instrPtr);
+    return;
+}
+
+void Processor::execute(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Starting Execute" << std::endl;
+    eUnit->execute(instrPtr);
+    return;
+}
+
+void Processor::memref(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Starting MemoryAccess" << std::endl;
+    mrUnit->memref(instrPtr);
+    return;
+}
+
+void Processor::writeback(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Starting WriteBack" << std::endl;
+    wbUnit->writeback(instrPtr);
+    return;
+}
+
+void Processor::runInstr(Instructions::Instruction *instrPtr)
+{
+    switch (instrPtr->stage)
     {
-    case ADD:
-    case ADDU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
+    case FETCH:
+        fetch(instrPtr);
         break;
-    case ADDI:
-    case ADDIU:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
+    case DECODE:
+        decode(instrPtr);
         break;
-    case SUB:
-    case SUBU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
+    case EXECUTE:
+        execute(instrPtr);
         break;
-    case MULT:
-    case MULTU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
+    case MEMORYACCESS:
+        memref(instrPtr);
         break;
-    case DIV:
-    case DIVU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case AND:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case ANDI:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case OR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case ORI:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case NOR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case XOR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case LW:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
+    case WRITEBACK:
+        writeback(instrPtr);
         break;
     default:
-        break;
+        return;
     }
+    instrPtr->nextPipeStage();
 }
 
 /*---------------------------------------------------*/

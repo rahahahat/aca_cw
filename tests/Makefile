@@ -1,14 +1,12 @@
-TARGET_EXEC ?= out
+TARGET_EXEC ?= tests
 
 BUILD_DIR ?= build
-SRC_DIRS ?= ./src
 
-
-SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
+SRCS := $(shell find ../src/classes -name \*.cpp) $(shell find ./ -name \*.cpp)
 OBJS := $(addsuffix .o, $(basename $(SRCS)))
 
-INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS)) 
+INC_DIRS := $(shell find ../src/includes -type d)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
 CPPFLAGS ?= $(INC_FLAGS) -Wall -std=c++11
 CXX=g++

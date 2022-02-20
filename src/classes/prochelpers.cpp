@@ -1,29 +1,29 @@
 #include "prochelpers.h"
 
 
-void Scoreboard::validate(Registers r)
+void Scoreboard::validate(Register r)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
         itr->second = 1;
         return;
     }
-    board.insert(std::pair<Registers, int>(r, 1));
+    board.insert(std::pair<Register, int>(r, 1));
     return;
 };
 
-void Scoreboard::inValidate(Registers r) 
+void Scoreboard::inValidate(Register r) 
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
         itr->second = 0;
         return;
     }
-    board.insert(std::pair<Registers, int>(r, 0));
+    board.insert(std::pair<Register, int>(r, 0));
     return;
 }
 
-int Scoreboard::isValid(Registers r) 
+int Scoreboard::isValid(Register r) 
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
@@ -32,18 +32,18 @@ int Scoreboard::isValid(Registers r)
     return -1;
 }
 
-void ResultForwarder::addValue(Registers r, int value) 
+void ResultForwarder::addValue(Register r, int value) 
 {
     auto itr = valueMap.find(r);
     if (itr != valueMap.end()) {
         itr->second = r;
         return;
     }
-    valueMap.insert(std::pair<Registers, int>(r, value));
+    valueMap.insert(std::pair<Register, int>(r, value));
     return;
 }
 
-void ResultForwarder::removeValue(Registers r) 
+void ResultForwarder::removeValue(Register r) 
 {
     auto itr = valueMap.find(r);
     if (itr != valueMap.end()) {
@@ -53,7 +53,7 @@ void ResultForwarder::removeValue(Registers r)
     return;
 }
 
-std::pair<int, int> ResultForwarder::getValue(Registers r)
+std::pair<int, int> ResultForwarder::getValue(Register r)
 {
     auto itr = valueMap.find(r);
     if (itr != valueMap.end()) {

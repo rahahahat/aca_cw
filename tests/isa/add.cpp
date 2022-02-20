@@ -1,16 +1,9 @@
-#include "parser.h"
-#include "constants.h"
+#include "catch.h"
 #include "processor.h"
 #include "pipeline.h"
-#include "procUnits.h"
 #include "instruction.h"
-#include "isa.h"
-#include "util.h"
-#include <iostream>
-#include <string>
-#include <map>
 
-int main(int argc, char* argv[]) {
+TEST_CASE( "Add works", "" ) {
     ScalarPipeline pipe = ScalarPipeline();
     ResultForwarder rf = ResultForwarder();
     Scoreboard sb = Scoreboard();
@@ -25,13 +18,14 @@ int main(int argc, char* argv[]) {
     processor.attachProcUnit(&en);
     processor.attachProcUnit(&mref);
     processor.attachProcUnit(&wbu);
-    processor.loadProgram("./abc.txt");
     Instructions::Instruction instr = Instructions::Instruction();
+    instr.instrString = "add r2 r1 r0";
+    instr.nextPipeStage();
+    processor.runInstr(&instr);
+    processor.registers[instr.rs] = 1;
+    processor.registers[instr.rt] = 1;
     processor.runInstr(&instr);
     processor.runInstr(&instr);
     processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    std::cout << "Result: " << processor.registers[instr.rd] << std::endl;
-    return 0;
+    REQUIRE(processor.registers[instr.rd] == 2);
 }

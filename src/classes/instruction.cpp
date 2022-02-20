@@ -8,8 +8,11 @@
 using namespace Instructions;
 
 Instruction::Instruction() {
+    rd = $noreg;
+    rs = $noreg;
+    rt = $noreg;
     instrString = "";
-    stage = INIT;
+    stage = FETCH;
 };
 
 Instruction::Instruction(std::string instr) {
@@ -20,16 +23,21 @@ Instruction::Instruction(std::string instr) {
     stage = FETCH;
 };
 
+
 void Instruction::nextPipeStage() {
     switch (stage) {
         case FETCH:
             stage = DECODE;
+            break;
         case DECODE:
             stage = EXECUTE;
+            break;
         case EXECUTE:
             stage = MEMORYACCESS;
+            break;
         case MEMORYACCESS:
             stage = WRITEBACK;
+            break;
         case WRITEBACK:
             stage = DONE;
         default:

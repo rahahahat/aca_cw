@@ -9,14 +9,15 @@
 namespace Instructions {
 
     class Instruction {
-        private:
-            pipestage stage;
         public:
-            Registers rs;
-            Registers rt;
-            Registers rd;
+            Register rs;
+            pipestage stage;
+            Register rt;
+            Register rd;
             int immediateOrAddress;
             int temp;
+            int src1;
+            int src2;
             InstructionType type;
             Opcodes opcode;
             std::string instrString;
