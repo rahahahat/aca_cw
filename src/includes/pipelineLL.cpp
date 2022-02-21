@@ -21,7 +21,7 @@ int PipelineLLNode::isTail()
 
 int PipelineLLNode::isHead()
 {
-    return prev == NULL;
+    return prev != NULL;
 }
 
 PipelineLL::PipelineLL()
