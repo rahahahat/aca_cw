@@ -153,50 +153,67 @@ void Processor::writeback(Instructions::Instruction *instrPtr)
 
 void Processor::runInstr(Instructions::Instruction *instrPtr)
 {
+    std::cout << "Running Instruction: " << instrPtr->id << std::endl;
+    std::cout << "Stage is: " << instrPtr->stage << std::endl;
     switch (instrPtr->stage)
     {
     case FETCH:
-        std::cout << "Fetching" << std::endl;
+        // std::cout << "Fetching: " << instrPtr->id << std::endl;
         fetch(instrPtr);
         break;
     case DECODE:
-        std::cout << "Decoding: " << instrPtr->instrString << std::endl;
+        // std::cout << "Decoding: " << instrPtr->instrString << std::endl;
         decode(instrPtr);
         break;
     case EXECUTE:
-        std::cout << "Executing: " << instrPtr->instrString << std::endl;
+        // std::cout << "Executing: " << instrPtr->instrString << std::endl;
         execute(instrPtr);
         break;
     case MEMORYACCESS:
-        std::cout << "Memory accessing: " << instrPtr->instrString << std::endl;
+        // std::cout << "Memory accessing: " << instrPtr->instrString << std::endl;
         memref(instrPtr);
         break;
     case WRITEBACK:
-        std::cout << "writing back: " << instrPtr->instrString << std::endl;
+        // std::cout << "writing back: " << instrPtr->instrString << std::endl;
         writeback(instrPtr);
         break;
     default:
         return;
     }
-    if (!pipeline->stalled()) instrPtr->nextPipeStage();
+    if (!pipeline->stalled()) { 
+        std::cout << "Happens for Instruction: " << instrPtr->id << std::endl;
+        instrPtr->nextPipeStage();
+        std::cout << instrPtr->stage << std::endl;
+        std::cout << instrPtr->instrString << std::endl;
+    }
 }
 
 void Processor::runProgram()
 {
+    int count = 0;
     // Starting execution by putting instruction in pipeline
     Instructions::Instruction instr = Instructions::Instruction();
-    pipeline->addInstructionToPipeline(&instr);
+    pipeline->addInstructionToPipeline(NULL, count);
+    count += 1;
     while(!pipeline->isEmpty())
     {
+        std::cout << std::endl;
+        std::cout << "--------------------------------------------------" << std::endl;
+        std::cout << "Cycle starts: " << clock << std::endl;
+
         pipeline->pipeInstructionsToProcessor();
         pipeline->removeCompletedInstructions();
         if (PC < instrMemSize && pipeline->getInstrSize() < 5)
         {    
-            Instructions::Instruction inst = Instructions::Instruction();
-            pipeline->addInstructionToPipeline(&inst);
+            pipeline->addInstructionToPipeline(NULL, count);
+            count += 1;
         };
+        std::cout << "Cycle ends: " << clock << std::endl;
+        std::cout << "--------------------------------------------------" << std::endl;
+        std::cout << std::endl; 
         clock++;
     }
+
     std::cout << "Program has ended!" << std::endl;
     std::cout << "Clock: " << clock << std::endl;
     return;

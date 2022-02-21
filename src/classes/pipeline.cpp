@@ -48,22 +48,33 @@ pipelineType ScalarPipeline::getType()
     return Scalar;
 }
 
-void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instr) {
+void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instr, int id)
+{
+    std::cout << "Putting new insruction in pipeline" << std::endl;
     if (instr == NULL) {
+        Instructions::Instruction *new_inst = new Instructions::Instruction();
+        new_inst->id = id;
+        instructions.push_back(new_inst);
         return;
     }
-    std::cout << "Putting new insruction in pipeline" << std::endl;
     instructions.push_back(instr);
     return;
 };
 
 void ScalarPipeline::pipeInstructionsToProcessor() {
-    if (stalled()) resume();
-    for (auto instr = begin(instructions); instr != end(instructions); ++instr) {
-        Instructions::Instruction *ins = *instr;
-        processor->runInstr(*instr);
+    resume();
+    int count = 0;
+    std::cout << std::endl;
+    std::cout << "Instructions in pipeline: " << instructions.size() << std::endl;
+    for (int i = 0; i < instructions.size(); i++) {
+        std::cout << "Iterations: " << count << std::endl;
+        count += 1;
+        Instructions::Instruction *instr = instructions.at(i);
+        processor->runInstr(instr);
         if (stalled()) break;
     }
+    std::cout << "------------------------ All instructions for current cycle have been run ----------------------------" << std::endl;
+    std::cout << std::endl;
     sleep(1);
 }
 

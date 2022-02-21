@@ -1,4 +1,5 @@
 #include "procUnits.h"
+#include "constants.h"
 
 ProcUnit::ProcUnit()
 {
@@ -171,7 +172,7 @@ void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
         std::pair<int, int> src2 = processor->resultForwarder->getValue(instrPtr->rt);
         int forwarded = 0;
         if (src1.first && src2.first) {
-            std::cout << "User RF" << std::endl;
+            std::cout << GRN "Forwarding Results of Register: "NC<< std::endl;
             instrPtr->src1 = src1.second;
             instrPtr->src2 = src2.second;
             forwarded = 1;
@@ -180,7 +181,7 @@ void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
             // Checks validity of source registers in scoreboard
             if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt))
             {
-                std::cout << "stalling pipeline" << std::endl;
+                std::cout << REDB "stalling pipeline" NC << std::endl;
                 pipeline->stallPipeline();
                 return;
             }
@@ -200,6 +201,7 @@ void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
             // Checks validity of source registers in scoreboard
             if (!processor->scoreboard->isValid(instrPtr->rs))
             {
+                std::cout << REDB "stalling pipeline" NC << std::endl;
                 pipeline->stallPipeline();
                 return;
             }
@@ -281,6 +283,7 @@ void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
     default:
         break;
     }
+    populateResultForwarder(instrPtr);
 }
 
 void ExecuteUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
@@ -311,13 +314,14 @@ void MemRefUnit::memref(Instructions::Instruction *instrPtr)
         processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
         break;
     }
+    populateResultForwarder(instrPtr);
 };
 
 void MemRefUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
 {
     Opcodes opcode = instrPtr->opcode;
     if (opcode == LW) {
-        processor->resultForwarder->addValue(instrPtr->rd, instrPtr->temp);
+        processor->resultForwarder->addValue(instrPtr->rt, instrPtr->temp);
     }
     return;
 }

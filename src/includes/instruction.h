@@ -14,6 +14,7 @@ namespace Instructions {
             pipestage stage;
             Register rt;
             Register rd;
+            int id;
             int immediateOrAddress;
             int temp;
             int src1;

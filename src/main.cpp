@@ -13,11 +13,13 @@
 int main(int argc, char* argv[]) {
     Processor *processor = Processor::fabricate();
     processor->loadProgram("./abc.txt");
-    processor->registers[$r1] = 2;
-    processor->registers[$r0] = 2;
-    processor->registers[$r3] = 3;
+    std::cout << "ProgramSize: " << processor->instrMemSize <<std::endl;
+    processor->DataMemory[0] = 1;
+    processor->DataMemory[1] = 1;
     processor->runProgram();
+    std::cout << processor->registers[$r1] << std::endl;
     std::cout << processor->registers[$r2] << std::endl;
+    std::cout << processor->registers[$r3] << std::endl;
     std::cout << processor->registers[$r4] << std::endl;
     Processor::destroy(processor);
     return 0;
