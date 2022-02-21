@@ -11,9 +11,11 @@ class Scoreboard
     private:
         std::map<Register, int> board;
     public:
+        Scoreboard();
         void validate(Register r);
         void inValidate(Register r);
         int isValid(Register r);
+        int getSize();
 };
 
 class ResultForwarder
@@ -24,6 +26,7 @@ class ResultForwarder
         void addValue(Register r, int value);
         void removeValue(Register r);
         std::pair<int, int> getValue(Register r);
+        int getSize();
 };
 
 #endif

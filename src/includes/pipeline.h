@@ -17,11 +17,20 @@ class Pipeline {
     protected:
         Processor *processor;
         std::vector<Instructions::Instruction*> instructions;
+        static int completedInstr(Instructions::Instruction *instPtr);
+        int stall;
     public:
         virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
+        virtual void stallPipeline() {};
+        virtual void resume() {};
+        virtual int stalled() {};
         virtual pipelineType getType();
+        int isEmpty();
+        void removeCompletedInstructions();
+        int getInstrSize();
+        std::vector<Instructions::Instruction*> getInstructions() { return instructions; };
 };
 
 class ScalarPipeline: public Pipeline {
@@ -29,6 +38,9 @@ class ScalarPipeline: public Pipeline {
         ScalarPipeline();
         virtual void addInstructionToPipeline(Instructions::Instruction *instr);
         virtual void pipeInstructionsToProcessor();
+        virtual void stallPipeline();
+        virtual void resume();
+        virtual int stalled();
         virtual pipelineType getType();
 };
 

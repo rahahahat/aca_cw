@@ -38,6 +38,9 @@ class Processor
         void writeback(Instructions::Instruction *instrPtr);
 
     public:
+        int clock;
+        static Processor* fabricate();
+        static void destroy(Processor *processor);
         FetchUnit *fUnit;
         ResultForwarder *resultForwarder;
         Scoreboard *scoreboard;
@@ -47,16 +50,18 @@ class Processor
         int32_t DataMemory[1024];
         std::string instructionMemory[512];
         int32_t instrMemSize = 0;
-        Processor(Pipeline *pipe, Scoreboard *sb, ResultForwarder *rf);
+        Processor();
         void loadInstructionIntoMemory(std::string instruction);
-        void attachPipeline(Pipeline *pipe);
 
+        void attachPipeline(Pipeline *pipe);
+        void attachProcHelper(ResultForwarder *rf);
+        void attachProcHelper(Scoreboard *sb);
         void attachProcUnit(FetchUnit *pu);
         void attachProcUnit(DecodeUnit *pu);
         void attachProcUnit(ExecuteUnit *pu);
         void attachProcUnit(MemRefUnit *pu);
         void attachProcUnit(WriteBackUnit *pu);
-
+        void runProgram();
         void loadProgram(std::string fn);
         void runInstr(Instructions::Instruction *instr);
 };

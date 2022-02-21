@@ -126,8 +126,8 @@ void DecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
         return;
     }
     if (instrPtr->type == IType) {
-        processor->resultForwarder->removeValue(instrPtr->rs);
-        processor->scoreboard->inValidate(instrPtr->rs);
+        processor->resultForwarder->removeValue(instrPtr->rt);
+        processor->scoreboard->inValidate(instrPtr->rt);
         return;
     }
     return;
@@ -171,13 +171,19 @@ void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
         std::pair<int, int> src2 = processor->resultForwarder->getValue(instrPtr->rt);
         int forwarded = 0;
         if (src1.first && src2.first) {
+            std::cout << "User RF" << std::endl;
             instrPtr->src1 = src1.second;
             instrPtr->src2 = src2.second;
             forwarded = 1;
         }
         if (!forwarded) {
             // Checks validity of source registers in scoreboard
-            if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt)) return;
+            if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt))
+            {
+                std::cout << "stalling pipeline" << std::endl;
+                pipeline->stallPipeline();
+                return;
+            }
             instrPtr->src1 = processor->registers[instrPtr->rs];
             instrPtr->src2 = processor->registers[instrPtr->rt];
         }
@@ -192,7 +198,11 @@ void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
         }
         if (!src1.first) {
             // Checks validity of source registers in scoreboard
-            if (!processor->scoreboard->isValid(instrPtr->rs)) return;
+            if (!processor->scoreboard->isValid(instrPtr->rs))
+            {
+                pipeline->stallPipeline();
+                return;
+            }
             instrPtr->src1 = processor->registers[instrPtr->rs];
         }
     }
@@ -370,10 +380,20 @@ void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
     default:
         break;
     }
+    validateDestReg(instrPtr);
 }
 
 void WriteBackUnit::validateDestReg(Instructions::Instruction *instrPtr)
 {
-    processor->scoreboard->validate(instrPtr->rd);
+    if (instrPtr->type == IType)
+    {
+        processor->scoreboard->validate(instrPtr->rt);
+        return;
+    } 
+    if (instrPtr->type == RType)
+    {
+        processor->scoreboard->validate(instrPtr->rd);
+        return;
+    }
     return;
 }

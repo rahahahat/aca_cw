@@ -11,27 +11,14 @@
 #include <map>
 
 int main(int argc, char* argv[]) {
-    ScalarPipeline pipe = ScalarPipeline();
-    ResultForwarder rf = ResultForwarder();
-    Scoreboard sb = Scoreboard();
-    Processor processor = Processor(&pipe, &sb, &rf);
-    FetchUnit fn = FetchUnit(&pipe);
-    DecodeUnit dn = DecodeUnit(&pipe);
-    ExecuteUnit en = ExecuteUnit(&pipe);
-    MemRefUnit mref = MemRefUnit(&pipe);
-    WriteBackUnit wbu = WriteBackUnit(&pipe);
-    processor.attachProcUnit(&fn);
-    processor.attachProcUnit(&dn);
-    processor.attachProcUnit(&en);
-    processor.attachProcUnit(&mref);
-    processor.attachProcUnit(&wbu);
-    processor.loadProgram("./abc.txt");
-    Instructions::Instruction instr = Instructions::Instruction();
-    processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    processor.runInstr(&instr);
-    std::cout << "Result: " << processor.registers[instr.rd] << std::endl;
+    Processor *processor = Processor::fabricate();
+    processor->loadProgram("./abc.txt");
+    processor->registers[$r1] = 2;
+    processor->registers[$r0] = 2;
+    processor->registers[$r3] = 3;
+    processor->runProgram();
+    std::cout << processor->registers[$r2] << std::endl;
+    std::cout << processor->registers[$r4] << std::endl;
+    Processor::destroy(processor);
     return 0;
 }

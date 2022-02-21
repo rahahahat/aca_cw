@@ -2,13 +2,11 @@
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
 /*---------------------------------------------------*/
-Processor::Processor(Pipeline *pipe, Scoreboard *sb, ResultForwarder *rf)
+Processor::Processor()
 {
-    Parser pn = Parser(this);
-    this->pipeline = pipe;
-    this->parser = &pn;
-    this->scoreboard = sb;
-    this->resultForwarder = rf;
+    Parser *pn = new Parser(this);
+    this->parser = pn;
+    this->clock = 0;
 };
 
 void Processor::loadProgram(std::string fn)
@@ -19,6 +17,45 @@ void Processor::loadProgram(std::string fn)
     }
     return;
 }
+
+Processor* Processor::fabricate()
+{
+    ScalarPipeline *pipeline = new ScalarPipeline();
+    Scoreboard *scoreboard = new Scoreboard();
+    ResultForwarder *resultForwarder = new ResultForwarder();
+    Processor *processor = new Processor();
+    pipeline->attachToProcessor(processor);
+    processor->attachPipeline(pipeline);
+    FetchUnit *fn = new FetchUnit(pipeline);
+    DecodeUnit *dn = new DecodeUnit(pipeline);
+    ExecuteUnit *en = new ExecuteUnit(pipeline);
+    MemRefUnit *mrf = new MemRefUnit(pipeline);
+    WriteBackUnit *wb = new WriteBackUnit(pipeline);
+    processor->attachProcHelper(resultForwarder);
+    processor->attachProcHelper(scoreboard);
+    processor->attachProcUnit(fn);
+    processor->attachProcUnit(dn);
+    processor->attachProcUnit(en);
+    processor->attachProcUnit(mrf);
+    processor->attachProcUnit(wb);
+
+    return processor;
+}
+ 
+void Processor::destroy(Processor *processor)
+{
+    delete processor->resultForwarder;
+    delete processor->scoreboard;
+    delete processor->pipeline;
+    delete processor->fUnit;
+    delete processor->dUnit;
+    delete processor->eUnit;
+    delete processor->mrUnit;
+    delete processor->wbUnit;
+    delete processor;
+    return;
+}
+
 
 void Processor::loadInstructionIntoMemory(std::string instruction)
 {
@@ -72,37 +109,44 @@ void Processor::attachPipeline(Pipeline *pipe)
     return;
 };
 
+void Processor::attachProcHelper(ResultForwarder *rf)
+{
+    resultForwarder = rf;
+    return;
+}
+
+void Processor::attachProcHelper(Scoreboard *sb)
+{
+    scoreboard = sb;
+    return;
+}
+
 void Processor::fetch(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Starting Fetch" << std::endl;
     fUnit->fetch(instrPtr);
     return;
 }
 
 void Processor::decode(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Starting Decode" << std::endl;
     dUnit->decode(instrPtr);
     return;
 }
 
 void Processor::execute(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Starting Execute" << std::endl;
     eUnit->execute(instrPtr);
     return;
 }
 
 void Processor::memref(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Starting MemoryAccess" << std::endl;
     mrUnit->memref(instrPtr);
     return;
 }
 
 void Processor::writeback(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Starting WriteBack" << std::endl;
     wbUnit->writeback(instrPtr);
     return;
 }
@@ -112,24 +156,50 @@ void Processor::runInstr(Instructions::Instruction *instrPtr)
     switch (instrPtr->stage)
     {
     case FETCH:
+        std::cout << "Fetching" << std::endl;
         fetch(instrPtr);
         break;
     case DECODE:
+        std::cout << "Decoding: " << instrPtr->instrString << std::endl;
         decode(instrPtr);
         break;
     case EXECUTE:
+        std::cout << "Executing: " << instrPtr->instrString << std::endl;
         execute(instrPtr);
         break;
     case MEMORYACCESS:
+        std::cout << "Memory accessing: " << instrPtr->instrString << std::endl;
         memref(instrPtr);
         break;
     case WRITEBACK:
+        std::cout << "writing back: " << instrPtr->instrString << std::endl;
         writeback(instrPtr);
         break;
     default:
         return;
     }
-    instrPtr->nextPipeStage();
+    if (!pipeline->stalled()) instrPtr->nextPipeStage();
+}
+
+void Processor::runProgram()
+{
+    // Starting execution by putting instruction in pipeline
+    Instructions::Instruction instr = Instructions::Instruction();
+    pipeline->addInstructionToPipeline(&instr);
+    while(!pipeline->isEmpty())
+    {
+        pipeline->pipeInstructionsToProcessor();
+        pipeline->removeCompletedInstructions();
+        if (PC < instrMemSize && pipeline->getInstrSize() < 5)
+        {    
+            Instructions::Instruction inst = Instructions::Instruction();
+            pipeline->addInstructionToPipeline(&inst);
+        };
+        clock++;
+    }
+    std::cout << "Program has ended!" << std::endl;
+    std::cout << "Clock: " << clock << std::endl;
+    return;
 }
 
 /*---------------------------------------------------*/

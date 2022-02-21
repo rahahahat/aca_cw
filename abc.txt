@@ -1,1 +1,2 @@
 add r2 r1 r0
+add r4 r3 r2
