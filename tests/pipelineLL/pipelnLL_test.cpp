@@ -116,7 +116,7 @@ TEST_CASE("removing an instruction from Pipeline LL")
         REQUIRE(plnLL.head->payload == &instr_b);
         REQUIRE(plnLL.tail->payload == &instr_b);
     }
-    SECTION("Removing the tail of Pipeline LL")
+    SECTION("Removing the tail of Pipeline LL", "#1")
     {
         PipelineLL plnLL = PipelineLL();
         Instructions::Instruction instr_a = Instructions::Instruction();
@@ -132,4 +132,59 @@ TEST_CASE("removing an instruction from Pipeline LL")
         REQUIRE(plnLL.head->payload == &instr_a);
         REQUIRE(plnLL.tail->payload == &instr_a);
     }
+    SECTION("Removing the tail of Pipeline LL", "#2")
+    {
+        PipelineLL plnLL = PipelineLL();
+        Instructions::Instruction instr_a = Instructions::Instruction();
+        Instructions::Instruction instr_b = Instructions::Instruction();
+        Instructions::Instruction instr_c = Instructions::Instruction();
+        instr_a.id = 0;
+        instr_b.id = 1;
+        instr_c.id = 2;
+        plnLL.add(&instr_a);
+        plnLL.add(&instr_b);
+        plnLL.add(&instr_c);
+        REQUIRE(plnLL.size == 3);
+        plnLL.remove(2);
+        REQUIRE(plnLL.size == 2);
+        REQUIRE(plnLL.head->payload == &instr_a);
+        REQUIRE(plnLL.tail->payload == &instr_b);
+    }
+    SECTION("Removing an element in between head and tail")
+    {
+        PipelineLL plnLL = PipelineLL();
+        Instructions::Instruction instr_a = Instructions::Instruction();
+        Instructions::Instruction instr_b = Instructions::Instruction();
+        Instructions::Instruction instr_c = Instructions::Instruction();
+        instr_a.id = 0;
+        instr_b.id = 1;
+        instr_c.id = 2;
+        plnLL.add(&instr_a);
+        plnLL.add(&instr_b);
+        plnLL.add(&instr_c);
+        REQUIRE(plnLL.size == 3);
+        plnLL.remove(1);
+        REQUIRE(plnLL.size == 2);
+        REQUIRE(plnLL.head->payload == &instr_a);
+        REQUIRE(plnLL.tail->payload == &instr_c);
+    }
+}
+
+TEST_CASE("PipelineLL flushes all completed instructions")
+{
+    PipelineLL plnLL = PipelineLL();
+    Instructions::Instruction instr_a = Instructions::Instruction();
+    Instructions::Instruction instr_b = Instructions::Instruction();
+    Instructions::Instruction instr_c = Instructions::Instruction();
+    instr_a.id = 0;
+    instr_a.stage = DONE;
+    instr_b.id = 1;
+    instr_c.id = 2;
+    plnLL.add(&instr_a);
+    plnLL.add(&instr_b);
+    plnLL.add(&instr_c);
+    plnLL.flushCompletedInstructions();
+    REQUIRE(plnLL.size == 2);
+    REQUIRE(plnLL.head->payload == &instr_b);
+    REQUIRE(plnLL.tail->payload == &instr_c);
 }
