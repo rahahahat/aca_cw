@@ -48,11 +48,12 @@ enum pipelineType {
 class Pipeline {
     protected:
         Processor *processor;
-        std::vector<Instructions::Instruction*> instructions;
+        PipelineLL* instructions;
         static int completedInstr(Instructions::Instruction *instPtr);
         int stall;
     public:
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr, int id) {};
+        virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
+        virtual void addInstructionToPipeline(int id) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
@@ -62,13 +63,13 @@ class Pipeline {
         int isEmpty();
         void removeCompletedInstructions();
         int getInstrSize();
-        std::vector<Instructions::Instruction*> getInstructions() { return instructions; };
 };
 
 class ScalarPipeline: public Pipeline {
     public:
         ScalarPipeline();
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr, int id);
+        virtual void addInstructionToPipeline(Instructions::Instruction *instr);
+        virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline();
         virtual void resume();

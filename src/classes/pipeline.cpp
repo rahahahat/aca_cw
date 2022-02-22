@@ -22,23 +22,22 @@ pipelineType Pipeline::getType()
 
 int Pipeline::isEmpty()
 {
-    return instructions.size() == 0;
+    return instructions->size == 0;
 }
 
 void Pipeline::removeCompletedInstructions()
 {
-    auto itr = std::remove_if(instructions.begin(), instructions.end(), Pipeline::completedInstr);
-    instructions.erase(itr, instructions.end());
-    return;
+    instructions->flushCompletedInstructions();
 }
 
 int Pipeline::getInstrSize()
 {
-    return instructions.size();
+    return instructions->size;
 }
 
 ScalarPipeline::ScalarPipeline()
 {
+    instructions = new PipelineLL();
     processor = NULL;
     stall = 0;
 };
@@ -48,30 +47,37 @@ pipelineType ScalarPipeline::getType()
     return Scalar;
 }
 
-void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instr, int id)
+void ScalarPipeline::addInstructionToPipeline(int id)
 {
     std::cout << "Putting new insruction in pipeline" << std::endl;
-    if (instr == NULL) {
-        Instructions::Instruction *new_inst = new Instructions::Instruction();
-        new_inst->id = id;
-        instructions.push_back(new_inst);
-        return;
-    }
-    instructions.push_back(instr);
+    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    new_inst->id = id;
     return;
 };
+
+void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr)
+{
+    std::cout << "Putting new insruction in pipeline" << std::endl;
+    instructions->add(instrPtr);
+    return;
+};
+
 
 void ScalarPipeline::pipeInstructionsToProcessor() {
     resume();
     int count = 0;
     std::cout << std::endl;
-    std::cout << "Instructions in pipeline: " << instructions.size() << std::endl;
-    for (int i = 0; i < instructions.size(); i++) {
-        std::cout << "Iterations: " << count << std::endl;
-        count += 1;
-        Instructions::Instruction *instr = instructions.at(i);
+    std::cout << "Instructions in pipeline: " << instructions->size << std::endl;
+    PipelineLLNode *curr = instructions->head;
+    while(curr != NULL)
+    {
+        Instructions::Instruction *instr = curr->payload;
         processor->runInstr(instr);
-        if (stalled()) break;
+        if (stalled()) {
+            curr = curr->next;
+            break;
+        }
+        curr = curr->next;
     }
     std::cout << "------------------------ All instructions for current cycle have been run ----------------------------" << std::endl;
     std::cout << std::endl;

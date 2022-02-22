@@ -193,7 +193,7 @@ void Processor::runProgram()
     int count = 0;
     // Starting execution by putting instruction in pipeline
     Instructions::Instruction instr = Instructions::Instruction();
-    pipeline->addInstructionToPipeline(NULL, count);
+    pipeline->addInstructionToPipeline(count);
     count += 1;
     while(!pipeline->isEmpty())
     {
@@ -205,7 +205,7 @@ void Processor::runProgram()
         pipeline->removeCompletedInstructions();
         if (PC < instrMemSize && pipeline->getInstrSize() < 5)
         {    
-            pipeline->addInstructionToPipeline(NULL, count);
+            pipeline->addInstructionToPipeline(count);
             count += 1;
         };
         std::cout << "Cycle ends: " << clock << std::endl;

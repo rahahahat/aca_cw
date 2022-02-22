@@ -101,8 +101,8 @@ Instructions::Instruction* PipelineLL::remove(PipelineLLNode* pl_node)
         std::cout << "PipelineLLNode is NULL" << std::endl;
         return NULL;
     }
-    PipelineLLNode* prev = pl_node->next;
-    PipelineLLNode* next = pl_node->prev;
+    PipelineLLNode* prev = pl_node->prev;
+    PipelineLLNode* next = pl_node->next;
     Instructions::Instruction* ret_instr;
     if (prev != NULL)
     {
@@ -178,20 +178,24 @@ void PipelineLL::removeAndDestroy(int i)
     return;
 }
 
+void PipelineLL::removeAndDestroy(PipelineLLNode *pl_node)
+{
+    Instructions::Instruction* ret_instr = remove(pl_node);
+    delete ret_instr;
+    return;
+}
+
 void PipelineLL::flushCompletedInstructions()
 {
     PipelineLLNode* curr = head;
-    int count = 0;
     while(curr != NULL)
     {
         PipelineLLNode* next = curr->next;
-        curr = NULL;
         if (curr->payload->stage == DONE)
         {
-            removeAndDestroy(count);
+            removeAndDestroy(curr);
         }
         curr = next;
-        count++;
     }
     return;
 }
