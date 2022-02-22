@@ -18,16 +18,18 @@ class PipelineLL {
         PipelineLLNode* tail;
         int size;
         Instructions::Instruction* pop();
-        void push(Instructions::Instruction *instrPtr);
+        void add(Instructions::Instruction *instrPtr);
         Instructions::Instruction* remove(int i);
         void removeAndDestroy(int i);
         Instructions::Instruction* addInstructionForFetch();
+        Instructions::Instruction* addInstructionForFetch(int id);
         void flushCompletedInstructions();
 };
 
 class PipelineLLNode {
     public:
         PipelineLLNode();
+        PipelineLLNode(int id);
         PipelineLLNode(Instructions::Instruction *instrPtr);
         Instructions::Instruction* payload;
         PipelineLLNode* next;

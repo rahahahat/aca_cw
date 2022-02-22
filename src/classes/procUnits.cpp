@@ -283,7 +283,7 @@ void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
     default:
         break;
     }
-    populateResultForwarder(instrPtr);
+    // populateResultForwarder(instrPtr);
 }
 
 void ExecuteUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
@@ -314,7 +314,7 @@ void MemRefUnit::memref(Instructions::Instruction *instrPtr)
         processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
         break;
     }
-    populateResultForwarder(instrPtr);
+    // populateResultForwarder(instrPtr);
 };
 
 void MemRefUnit::populateResultForwarder(Instructions::Instruction *instrPtr)

@@ -14,6 +14,14 @@ PipelineLLNode::PipelineLLNode(Instructions::Instruction *instrPtr)
     prev = NULL;
 }
 
+PipelineLLNode::PipelineLLNode(int id)
+{
+    payload = new Instructions::Instruction();
+    payload->id = id;
+    next = NULL;
+    prev = NULL;
+}
+
 int PipelineLLNode::isTail()
 {
     return next == NULL;
@@ -36,9 +44,9 @@ Instructions::Instruction* PipelineLLNode::get()
     return payload;
 }
 
-Instructions::Instruction* PipelineLL::addInstructionForFetch()
+Instructions::Instruction* PipelineLL::addInstructionForFetch(int id)
 {
-    PipelineLLNode *pl_node = new PipelineLLNode();
+    PipelineLLNode *pl_node = new PipelineLLNode(id);
     if (head == NULL && size == 0)
     {
         head = pl_node;
@@ -54,7 +62,7 @@ Instructions::Instruction* PipelineLL::addInstructionForFetch()
     return pl_node->payload;
 };
 
-void PipelineLL::push(Instructions::Instruction *instrPtr)
+void PipelineLL::add(Instructions::Instruction *instrPtr)
 {
     PipelineLLNode *pl_node = new PipelineLLNode(instrPtr);
     if (head == NULL && size == 0)
@@ -83,6 +91,9 @@ Instructions::Instruction* PipelineLL::pop()
     if (temp != NULL)
     {
         temp->prev = NULL;
+    }
+    if (head == tail) {
+        tail = NULL;
     }
     delete head;
     head = temp;
