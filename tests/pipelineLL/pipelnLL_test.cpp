@@ -248,34 +248,47 @@ TEST_CASE("removing an instruction from Pipeline LL")
 
 TEST_CASE("PipelineLL flushes completed instructions")
 {
-    WHEN("the first instruction is completed")
+    WHEN("the first instruction is complete")
     {
-            PipelineLL plnLL = PipelineLL();
-            auto ins1 = plnLL.addInstructionForFetch();
-            auto ins2 = plnLL.addInstructionForFetch();
-            ins1->id = 1;
-            ins2->id = 2;
-            plnLL.head->payload->stage = DONE;
-            REQUIRE(plnLL.size == 2);
-            plnLL.flushCompletedInstructions();
-            REQUIRE(plnLL.size == 1);
-            REQUIRE(plnLL.head == plnLL.tail);
-            REQUIRE(plnLL.head->payload->stage != DONE);
-            REQUIRE(plnLL.head->payload->id == 2);
+        PipelineLL plnLL = PipelineLL();
+        auto ins1 = plnLL.addInstructionForFetch();
+        auto ins2 = plnLL.addInstructionForFetch();
+        ins1->id = 1;
+        ins2->id = 2;
+        plnLL.head->payload->stage = DONE;
+        REQUIRE(plnLL.size == 2);
+        plnLL.flushCompletedInstructions();
+        REQUIRE(plnLL.size == 1);
+        REQUIRE(plnLL.head == plnLL.tail);
+        REQUIRE(plnLL.head->payload->stage != DONE);
+        REQUIRE(plnLL.head->payload->id == 2);
     }
-    WHEN("the last instruction is completed")
+    WHEN("the instruction in tail of PipelineLL is complete")
     {
-            PipelineLL plnLL = PipelineLL();
-            auto ins1 = plnLL.addInstructionForFetch();
-            auto ins2 = plnLL.addInstructionForFetch();
-            ins1->id = 1;
-            ins2->id = 2;
-            plnLL.tail->payload->stage = DONE;
-            REQUIRE(plnLL.size == 2);
-            plnLL.flushCompletedInstructions();
-            REQUIRE(plnLL.size == 1);
-            REQUIRE(plnLL.head == plnLL.tail);
-            REQUIRE(plnLL.head->payload->stage != DONE);
-            REQUIRE(plnLL.head->payload->id == 1);
+        PipelineLL plnLL = PipelineLL();
+        auto ins1 = plnLL.addInstructionForFetch();
+        auto ins2 = plnLL.addInstructionForFetch();
+        ins1->id = 1;
+        ins2->id = 2;
+        plnLL.tail->payload->stage = DONE;
+        REQUIRE(plnLL.size == 2);
+        plnLL.flushCompletedInstructions();
+        REQUIRE(plnLL.size == 1);
+        REQUIRE(plnLL.head == plnLL.tail);
+        REQUIRE(plnLL.head->payload->stage != DONE);
+        REQUIRE(plnLL.head->payload->id == 1);
+    }
+    WHEN("the last instruction is complete")
+    {
+        PipelineLL plnLL = PipelineLL();
+        auto ins1 = plnLL.addInstructionForFetch();
+        ins1->id = 1;
+        ins1->stage = DONE;
+        REQUIRE(plnLL.size == 1);
+        plnLL.flushCompletedInstructions();
+        REQUIRE(plnLL.size == 0);
+        REQUIRE(plnLL.head == plnLL.tail);
+        REQUIRE(plnLL.head == NULL);
+        REQUIRE(plnLL.tail == NULL);
     }
 }
