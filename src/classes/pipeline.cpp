@@ -62,7 +62,6 @@ void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPt
     return;
 };
 
-
 void ScalarPipeline::pipeInstructionsToProcessor() {
     resume();
     int count = 0;
