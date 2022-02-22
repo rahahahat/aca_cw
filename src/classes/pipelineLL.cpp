@@ -54,7 +54,7 @@ Instructions::Instruction* PipelineLL::addInstructionForFetch()
     return pl_node->payload;
 };
 
-void PipelineLL::push(Instructions::Instruction *instrPtr)
+void PipelineLL::add(Instructions::Instruction *instrPtr)
 {
     PipelineLLNode *pl_node = new PipelineLLNode(instrPtr);
     if (head == NULL && size == 0)
