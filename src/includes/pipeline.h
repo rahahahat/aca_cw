@@ -20,7 +20,9 @@ class PipelineLL {
         Instructions::Instruction* pop();
         void add(Instructions::Instruction *instrPtr);
         Instructions::Instruction* remove(int i);
+        Instructions::Instruction* remove(PipelineLLNode* pl_node);
         void removeAndDestroy(int i);
+        void removeAndDestroy(PipelineLLNode* pl_node);
         Instructions::Instruction* addInstructionForFetch();
         Instructions::Instruction* addInstructionForFetch(int id);
         void flushCompletedInstructions();

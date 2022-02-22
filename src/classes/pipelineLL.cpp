@@ -87,7 +87,45 @@ Instructions::Instruction* PipelineLL::pop()
     delete head;
     head = temp;
     size--;
+    if (size <= 1)
+    {
+        tail = head;
+    }
     return temp_instr;
+}
+
+Instructions::Instruction* PipelineLL::remove(PipelineLLNode* pl_node)
+{
+    if (pl_node == NULL)
+    {
+        std::cout << "PipelineLLNode is NULL" << std::endl;
+        return NULL;
+    }
+    PipelineLLNode* prev = pl_node->next;
+    PipelineLLNode* next = pl_node->prev;
+    Instructions::Instruction* ret_instr;
+    if (prev != NULL)
+    {
+        prev->next = next;
+    }
+    if (next != NULL) {
+        next->prev = prev;
+    }
+    if (pl_node == tail)
+    {
+        tail = prev;
+    }
+    if (pl_node == head)
+    {
+        head = next;
+    }
+    ret_instr = pl_node->payload;
+    pl_node->prev = NULL;
+    pl_node->next = NULL;
+    pl_node->payload = NULL;
+    size--;
+    delete pl_node;
+    return ret_instr;
 }
 
 Instructions::Instruction* PipelineLL::remove(int i)
@@ -116,6 +154,14 @@ Instructions::Instruction* PipelineLL::remove(int i)
     if (next != NULL) {
         next->prev = prev;
     }
+    if (i == 0)
+    {
+        head = next;
+    }
+    if (i == size - 1)
+    {
+        tail = prev;
+    }
     ret_instr = curr->payload;
     curr->prev = NULL;
     curr->next = NULL;
@@ -134,36 +180,18 @@ void PipelineLL::removeAndDestroy(int i)
 
 void PipelineLL::flushCompletedInstructions()
 {
-    Instructions::Instruction* to_rem;
-    PipelineLLNode* prev;
-    PipelineLLNode* next;
     PipelineLLNode* curr = head;
+    int count = 0;
     while(curr != NULL)
     {
+        PipelineLLNode* next = curr->next;
+        curr = NULL;
         if (curr->payload->stage == DONE)
         {
-            prev = curr->prev;
-            next = prev->next;
-            to_rem = curr->payload;
-            curr->next = NULL;
-            curr->prev = NULL;
-            curr->prev = NULL;
-            if (prev != NULL)
-            {
-                prev->next = next;
-            }
-            if (next != NULL)
-            {
-                next->prev = prev;
-            }
-            delete curr;
-            delete to_rem;
-            curr = next;
-            next = NULL;
-            prev = NULL;
-            to_rem = NULL;
-            size--;
+            removeAndDestroy(count);
         }
+        curr = next;
+        count++;
     }
     return;
 }
