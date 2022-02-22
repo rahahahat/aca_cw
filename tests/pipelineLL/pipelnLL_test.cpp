@@ -84,3 +84,52 @@ TEST_CASE("Poping an instruction from Pipeline LL")
     }
 };
 
+TEST_CASE("removing an instruction from Pipeline LL")
+{
+    SECTION("Pipeline LL has no elements")
+    {
+        PipelineLL plnLL = PipelineLL();
+        REQUIRE(plnLL.remove(0) == NULL);
+    }
+    SECTION("Index to be removed is greater than size")
+    {
+        PipelineLL plnLL = PipelineLL();
+        Instructions::Instruction instr_a = Instructions::Instruction();
+        instr_a.id = 0;
+        plnLL.add(&instr_a);
+        REQUIRE(plnLL.remove(1) == NULL);
+        REQUIRE(plnLL.size == 1);
+    }
+    SECTION("Removing the head of Pipeline LL")
+    {
+        PipelineLL plnLL = PipelineLL();
+        Instructions::Instruction instr_a = Instructions::Instruction();
+        Instructions::Instruction instr_b = Instructions::Instruction();
+        instr_a.id = 0;
+        instr_b.id = 1;
+        plnLL.add(&instr_a);
+        plnLL.add(&instr_b);
+        REQUIRE(plnLL.size == 2);
+        plnLL.remove(0);
+        REQUIRE(plnLL.size == 1);
+        REQUIRE(plnLL.head == plnLL.tail);
+        REQUIRE(plnLL.head->payload == &instr_b);
+        REQUIRE(plnLL.tail->payload == &instr_b);
+    }
+    SECTION("Removing the tail of Pipeline LL")
+    {
+        PipelineLL plnLL = PipelineLL();
+        Instructions::Instruction instr_a = Instructions::Instruction();
+        Instructions::Instruction instr_b = Instructions::Instruction();
+        instr_a.id = 0;
+        instr_b.id = 1;
+        plnLL.add(&instr_a);
+        plnLL.add(&instr_b);
+        REQUIRE(plnLL.size == 2);
+        plnLL.remove(1);
+        REQUIRE(plnLL.size == 1);
+        REQUIRE(plnLL.head == plnLL.tail);
+        REQUIRE(plnLL.head->payload == &instr_a);
+        REQUIRE(plnLL.tail->payload == &instr_a);
+    }
+}
