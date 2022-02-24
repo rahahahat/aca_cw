@@ -26,6 +26,7 @@ class PipelineLL {
         Instructions::Instruction* addInstructionForFetch();
         Instructions::Instruction* addInstructionForFetch(int id);
         void flushCompletedInstructions();
+        void flushAfterNode(PipelineLLNode *node);
 };
 
 class PipelineLLNode {
@@ -49,20 +50,24 @@ class Pipeline {
     protected:
         Processor *processor;
         PipelineLL* instructions;
+        PipelineLLNode *flushNode;
         static int completedInstr(Instructions::Instruction *instPtr);
         int stall;
     public:
+        int flush;
         virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual void addInstructionToPipeline(int id) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
+        virtual void flushPipelineOnBranchOrJump() {};
         virtual void resume() {};
         virtual int stalled() {};
         virtual pipelineType getType();
         int isEmpty();
         void removeCompletedInstructions();
         int getInstrSize();
+
 };
 
 class ScalarPipeline: public Pipeline {
@@ -72,6 +77,7 @@ class ScalarPipeline: public Pipeline {
         virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline();
+        virtual void flushPipelineOnBranchOrJump();
         virtual void resume();
         virtual int stalled();
         virtual pipelineType getType();

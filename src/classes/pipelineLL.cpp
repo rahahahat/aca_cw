@@ -199,3 +199,16 @@ void PipelineLL::flushCompletedInstructions()
     }
     return;
 }
+
+void PipelineLL::flushAfterNode(PipelineLLNode *node)
+{
+    PipelineLLNode *start_node = node->next;
+    PipelineLLNode *next = NULL;
+    while(start_node != NULL)
+    {   
+        next = start_node->next;
+        removeAndDestroy(start_node);
+        start_node = next;
+    }
+    return;
+}

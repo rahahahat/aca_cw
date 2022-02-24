@@ -40,8 +40,6 @@ void Instruction::nextPipeStage() {
             break;
         case WRITEBACK:
             stage = DONE;
-        default:
-            std::cerr << "Instruction has been completed" << std::endl;
     };
 };
 

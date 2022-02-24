@@ -64,6 +64,7 @@ class Processor
         void runProgram();
         void loadProgram(std::string fn);
         void runInstr(Instructions::Instruction *instr);
+        void regDump();
 };
 
 

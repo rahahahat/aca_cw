@@ -2,15 +2,15 @@
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
 /*---------------------------------------------------*/
-Processor::Processor()
-{
+Processor::Processor() {
+
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
 };
 
-void Processor::loadProgram(std::string fn)
-{
+void Processor::loadProgram(std::string fn) {
+
     std::vector<std::string> program = parser->parseProgram(fn);
     for (auto it = std::begin(program); it != std::end(program); ++it) {
         loadInstructionIntoMemory(*it);
@@ -18,8 +18,8 @@ void Processor::loadProgram(std::string fn)
     return;
 }
 
-Processor* Processor::fabricate()
-{
+Processor* Processor::fabricate() {
+
     ScalarPipeline *pipeline = new ScalarPipeline();
     Scoreboard *scoreboard = new Scoreboard();
     ResultForwarder *resultForwarder = new ResultForwarder();
@@ -42,8 +42,8 @@ Processor* Processor::fabricate()
     return processor;
 }
  
-void Processor::destroy(Processor *processor)
-{
+void Processor::destroy(Processor *processor) {
+
     delete processor->resultForwarder;
     delete processor->scoreboard;
     delete processor->pipeline;
@@ -57,8 +57,8 @@ void Processor::destroy(Processor *processor)
 }
 
 
-void Processor::loadInstructionIntoMemory(std::string instruction)
-{
+void Processor::loadInstructionIntoMemory(std::string instruction) {
+
     const char ch = instruction.back();
     if (ch == ':') {
         instruction.pop_back();
@@ -70,47 +70,48 @@ void Processor::loadInstructionIntoMemory(std::string instruction)
     return;
 };
 
-void Processor::attachProcUnit(FetchUnit *pu) 
-{
+void Processor::attachProcUnit(FetchUnit *pu) {
+
     fUnit = pu;
     fUnit->attachToProcessor(this);
     return;
 }
 
-void Processor::attachProcUnit(DecodeUnit *pu)
-{
+void Processor::attachProcUnit(DecodeUnit *pu) {
+
     dUnit = pu;
     dUnit->attachToProcessor(this);
     return;
 }
 
-void Processor::attachProcUnit(ExecuteUnit *pu)
-{
+void Processor::attachProcUnit(ExecuteUnit *pu) {
+
     eUnit = pu;
     eUnit->attachToProcessor(this);
     return;
 }
 void Processor::attachProcUnit(MemRefUnit *pu) {
+
     mrUnit = pu;
     mrUnit->attachToProcessor(this);
     return;
 }
 
-void Processor::attachProcUnit(WriteBackUnit *pu)
-{
+void Processor::attachProcUnit(WriteBackUnit *pu) {
+
     wbUnit = pu;
     wbUnit->attachToProcessor(this);
     return;
 };
 
-void Processor::attachPipeline(Pipeline *pipe)
-{
+void Processor::attachPipeline(Pipeline *pipe) {
+
     pipeline = pipe;
     return;
 };
 
-void Processor::attachProcHelper(ResultForwarder *rf)
-{
+void Processor::attachProcHelper(ResultForwarder *rf) {
+
     resultForwarder = rf;
     return;
 }
@@ -121,40 +122,38 @@ void Processor::attachProcHelper(Scoreboard *sb)
     return;
 }
 
-void Processor::fetch(Instructions::Instruction *instrPtr)
-{
+void Processor::fetch(Instructions::Instruction *instrPtr) {
+
     fUnit->fetch(instrPtr);
     return;
 }
 
-void Processor::decode(Instructions::Instruction *instrPtr)
-{
+void Processor::decode(Instructions::Instruction *instrPtr) {
+
     dUnit->decode(instrPtr);
     return;
 }
 
-void Processor::execute(Instructions::Instruction *instrPtr)
-{
+void Processor::execute(Instructions::Instruction *instrPtr) {
+
     eUnit->execute(instrPtr);
     return;
 }
 
-void Processor::memref(Instructions::Instruction *instrPtr)
-{
+void Processor::memref(Instructions::Instruction *instrPtr) {
+
     mrUnit->memref(instrPtr);
     return;
 }
 
-void Processor::writeback(Instructions::Instruction *instrPtr)
-{
+void Processor::writeback(Instructions::Instruction *instrPtr) {
+
     wbUnit->writeback(instrPtr);
     return;
 }
 
-void Processor::runInstr(Instructions::Instruction *instrPtr)
-{
-    std::cout << "Running Instruction: " << instrPtr->id << std::endl;
-    std::cout << "Stage is: " << instrPtr->stage << std::endl;
+void Processor::runInstr(Instructions::Instruction *instrPtr) {
+
     switch (instrPtr->stage)
     {
     case FETCH:
@@ -180,16 +179,13 @@ void Processor::runInstr(Instructions::Instruction *instrPtr)
     default:
         return;
     }
-    if (!pipeline->stalled()) { 
-        std::cout << "Happens for Instruction: " << instrPtr->id << std::endl;
+    if (!pipeline->stalled()) {
         instrPtr->nextPipeStage();
-        std::cout << instrPtr->stage << std::endl;
-        std::cout << instrPtr->instrString << std::endl;
     }
 }
 
-void Processor::runProgram()
-{
+void Processor::runProgram() { 
+
     int count = 0;
     // Starting execution by putting instruction in pipeline
     Instructions::Instruction instr = Instructions::Instruction();
@@ -197,23 +193,27 @@ void Processor::runProgram()
     count += 1;
     while(!pipeline->isEmpty())
     {
-        std::cout << std::endl;
-        std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << "Cycle starts: " << clock << std::endl;
+        clock++;
+        std::cout << "------------------------------------- New Clock Cycle Starts -----------------------------------------" << std::endl;
+        std::cout << CYN "Cycle starts: " << clock << NC<< std::endl;
 
         pipeline->pipeInstructionsToProcessor();
         pipeline->removeCompletedInstructions();
+        if (pipeline->flush)
+        {
+            pipeline->flushPipelineOnBranchOrJump();
+        }
         if (PC < instrMemSize && pipeline->getInstrSize() < 5)
         {    
             pipeline->addInstructionToPipeline(count);
             count += 1;
         };
-        std::cout << "Cycle ends: " << clock << std::endl;
-        std::cout << "--------------------------------------------------" << std::endl;
-        std::cout << std::endl; 
-        clock++;
+        resultForwarder->memDump();
+        scoreboard->memDump();
+        regDump();
+        std::cout << "------------------------ All instructions for current cycle have been run ----------------------------" << std::endl;
+        std::cout << std::endl;
     }
-
     std::cout << "Program has ended!" << std::endl;
     std::cout << "Clock: " << clock << std::endl;
     return;
@@ -222,8 +222,8 @@ void Processor::runProgram()
 /*---------------------------------------------------*/
 /*---------------------Extras------------------------*/
 /*---------------------------------------------------*/
-void printInstructionMemory(Processor processor)
-{
+void printInstructionMemory(Processor processor) {
+
     int size = processor.instrMemSize;
     for (int x = 0; x < size; x++) {
         std::cout << processor.instructionMemory[x] << std::endl;
@@ -231,8 +231,8 @@ void printInstructionMemory(Processor processor)
     return;
 };
 
-void printInstructionMemoryAtIndex(Processor processor, int index)
-{
+void printInstructionMemoryAtIndex(Processor processor, int index) {
+
     if (index > 512) {
         std::cerr << "Error in printInstructionMemoryAtIndex: index " << index << " is greater than 512" << std::endl;
         return;
@@ -245,9 +245,16 @@ void printInstructionMemoryAtIndex(Processor processor, int index)
     return;
 };
 
-void printClock(int clock)
-{
+void printClock(int clock) {
     std::cout << "End of cycle: " << clock << std::endl;
     return;
 };
 
+void Processor::regDump() {
+    std::cout << "[------------RegDump---------]" << std::endl;
+    for (int i = 0; i < 32; i++)
+    {
+        std::cout << GRN"$r"<< i << ":"NC << "\t\t" << registers[i] <<std::endl;
+    }
+    std::cout << "[----------------------------]" << std::endl;
+}

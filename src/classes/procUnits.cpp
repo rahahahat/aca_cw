@@ -14,7 +14,7 @@ void ProcUnit::attachToProcessor(Processor *proc)
 }
 
 /* --------------------------------------------------------------------------------------------------------- */
-/* -------------------------------------------------FetchUnit----------------------------------------------- */
+/* -------------------------------------------------FetchUnit---------------------------------------------- */
 /* --------------------------------------------------------------------------------------------------------- */
 
 FetchUnit::FetchUnit(Pipeline *pl)
@@ -26,273 +26,12 @@ FetchUnit::FetchUnit(Pipeline *pl)
 Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
 {
     std::string instr = processor->instructionMemory[processor->PC];
+    std::cout << "Fetching Instruction: " << instr << std::endl;
     instrPtr->instrString = instr;
     processor->PC++;
     return instrPtr;
 };
 
-/* --------------------------------------------------------------------------------------------------------- */
-/* -------------------------------------------------DecodeUnit---------------------------------------------- */
-/* --------------------------------------------------------------------------------------------------------- */
-
-DecodeUnit::DecodeUnit(Pipeline *pl) 
-{
-    pipeline = pl;
-    return;
-};
-
-void DecodeUnit::decode(Instructions::Instruction *instrPtr)
-{
-    std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
-    std::pair<Opcodes, InstructionType> InsPair = InstructionPairMap.at(splitInstr.front());
-    instrPtr->opcode = InsPair.first;
-    instrPtr->type = InsPair.second;
-    switch(InsPair.second)
-    {
-        case RType:
-            decodeRTypeInstruction(instrPtr, splitInstr, InsPair);
-            break;
-        case IType:
-            decodeITypeInstruction(instrPtr, splitInstr, InsPair);
-            break;
-        case JType:
-            decodeJTypeInstruction(instrPtr, splitInstr, InsPair);
-            break;
-    };
-    invalidateDestReg(instrPtr);
-};
-
-void DecodeUnit::decodeRTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair) 
-{
-    // Instruction format: opcode dest src1 src2
-    instrPtr->rt = RegisterMap.at(splitInstr.back()); // src2
-    splitInstr.pop_back();
-    instrPtr->rs = RegisterMap.at(splitInstr.back()); // src1
-    splitInstr.pop_back();
-    instrPtr->rd = RegisterMap.at(splitInstr.back()); // dest
-    splitInstr.pop_back();
-};
-
-void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair)
-{
-    Opcodes opcode = insPair.first;
-    std::string label;
-    switch(opcode)
-    {
-        case BEQ:
-        case BNE:
-            label = splitInstr.back();
-            instrPtr->immediateOrAddress = processor->labelMap.at(label); //label
-            splitInstr.pop_back();
-            instrPtr->rt = RegisterMap.at(splitInstr.back()); // r2
-            splitInstr.pop_back();
-            instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
-            splitInstr.pop_back();
-            return;
-        case BLEZ:
-        case BGTZ:
-            label = splitInstr.back();
-            instrPtr->immediateOrAddress = processor->labelMap.at(label); //label
-            splitInstr.pop_back();
-            instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
-            splitInstr.pop_back();
-            return;
-        default:
-            // Instruction format: opcode r1 r2 immediate
-            instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // immediate
-            splitInstr.pop_back();
-            instrPtr->rt = RegisterMap.at(splitInstr.back()); // r2
-            splitInstr.pop_back();
-            instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
-            splitInstr.pop_back();
-            return;
-    };
-}
-
-void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair) 
-{
-    // Instruction format: opcode address
-    std::string label;
-    label = splitInstr.back();
-    instrPtr->immediateOrAddress = processor->labelMap.at(label);
-    splitInstr.pop_back();
-    return;
-};
-
-void DecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
-{
-    if (instrPtr->type == RType) {
-        processor->resultForwarder->removeValue(instrPtr->rd);
-        processor->scoreboard->inValidate(instrPtr->rd);
-        return;
-    }
-    if (instrPtr->type == IType) {
-        processor->resultForwarder->removeValue(instrPtr->rt);
-        processor->scoreboard->inValidate(instrPtr->rt);
-        return;
-    }
-    return;
-}
-
-/* --------------------------------------------------------------------------------------------------------- */
-/* -------------------------------------------------ExecuteUnit--------------------------------------------- */
-/* --------------------------------------------------------------------------------------------------------- */
-
-ExecuteUnit::ExecuteUnit(Pipeline *pl)
-{   
-    pipeline = pl;
-    return;
-};
-
-void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
-{
-    switch(instrPtr->type)
-    {
-        case RType:
-            executeRTypeInstruction(instrPtr);
-            break;
-        case IType:
-            executeITypeInstruction(instrPtr);
-            break;
-        case JType:
-            executeJTypeInstruction(instrPtr);
-            break;
-    };
-    
-};
-
-void ExecuteUnit::executeInScalarPipeline(Instructions::Instruction *instrPtr)
-{
-    InstructionType instrType = instrPtr->type;
-    if (instrType == RType)
-    {
-        // Performs results forwarding
-        // pair<int::valid, int::value>
-        std::pair<int, int> src1 = processor->resultForwarder->getValue(instrPtr->rs);
-        std::pair<int, int> src2 = processor->resultForwarder->getValue(instrPtr->rt);
-        int forwarded = 0;
-        if (src1.first && src2.first) {
-            std::cout << GRN "Forwarding Results of Register: "NC<< std::endl;
-            instrPtr->src1 = src1.second;
-            instrPtr->src2 = src2.second;
-            forwarded = 1;
-        }
-        if (!forwarded) {
-            // Checks validity of source registers in scoreboard
-            if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt))
-            {
-                std::cout << REDB "stalling pipeline" NC << std::endl;
-                pipeline->stallPipeline();
-                return;
-            }
-            instrPtr->src1 = processor->registers[instrPtr->rs];
-            instrPtr->src2 = processor->registers[instrPtr->rt];
-        }
-    }
-    if (instrType == IType)
-    {
-        // Performs results forwarding
-        // pair<int::valid, int::value>
-        std::pair<int, int> src1 = processor->resultForwarder->getValue(instrPtr->rs);
-        if (src1.first) {
-            instrPtr->src1 = src1.second;
-        }
-        if (!src1.first) {
-            // Checks validity of source registers in scoreboard
-            if (!processor->scoreboard->isValid(instrPtr->rs))
-            {
-                std::cout << REDB "stalling pipeline" NC << std::endl;
-                pipeline->stallPipeline();
-                return;
-            }
-            instrPtr->src1 = processor->registers[instrPtr->rs];
-        }
-    }
-    executeInstrType(instrPtr);
-};
-
-void ExecuteUnit::execute(Instructions::Instruction *instrPtr)
-{
-    if (pipeline->getType() == Scalar)
-    {
-        executeInScalarPipeline(instrPtr);
-        return;
-    }
-}
-
-void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr) {};
-void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
-{
-    Register src = instrPtr->rs;
-    int immediate = instrPtr->immediateOrAddress;
-    int memAddr;
-    switch (instrPtr->opcode)
-    {
-    case ADDI:
-    case ADDIU:
-        instrPtr->temp = instrPtr->src1 + immediate;
-        break;
-    case LW:
-        instrPtr->temp = instrPtr->src1 + immediate;
-        break;
-    case SW:
-        instrPtr->temp = instrPtr->src1 + immediate;
-        break;
-    case ANDI:
-        instrPtr->temp = instrPtr->src1 & immediate;
-        break;
-    case ORI:
-        instrPtr->temp = instrPtr->src1 | immediate;
-        break;
-    }
-}
-void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
-{
-    Register src1_rs = instrPtr->rs;
-    Register src2_rt = instrPtr->rt; 
-    switch (instrPtr->opcode)
-    {
-    case ADD:
-    case ADDU:
-        instrPtr->temp = instrPtr->src1 + instrPtr->src2;
-        break;
-    case SUB: 
-    case SUBU:
-        instrPtr->temp = instrPtr->src1 - instrPtr->src2;
-        break;
-    case MULT:
-    case MULTU:
-        instrPtr->temp = instrPtr->src1 * instrPtr->src2;
-        break;
-    case DIV:
-    case DIVU:
-        instrPtr->temp = instrPtr->src1 / instrPtr->src2;
-        break;
-    case AND:
-        instrPtr->temp = instrPtr->src1 & instrPtr->src2;
-        break;
-    case OR:
-        instrPtr->temp = instrPtr->src1 | instrPtr->src2;
-        break;
-    case NOR:
-        instrPtr->temp = ~(instrPtr->src1 | instrPtr->src2); 
-        break;
-    case XOR:
-        instrPtr->temp = instrPtr->src1 ^ instrPtr->src2;
-        break;
-    default:
-        break;
-    }
-    populateResultForwarder(instrPtr);
-}
-
-void ExecuteUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
-{
-    Opcodes opcode = instrPtr->opcode;
-    if (opcode == LW || opcode == SW || opcode == JR) return;
-    processor->resultForwarder->addValue(instrPtr->rd, instrPtr->temp);
-    return;
-};
 /* --------------------------------------------------------------------------------------------------------- */
 /* -------------------------------------------------MemRefUnit---------------------------------------------- */
 /* --------------------------------------------------------------------------------------------------------- */
@@ -305,6 +44,7 @@ MemRefUnit::MemRefUnit(Pipeline *pl)
 
 void MemRefUnit::memref(Instructions::Instruction *instrPtr) 
 {
+    std::cout << "Memory Accesing Instruction: " << instrPtr->instrString << std::endl;
     switch (instrPtr->opcode)
     {
     case LW:
@@ -313,15 +53,19 @@ void MemRefUnit::memref(Instructions::Instruction *instrPtr)
     case SW:
         processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
         break;
+    case HALT:
+        return;
     }
-    populateResultForwarder(instrPtr);
+    // populateResultForwarder(instrPtr);
 };
 
 void MemRefUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
 {
     Opcodes opcode = instrPtr->opcode;
     if (opcode == LW) {
+        std::cout << "Comes here" << ": "<< instrPtr->rt << std::endl;
         processor->resultForwarder->addValue(instrPtr->rt, instrPtr->temp);
+        std::cout << processor->resultForwarder->getValue(instrPtr->rt).first << std::endl;
     }
     return;
 }
@@ -338,6 +82,7 @@ WriteBackUnit::WriteBackUnit(Pipeline *pl)
 
 void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
 {
+    std::cout << "Writing Back Instruction: " << instrPtr->instrString << std::endl;
     switch (instrPtr->opcode)
     {
     case ADD:
@@ -381,6 +126,20 @@ void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
     case LW:
         processor->registers[instrPtr->rt] = instrPtr->temp;
         break;
+    case BEQ:
+    case BNE:
+    case BL:
+    case BGTE:
+        if (instrPtr->temp) // if we are branching
+        {
+            processor->PC = instrPtr->immediateOrAddress;
+            pipeline->flush = 0;
+            processor->scoreboard->validate($pc);
+        }
+        break;
+    case HALT:
+        pipeline->flush = 0;
+        return;
     default:
         break;
     }
@@ -389,6 +148,8 @@ void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
 
 void WriteBackUnit::validateDestReg(Instructions::Instruction *instrPtr)
 {
+    Opcodes opcode = instrPtr->opcode;
+    if (opcode == BEQ || opcode == BNE || opcode == BL || opcode == BGTE || opcode == HALT) return;
     if (instrPtr->type == IType)
     {
         processor->scoreboard->validate(instrPtr->rt);

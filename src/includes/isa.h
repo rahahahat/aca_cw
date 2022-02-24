@@ -4,7 +4,7 @@
 #define _ISA_INCLUDED_
 
 enum InstructionType {
-        RType, IType, JType
+        RType, IType, JType, End
 };
 
 enum Register: int {
@@ -12,13 +12,13 @@ enum Register: int {
     $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
     $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
     $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31,
-    $noreg = -1,
+    $pc, $noreg = -1,
 };
 
 enum Opcodes {
     ADD, ADDI, ADDIU, ADDU, SUB, SUBU, MULT, MULTU, 
     DIV, DIVU, AND, ANDI, OR, ORI, NOR, XOR, LW, 
-    SW, BEQ, BLEZ, BNE, BGTZ, J, JAL, JR
+    SW, BEQ, BL, BNE, BGTE, J, JAL, JR, HALT
 };
 
 static std::map<std::string, Register> RegisterMap = 
@@ -76,14 +76,15 @@ static std::map<std::string, std::pair<Opcodes, InstructionType>> InstructionPai
     {"lw",    std::pair<Opcodes, InstructionType>(LW, IType)},
     {"sw",    std::pair<Opcodes, InstructionType>(SW, IType)},
     {"beq",   std::pair<Opcodes, InstructionType>(BEQ, IType)},
-    {"blez",  std::pair<Opcodes, InstructionType>(BLEZ, IType)},
+    {"bl",    std::pair<Opcodes, InstructionType>(BL, IType)},
     {"bne",   std::pair<Opcodes, InstructionType>(BNE, IType)},
-    {"bgtz",  std::pair<Opcodes, InstructionType>(BGTZ, IType)},
+    {"bgte",  std::pair<Opcodes, InstructionType>(BGTE, IType)},
     {"div",   std::pair<Opcodes, InstructionType>(DIV, RType)},
     {"divu",  std::pair<Opcodes, InstructionType>(DIVU, RType)},
     {"j",     std::pair<Opcodes, InstructionType>(J, JType)},
     {"jal",   std::pair<Opcodes, InstructionType>(JAL, JType)},
-    {"jr",    std::pair<Opcodes, InstructionType>(JR, RType)}
+    {"jr",    std::pair<Opcodes, InstructionType>(JR, RType)},
+    {"halt",  std::pair<Opcodes, InstructionType>(HALT, End)}
 };
 
 #endif
