@@ -215,9 +215,9 @@ void Processor::runProgram() {
             pipeline->addInstructionToPipeline(count);
             count += 1;
         };
-        resultForwarder->memDump();
-        scoreboard->memDump();
-        regDump();
+        // resultForwarder->memDump();
+        // scoreboard->memDump();
+        // regDump();
         std::cout
         << termcolor::bold
         << "Clock cycle: "

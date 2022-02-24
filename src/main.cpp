@@ -14,11 +14,8 @@
 int main(int argc, char* argv[]) {
     std::cout << termcolor::on_green << "Starting" << termcolor::reset << std::endl;
     Processor *processor = Processor::fabricate();
-    processor->loadProgram("./abc.txt");
+    processor->loadProgram("./factorial.txt");
     std::cout << "ProgramSize: " << processor->instrMemSize <<std::endl;
-    processor->registers[$r0] = 0;
-    processor->DataMemory[0] = 0;
-    processor->DataMemory[1] = 1;
     processor->runProgram();
     Processor::destroy(processor);
     return 0;

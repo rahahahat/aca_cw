@@ -157,6 +157,11 @@ void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
     case HALT:
         pipeline->flush = 0;
         return;
+    case J:
+        processor->PC = instrPtr->temp;
+        pipeline->flush = 0;
+        processor->scoreboard->validate($pc);
+        break;
     default:
         break;
     }

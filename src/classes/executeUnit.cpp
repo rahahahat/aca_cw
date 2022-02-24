@@ -202,7 +202,12 @@ void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
     }
     if (isBranchInstr && instrPtr->temp)
     {
-        std::cout << REDB "Stalling pipeline in Branch Execute" NC << std::endl;
+        std::cout 
+        << termcolor::bold
+        << termcolor::red
+        << "Executing a branch instruction (pseudo stall)"
+        << termcolor::reset
+        << std::endl;
         pipeline->flush = 1;
         pipeline->stallPipeline();
         instrPtr->nextPipeStage();
@@ -218,7 +223,16 @@ void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
     switch (instrPtr->opcode)
     {
     case J:
+        std::cout 
+        << termcolor::bold
+        << termcolor::red
+        << "Executing a jump instruction (pseudo stall)"
+        << termcolor::reset
+        << std::endl;
         instrPtr->temp = immediate;
+        pipeline->stallPipeline();
+        instrPtr->nextPipeStage();
+        processor->scoreboard->inValidate($pc);
         break;
     case JR:
         instrPtr->temp = processor->PC - 1;
