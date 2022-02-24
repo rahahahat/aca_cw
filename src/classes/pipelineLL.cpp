@@ -44,6 +44,25 @@ Instructions::Instruction* PipelineLLNode::get()
     return payload;
 }
 
+Instructions::Instruction* PipelineLL::addInstructionForFetch()
+{
+    PipelineLLNode *pl_node = new PipelineLLNode();
+    if (head == NULL && size == 0)
+    {
+        head = pl_node;
+        tail = pl_node;
+        size++;
+        return pl_node->payload;
+    }
+    tail->next = pl_node;
+    pl_node->prev = tail;
+    tail = pl_node;
+    pl_node->next = NULL;
+    size++;
+    return pl_node->payload;
+};
+
+
 Instructions::Instruction* PipelineLL::addInstructionForFetch(int id)
 {
     PipelineLLNode *pl_node = new PipelineLLNode(id);
