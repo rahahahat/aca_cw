@@ -1,5 +1,6 @@
 #include "procUnits.h"
 #include "constants.h"
+#include "termcolor.h"
 
 ProcUnit::ProcUnit()
 {
@@ -26,7 +27,13 @@ FetchUnit::FetchUnit(Pipeline *pl)
 Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
 {
     std::string instr = processor->instructionMemory[processor->PC];
-    std::cout << "Fetching Instruction: " << instr << std::endl;
+    std::cout 
+    << termcolor::green
+    << termcolor::bold
+    << "Fetching Instruction: "
+    << termcolor::reset 
+    << instr
+    << std::endl;
     instrPtr->instrString = instr;
     processor->PC++;
     return instrPtr;
@@ -44,7 +51,13 @@ MemRefUnit::MemRefUnit(Pipeline *pl)
 
 void MemRefUnit::memref(Instructions::Instruction *instrPtr) 
 {
-    std::cout << "Memory Accesing Instruction: " << instrPtr->instrString << std::endl;
+    std::cout 
+    << termcolor::green
+    << termcolor::bold
+    << "Memory Accessing Instruction: "
+    << termcolor::reset 
+    << instrPtr->instrString 
+    << std::endl;
     switch (instrPtr->opcode)
     {
     case LW:
@@ -63,9 +76,7 @@ void MemRefUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
 {
     Opcodes opcode = instrPtr->opcode;
     if (opcode == LW) {
-        std::cout << "Comes here" << ": "<< instrPtr->rt << std::endl;
         processor->resultForwarder->addValue(instrPtr->rt, instrPtr->temp);
-        std::cout << processor->resultForwarder->getValue(instrPtr->rt).first << std::endl;
     }
     return;
 }
@@ -82,7 +93,13 @@ WriteBackUnit::WriteBackUnit(Pipeline *pl)
 
 void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Writing Back Instruction: " << instrPtr->instrString << std::endl;
+    std::cout 
+    << termcolor::green
+    << termcolor::bold
+    << "Writing Back Instruction: "
+    << termcolor::reset 
+    << instrPtr->instrString 
+    << std::endl;
     switch (instrPtr->opcode)
     {
     case ADD:

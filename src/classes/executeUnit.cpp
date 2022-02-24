@@ -1,5 +1,6 @@
 #include "procUnits.h"
 #include "constants.h"
+#include "termcolor.h"
 
 ExecuteUnit::ExecuteUnit(Pipeline *pl)
 {   
@@ -11,7 +12,13 @@ void ExecuteUnit::execute(Instructions::Instruction *instrPtr)
 {
     if (pipeline->getType() == Scalar)
     {
-        std::cout << "Executing Instruction: " << instrPtr->instrString << std::endl;
+        std::cout 
+        << termcolor::green
+        << termcolor::bold
+        << "Executing Instruction: "
+        << termcolor::reset 
+        << instrPtr->instrString 
+        << std::endl;
         executeInScalarPipeline(instrPtr);
         return;
     }
@@ -44,7 +51,7 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
             instrPtr->nextPipeStage();
             return;
     };
-    populateResultForwarder(instrPtr);
+    // populateResultForwarder(instrPtr);
     return;
 };
 
@@ -60,7 +67,14 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
     if (instrType == RType || isBranchInstr)
     {
         if (src1.first && src2.first) {
-            std::cout<<GRN"Forwarding Results of Registers: "<<"$r"<<instrPtr->rs<<" "<<"$r"<<instrPtr->rt<<NC<<std::endl;
+            std::cout 
+            << termcolor::blue
+            << termcolor::bold
+            << "Result Forwaring registers: "
+            << "$r" << instrPtr->rs << " "
+            << "$r" << instrPtr->rt << " "
+            << termcolor::reset
+            << std::endl;
             instrPtr->src1 = src1.second;
             instrPtr->src2 = src2.second;
             return;
@@ -68,7 +82,12 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
         // Checks validity of source registers in scoreboard
         if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt))
         {
-            std::cout << REDB "Stalling pipeline" NC << std::endl;
+            std::cout 
+            << termcolor::on_red
+            << termcolor::bold
+            << "Stalling Pipeline"
+            << termcolor::reset
+            << std::endl;
             pipeline->stallPipeline();
             return;
         }
@@ -79,14 +98,25 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
     {
         std::pair<int, int> src1 = processor->resultForwarder->getValue(instrPtr->rs); // pair<int::valid, int::value>
         if (src1.first) {
-             std::cout<<GRN "Forwarding Results of Registers: "<<"$r"<<instrPtr->rs<<NC<< std::endl;
+            std::cout 
+            << termcolor::blue
+            << termcolor::bold
+            << "Result Forwaring register: "
+            << "$r" << instrPtr->rs << " "
+            << termcolor::reset
+            << std::endl;
             instrPtr->src1 = src1.second;
             return;
         }
         // Checks validity of source register in scoreboard
         if (!processor->scoreboard->isValid(instrPtr->rs))
         {
-            std::cout << REDB "Stalling pipeline" NC << std::endl;
+            std::cout 
+            << termcolor::on_red
+            << termcolor::bold
+            << "Stalling Pipeline"
+            << termcolor::reset
+            << std::endl;
             pipeline->stallPipeline();
             return;
         }

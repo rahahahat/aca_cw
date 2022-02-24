@@ -1,6 +1,6 @@
 #include "prochelpers.h"
 #include "constants.h"
-
+#include "termcolor.h"
 Scoreboard::Scoreboard()
 {
     board = {
@@ -95,12 +95,24 @@ void Scoreboard::equaliseSavedState()
 
 void Scoreboard::memDump()
 {
-    std::cout << "[---------SB-MemDump---------]" << std::endl;
+    std::cout 
+    << termcolor::bold
+    << "---------SB-MemDump---------" 
+    << std::endl;
     for (auto it = board.begin(); it != board.end(); ++it)
     {
-        std::cout << GRN"$r"<< it->first << ":"NC << "\t\t" << it->second <<std::endl;
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "$r"
+        << it->first
+        << ":\t\t"
+        << termcolor::white
+        << it->second
+        << termcolor::reset
+        << std::endl;
     }
-    std::cout << "[----------------------------]" << std::endl;
+    std::cout << std::endl;
 }
 
 void ResultForwarder::addValue(Register r, int value) 
@@ -159,10 +171,22 @@ void ResultForwarder::equaliseSavedState()
 
 void ResultForwarder::memDump()
 {
-    std::cout << "[---------RF-MemDump---------]" << std::endl;
+    std::cout 
+    << termcolor::bold
+    << "---------RF-MemDump---------" 
+    << std::endl;
     for (auto it = valueMap.begin(); it != valueMap.end(); ++it)
     {
-        std::cout << GRN"$r"<< it->first << ":"NC << "\t\t" << it->second <<std::endl;
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "$r"
+        << it->first
+        << ":\t\t"
+        << termcolor::white
+        << it->second
+        << termcolor::reset
+        << std::endl;
     }
-    std::cout << "[----------------------------]" << std::endl;
+    std::cout << std::endl;
 }

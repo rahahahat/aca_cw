@@ -1,4 +1,5 @@
 #include "processor.h"
+#include "termcolor.h"
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
 /*---------------------------------------------------*/
@@ -194,9 +195,15 @@ void Processor::runProgram() {
     while(!pipeline->isEmpty())
     {
         clock++;
-        std::cout << "------------------------------------- New Clock Cycle Starts -----------------------------------------" << std::endl;
-        std::cout << CYN "Cycle starts: " << clock << NC<< std::endl;
-
+        std::cout
+        << termcolor::bold
+        << "Clock cycle: "
+        << termcolor::green
+        << clock
+        << termcolor::white
+        << " starting -----------------------------------------\n"
+        << termcolor::reset
+        << std::endl;
         pipeline->pipeInstructionsToProcessor();
         pipeline->removeCompletedInstructions();
         if (pipeline->flush)
@@ -211,7 +218,15 @@ void Processor::runProgram() {
         resultForwarder->memDump();
         scoreboard->memDump();
         regDump();
-        std::cout << "------------------------ All instructions for current cycle have been run ----------------------------" << std::endl;
+        std::cout
+        << termcolor::bold
+        << "Clock cycle: "
+        << termcolor::green
+        << clock
+        << termcolor::white
+        << " has Ended -----------------------------------------"
+        << termcolor::reset
+        << std::endl;
         std::cout << std::endl;
     }
     std::cout << "Program has ended!" << std::endl;
@@ -251,10 +266,22 @@ void printClock(int clock) {
 };
 
 void Processor::regDump() {
-    std::cout << "[------------RegDump---------]" << std::endl;
+    std::cout 
+    << termcolor::bold
+    << "-----------RegDump-----------" 
+    << std::endl;
     for (int i = 0; i < 32; i++)
     {
-        std::cout << GRN"$r"<< i << ":"NC << "\t\t" << registers[i] <<std::endl;
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "$r"
+        << i
+        << ":\t\t"
+        << termcolor::white
+        << registers[i]
+        << termcolor::reset
+        << std::endl;
     }
-    std::cout << "[----------------------------]" << std::endl;
+    std::cout << std::endl;
 }

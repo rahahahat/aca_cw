@@ -1,5 +1,6 @@
 #include "procUnits.h"
 #include "constants.h"
+#include "termcolor.h"
 
 DecodeUnit::DecodeUnit(Pipeline *pl) 
 {
@@ -9,7 +10,13 @@ DecodeUnit::DecodeUnit(Pipeline *pl)
 
 void DecodeUnit::decode(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Decoding Instruction: " << instrPtr->instrString << std::endl;
+    std::cout 
+    << termcolor::green
+    << termcolor::bold
+    << "Decoding Instruction: "
+    << termcolor::reset 
+    << instrPtr->instrString 
+    << std::endl;
     std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
     std::pair<Opcodes, InstructionType> InsPair = InstructionPairMap.at(splitInstr.front());
     instrPtr->opcode = InsPair.first;
