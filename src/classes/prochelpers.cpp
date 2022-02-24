@@ -1,5 +1,6 @@
 #include "prochelpers.h"
-
+#include "constants.h"
+#include "termcolor.h"
 Scoreboard::Scoreboard()
 {
     board = {
@@ -35,6 +36,7 @@ Scoreboard::Scoreboard()
         {$r29, 1},
         {$r30, 1},
         {$r31, 1},
+        {$pc, 1}
     };
 }
 
@@ -72,6 +74,47 @@ int Scoreboard::getSize()
     return board.size();
 }
 
+void Scoreboard::saveState()
+{
+    savedState = std::map<Register, int>(board);
+    return;
+}
+
+void Scoreboard::restoreState()
+{
+    board = std::map<Register, int>(savedState);
+    savedState = std::map<Register, int>();
+    return;
+}
+
+void Scoreboard::equaliseSavedState()
+{
+    saveState();
+    return;
+}
+
+void Scoreboard::memDump()
+{
+    std::cout 
+    << termcolor::bold
+    << "---------SB-MemDump---------" 
+    << std::endl;
+    for (auto it = board.begin(); it != board.end(); ++it)
+    {
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "$r"
+        << it->first
+        << ":\t\t"
+        << termcolor::white
+        << it->second
+        << termcolor::reset
+        << std::endl;
+    }
+    std::cout << std::endl;
+}
+
 void ResultForwarder::addValue(Register r, int value) 
 {
     auto itr = valueMap.find(r);
@@ -105,4 +148,45 @@ std::pair<int, int> ResultForwarder::getValue(Register r)
 int ResultForwarder::getSize()
 {
     return valueMap.size();
+}
+
+void ResultForwarder::saveState()
+{
+    savedState = std::map<Register, int>(valueMap);
+    return;
+}
+
+void ResultForwarder::restoreState()
+{
+    valueMap = std::map<Register, int>(savedState);
+    savedState = std::map<Register, int>();
+    return;
+}
+
+void ResultForwarder::equaliseSavedState()
+{
+    saveState();
+    return;
+}
+
+void ResultForwarder::memDump()
+{
+    std::cout 
+    << termcolor::bold
+    << "---------RF-MemDump---------" 
+    << std::endl;
+    for (auto it = valueMap.begin(); it != valueMap.end(); ++it)
+    {
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "$r"
+        << it->first
+        << ":\t\t"
+        << termcolor::white
+        << it->second
+        << termcolor::reset
+        << std::endl;
+    }
+    std::cout << std::endl;
 }

@@ -3,7 +3,7 @@
 #include "pipeline.h"
 #include "instruction.h"
 
-TEST_CASE( "Add works", "" ) {
+TEST_CASE( "Add works") {
     Processor *processor = Processor::fabricate();
     Instructions::Instruction instr = Instructions::Instruction();
     processor->instrMemSize = 1;

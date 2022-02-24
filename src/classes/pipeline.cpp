@@ -1,95 +1,95 @@
 #include "pipeline.h"
 #include <bits/stdc++.h>
 #include <unistd.h>
+#include "termcolor.h"
+#include <thread>
+#include <chrono>
 
-int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
-{
-    if (instrPtr->stage == DONE)
-    {
-        return 1;
-    }
+int Pipeline::completedInstr(Instructions::Instruction *instrPtr) { 
+    if (instrPtr->stage == DONE) return 1;
     return 0;
 }
 
-void Pipeline::attachToProcessor(Processor *proc) {
-    processor = proc;
+void Pipeline::attachToProcessor(Processor *proc) { 
+    processor = proc; return;
 };
 
-pipelineType Pipeline::getType()
-{
-    return None;
+pipelineType Pipeline::getType() {
+    return None; 
 }
 
-int Pipeline::isEmpty()
-{
-    return instructions.size() == 0;
+int Pipeline::isEmpty() {
+    return instructions->size == 0;
 }
 
-void Pipeline::removeCompletedInstructions()
-{
-    auto itr = std::remove_if(instructions.begin(), instructions.end(), Pipeline::completedInstr);
-    instructions.erase(itr, instructions.end());
-    return;
+void Pipeline::removeCompletedInstructions() {
+    instructions->flushCompletedInstructions();
 }
 
-int Pipeline::getInstrSize()
-{
-    return instructions.size();
+int Pipeline::getInstrSize() {
+    return instructions->size;
 }
 
-ScalarPipeline::ScalarPipeline()
-{
+ScalarPipeline::ScalarPipeline() {
+    instructions = new PipelineLL();
     processor = NULL;
     stall = 0;
 };
 
-pipelineType ScalarPipeline::getType()
-{
+pipelineType ScalarPipeline::getType() {
     return Scalar;
 }
 
-void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instr, int id)
-{
-    std::cout << "Putting new insruction in pipeline" << std::endl;
-    if (instr == NULL) {
-        Instructions::Instruction *new_inst = new Instructions::Instruction();
-        new_inst->id = id;
-        instructions.push_back(new_inst);
-        return;
-    }
-    instructions.push_back(instr);
+void ScalarPipeline::addInstructionToPipeline(int id) {
+    if (!processor->scoreboard->isValid($pc)) return;
+    std::cout
+    << termcolor::bold
+    << termcolor::yellow
+    << "Placing new instruction in pipeline"
+    << termcolor::reset
+    << std::endl;
+    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    new_inst->id = id;
+    return;
+};
+
+void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) {
+    std::cout << REDB "\nPutting new insruction in pipeline" NC << "\n" <<std::endl;
+    instructions->add(instrPtr);
     return;
 };
 
 void ScalarPipeline::pipeInstructionsToProcessor() {
+    std::cout 
+    << termcolor::on_blue
+    << termcolor::bold
+    << "Number of Instructions in Pipeline: "
+    << instructions->size 
+    << termcolor::reset
+    << "\n"
+    << std::endl;
     resume();
-    int count = 0;
-    std::cout << std::endl;
-    std::cout << "Instructions in pipeline: " << instructions.size() << std::endl;
-    for (int i = 0; i < instructions.size(); i++) {
-        std::cout << "Iterations: " << count << std::endl;
-        count += 1;
-        Instructions::Instruction *instr = instructions.at(i);
+    PipelineLLNode *curr = instructions->head;
+    while(curr != NULL)
+    {
+        Instructions::Instruction *instr = curr->payload;
         processor->runInstr(instr);
+        if (flush) flushNode = curr;
         if (stalled()) break;
+        curr = curr->next;
     }
-    std::cout << "------------------------ All instructions for current cycle have been run ----------------------------" << std::endl;
-    std::cout << std::endl;
-    sleep(1);
+    // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
-void ScalarPipeline::stallPipeline()
-{
-    if (stall == 0)
-    {
+void ScalarPipeline::stallPipeline() {
+    if (stall == 0) {
         stall = 1;
         return;
     }
     return;
 }
 
-void ScalarPipeline::resume()
-{
+void ScalarPipeline::resume() {
     if (stall == 1)
     {
         stall = 0;
@@ -98,7 +98,17 @@ void ScalarPipeline::resume()
     return;
 }
 
-int ScalarPipeline::stalled()
-{
+int ScalarPipeline::stalled() {
     return (stall == 1);
+}
+
+void ScalarPipeline::flushPipelineOnBranchOrJump()
+{
+    if (flushNode != NULL || flush != 1)
+    {
+        instructions->flushAfterNode(flushNode);
+        flush = 0;
+        return;
+    }
+    return;
 }

@@ -20,10 +20,13 @@ class PipelineLL {
         Instructions::Instruction* pop();
         void add(Instructions::Instruction *instrPtr);
         Instructions::Instruction* remove(int i);
+        Instructions::Instruction* remove(PipelineLLNode* pl_node);
         void removeAndDestroy(int i);
+        void removeAndDestroy(PipelineLLNode* pl_node);
         Instructions::Instruction* addInstructionForFetch();
         Instructions::Instruction* addInstructionForFetch(int id);
         void flushCompletedInstructions();
+        void flushAfterNode(PipelineLLNode *node);
 };
 
 class PipelineLLNode {
@@ -46,29 +49,35 @@ enum pipelineType {
 class Pipeline {
     protected:
         Processor *processor;
-        std::vector<Instructions::Instruction*> instructions;
+        PipelineLL* instructions;
+        PipelineLLNode *flushNode;
         static int completedInstr(Instructions::Instruction *instPtr);
         int stall;
     public:
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr, int id) {};
+        int flush;
+        virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
+        virtual void addInstructionToPipeline(int id) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
+        virtual void flushPipelineOnBranchOrJump() {};
         virtual void resume() {};
         virtual int stalled() {};
         virtual pipelineType getType();
         int isEmpty();
         void removeCompletedInstructions();
         int getInstrSize();
-        std::vector<Instructions::Instruction*> getInstructions() { return instructions; };
+
 };
 
 class ScalarPipeline: public Pipeline {
     public:
         ScalarPipeline();
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr, int id);
+        virtual void addInstructionToPipeline(Instructions::Instruction *instr);
+        virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline();
+        virtual void flushPipelineOnBranchOrJump();
         virtual void resume();
         virtual int stalled();
         virtual pipelineType getType();

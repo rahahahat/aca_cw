@@ -48,6 +48,7 @@ class ExecuteUnit: public ProcUnit
         void executeJTypeInstruction(Instructions::Instruction *instrPtr);
         void executeInstrType(Instructions::Instruction *instrPtr);
         void executeInScalarPipeline(Instructions::Instruction *instrPtr);
+        void populateInstrSources(Instructions::Instruction *instrPtr);
     protected:
         virtual void populateResultForwarder(Instructions::Instruction *instrPtr);
     public:
