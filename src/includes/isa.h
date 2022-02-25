@@ -18,7 +18,7 @@ enum Register: int {
 enum Opcodes {
     ADD, ADDI, ADDIU, ADDU, SUB, SUBU, MULT, MULTU, 
     DIV, DIVU, AND, ANDI, OR, ORI, NOR, XOR, LW, 
-    SW, BEQ, BL, BNE, BGTE, J, JAL, JR, HALT
+    SW, BEQ, BL, BNE, BGTE, J, JAL, JR, HALT, LSR
 };
 
 static std::map<std::string, Register> RegisterMap = 
@@ -84,7 +84,8 @@ static std::map<std::string, std::pair<Opcodes, InstructionType>> InstructionPai
     {"j",     std::pair<Opcodes, InstructionType>(J, JType)},
     {"jal",   std::pair<Opcodes, InstructionType>(JAL, JType)},
     {"jr",    std::pair<Opcodes, InstructionType>(JR, RType)},
-    {"halt",  std::pair<Opcodes, InstructionType>(HALT, End)}
+    {"halt",  std::pair<Opcodes, InstructionType>(HALT, End)},
+    {"lsr",  std::pair<Opcodes, InstructionType>(LSR, IType)}
 };
 
 #endif

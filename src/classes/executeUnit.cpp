@@ -187,6 +187,10 @@ void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
     case ORI:
         instrPtr->temp = instrPtr->src1 | immediate;
         break;
+    case LSR:
+        instrPtr->temp = instrPtr->src1 >> immediate;
+        std::cout << instrPtr->src1 << ", " << immediate << ", " << instrPtr->temp << std::endl;
+        break;
     case BEQ:
         instrPtr->temp = instrPtr->src1 == instrPtr->src2;
         break;
@@ -230,6 +234,7 @@ void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
         << termcolor::reset
         << std::endl;
         instrPtr->temp = immediate;
+        pipeline->flush = 1;
         pipeline->stallPipeline();
         instrPtr->nextPipeStage();
         processor->scoreboard->inValidate($pc);

@@ -143,6 +143,9 @@ void WriteBackUnit::writeback(Instructions::Instruction *instrPtr)
     case LW:
         processor->registers[instrPtr->rt] = instrPtr->temp;
         break;
+    case LSR:
+        processor->registers[instrPtr->rt] = instrPtr->temp;
+        break;
     case BEQ:
     case BNE:
     case BL:

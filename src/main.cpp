@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include "termcolor.h"
+#include <cassert>
 
 int main(int argc, char* argv[]) {
     std::cout << termcolor::on_green << "Starting" << termcolor::reset << std::endl;

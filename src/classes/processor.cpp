@@ -215,9 +215,9 @@ void Processor::runProgram() {
             pipeline->addInstructionToPipeline(count);
             count += 1;
         };
-        // resultForwarder->memDump();
+        resultForwarder->memDump();
         // scoreboard->memDump();
-        // regDump();
+        regDump();
         std::cout
         << termcolor::bold
         << "Clock cycle: "
@@ -229,6 +229,9 @@ void Processor::runProgram() {
         << std::endl;
         std::cout << std::endl;
     }
+    // resultForwarder->memDump();
+    // scoreboard->memDump();
+    // regDump();
     std::cout << "Program has ended!" << std::endl;
     std::cout << "Clock: " << clock << std::endl;
     return;

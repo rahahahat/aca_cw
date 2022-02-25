@@ -18,7 +18,12 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
     << instrPtr->instrString 
     << std::endl;
     std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
-    std::pair<Opcodes, InstructionType> InsPair = InstructionPairMap.at(splitInstr.front());
+    std::pair<Opcodes, InstructionType> InsPair;
+    if (!instrPtr->instrString.compare("")) {
+        InsPair = InstructionPairMap.at("halt");
+    } else {
+        InsPair = InstructionPairMap.at(splitInstr.front());
+    }
     instrPtr->opcode = InsPair.first;
     instrPtr->type = InsPair.second;
     switch(InsPair.second)
