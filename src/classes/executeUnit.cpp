@@ -66,6 +66,21 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
     int forwarded = 0;
     if (instrType == RType || isBranchInstr)
     {
+    std::cout << "rs = r" << instrPtr->rs << " rt = r" << instrPtr->rt << " rd = r" << instrPtr->rd << std::endl;
+        if (instrPtr->rd == instrPtr->rs) {
+            if (src2.first) {
+                instrPtr->src1 = processor->registers[instrPtr->rs];
+                instrPtr->src2 = src2.second;
+                return;
+            }
+        }
+        if (instrPtr->rd == instrPtr->rt) {
+            if (src1.first) {
+                instrPtr->src2 = processor->registers[instrPtr->rt];
+                instrPtr->src1 = src1.second;
+                return;
+            }
+        }
         if (src1.first && src2.first) {
             std::cout 
             << termcolor::blue
@@ -79,8 +94,13 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
             instrPtr->src2 = src2.second;
             return;
         }
+
+        int isSrc1Valid = instrPtr->rs == instrPtr->rd || processor->scoreboard->isValid(instrPtr->rs);
+        int isSrc2Valid = instrPtr->rt == instrPtr->rd || processor->scoreboard->isValid(instrPtr->rt);
+        std::cout << termcolor::bold << termcolor::blue << "rs " << (instrPtr->rs == instrPtr->rd) << " " << processor->scoreboard->isValid(instrPtr->rs) << termcolor::reset << std::endl;
+        std::cout << termcolor::bold << termcolor::blue << "rt " << (instrPtr->rt == instrPtr->rd) << " " << processor->scoreboard->isValid(instrPtr->rt) << termcolor::reset << std::endl;
         // Checks validity of source registers in scoreboard
-        if (!processor->scoreboard->isValid(instrPtr->rs) || !processor->scoreboard->isValid(instrPtr->rt))
+        if (!isSrc1Valid || !isSrc2Valid)
         {
             std::cout 
             << termcolor::on_red
@@ -108,8 +128,10 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
             instrPtr->src1 = src1.second;
             return;
         }
+        int isSrcValid = instrPtr->rs == instrPtr->rt || processor->scoreboard->isValid(instrPtr->rs);
+        std::cout << termcolor::bold << termcolor::blue << "rs " << (instrPtr->rt == instrPtr->rs) << " " << processor->scoreboard->isValid(instrPtr->rs) << termcolor::reset << std::endl;
         // Checks validity of source register in scoreboard
-        if (!processor->scoreboard->isValid(instrPtr->rs))
+        if (!isSrcValid)
         {
             std::cout 
             << termcolor::on_red
@@ -255,9 +277,14 @@ void ExecuteUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
     if (isInstrInvalid) return;
     if (instrPtr->type == IType)
     {
+        std::cout << termcolor::bold <<"Comes here" << std::endl;
         processor->resultForwarder->addValue(instrPtr->rt, instrPtr->temp);
         return;
     }
-    processor->resultForwarder->addValue(instrPtr->rd, instrPtr->temp);
+    if (instrPtr->type == RType) {
+        std::cout << termcolor::bold << "Here" <<std::endl;
+        processor->resultForwarder->addValue(instrPtr->rd, instrPtr->temp);
+        return;
+    }
     return;
 };

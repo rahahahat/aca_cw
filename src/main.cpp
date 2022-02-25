@@ -15,9 +15,11 @@
 int main(int argc, char* argv[]) {
     std::cout << termcolor::on_green << "Starting" << termcolor::reset << std::endl;
     Processor *processor = Processor::fabricate();
-    processor->loadProgram("./factorial.txt");
+    processor->loadProgram("./hamming_w.txt");
     std::cout << "ProgramSize: " << processor->instrMemSize <<std::endl;
     processor->runProgram();
+    processor->DataMemory[0] = 1;
+    processor->DataMemory[1] = 1;
     Processor::destroy(processor);
     return 0;
 }

@@ -103,13 +103,11 @@ void DecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
     Opcodes opcode = instrPtr->opcode;
     if (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL) return;
     if (instrPtr->type == RType) {
-        if (instrPtr->rd == instrPtr->rt || instrPtr->rd == instrPtr->rs) return
         processor->resultForwarder->removeValue(instrPtr->rd);
         processor->scoreboard->inValidate(instrPtr->rd);
         return;
     }
     if (instrPtr->type == IType) {
-        if (instrPtr->rt == instrPtr->rs) return
         processor->resultForwarder->removeValue(instrPtr->rt);
         processor->scoreboard->inValidate(instrPtr->rt);
         return;

@@ -216,7 +216,7 @@ void Processor::runProgram() {
             count += 1;
         };
         resultForwarder->memDump();
-        // scoreboard->memDump();
+        scoreboard->memDump();
         regDump();
         std::cout
         << termcolor::bold
