@@ -2,11 +2,13 @@
 #define _PROCUNITS_DEFINED_
 #include "processor.h"
 #include "pipeline.h"
+#include "events.h"
+
 
 class Processor;
 class Pipeline;
 
-class ProcUnit
+class ProcUnit: public EventDispatcher
 {
     protected:
         Processor *processor;

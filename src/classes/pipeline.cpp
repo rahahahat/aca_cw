@@ -4,6 +4,7 @@
 #include "termcolor.h"
 #include <thread>
 #include <chrono>
+#include <functional>
 
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr) { 
     if (instrPtr->stage == DONE) return 1;
@@ -82,11 +83,22 @@ void ScalarPipeline::pipeInstructionsToProcessor() {
 }
 
 void ScalarPipeline::stallPipeline() {
-    if (stall == 0) {
-        stall = 1;
-        return;
-    }
+    this->stall = 1;
     return;
+}
+
+void ScalarPipeline::flushPipeline() {
+    this->flush = 1;
+    return;
+}
+
+void ScalarPipeline::stallPipelineOnEvent(const EventBase &base) {
+    this->flushPipelineOnEvent(base);
+    return;
+}
+
+void ScalarPipeline::flushPipelineOnEvent(const EventBase &base) {
+    const Event<int>& new_event = static_cast<const Event<int>&>(base);
 }
 
 void ScalarPipeline::resume() {

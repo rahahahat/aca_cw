@@ -6,7 +6,16 @@
 
 #ifndef _PIPELINE_INCLUDED_
 #define _PIPELINE_INCLUDED_
+
+#include "events.h"
 #include "processor.h"
+
+
+namespace PipelineEvents
+{
+    const std::string StallPipelineEvent = "StallPipeline";
+    const std::string FlushPipelineEvent = "FlushPipeline";
+};
 
 class Processor;
 class PipelineLLNode;
@@ -46,7 +55,7 @@ enum pipelineType {
     None, Scalar
 };
 
-class Pipeline {
+class Pipeline: public EventDispatcher {
     protected:
         Processor *processor;
         PipelineLL* instructions;
@@ -60,6 +69,9 @@ class Pipeline {
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
+        // virtual void stallPipelineOnEvent(EventBase& base) {};
+        virtual void flushPipeline() {}
+        virtual void flushPipelineOnEvent(const EventBase& base) {};
         virtual void flushPipelineOnBranchOrJump() {};
         virtual void resume() {};
         virtual int stalled() {};
@@ -77,6 +89,9 @@ class ScalarPipeline: public Pipeline {
         virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline();
+        void stallPipelineOnEvent(const EventBase& base);
+        virtual void flushPipeline();
+        virtual void flushPipelineOnEvent(const EventBase& base);
         virtual void flushPipelineOnBranchOrJump();
         virtual void resume();
         virtual int stalled();

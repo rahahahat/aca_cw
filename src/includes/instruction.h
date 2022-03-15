@@ -9,6 +9,9 @@
 namespace Instructions {
 
     class Instruction {
+        private:
+            const int num_cycles;
+            int curr_cycle;
         public:
             Register rs;
             pipestage stage;
@@ -24,9 +27,12 @@ namespace Instructions {
             std::string instrString;
             Instruction();
             Instruction(std::string instr);
-            void nextPipeStage();
+            Instruction(std::string instr, int cycles);
             pipestage getCurrentPipeStage();
+            void nextPipeStage();
+            void incrementCycle();
+            int getCurrCycle();
     };
-} 
+}
 
 #endif

@@ -4,14 +4,14 @@
 #include <string>
 #include "instruction.h"
 #include "util.h"
-#include "prochelpers.h"
-
 
 #ifndef _PROCESSOR_INCLUDED_
 #define _PROCESSOR_INCLUDED_
 #include "parser.h"
 #include "procUnits.h"
 #include "pipeline.h"
+#include "events.h"
+#include "prochelpers.h"
 
 class DecodeUnit;
 class FetchUnit;
@@ -21,7 +21,7 @@ class WriteBackUnit;
 class Pipeline;
 class Parser;
 
-class Processor
+class Processor: public EventDispatcher
 {
     private:
         Pipeline *pipeline;
@@ -38,6 +38,15 @@ class Processor
         void writeback(Instructions::Instruction *instrPtr);
 
     public:
+        static Processor* getProcessorInstance()
+        {
+            static Processor* instance;
+            if (instance == NULL) 
+            {
+                instance = Processor::fabricate();
+            }
+            return instance;
+        }
         int clock;
         static Processor* fabricate();
         static void destroy(Processor *processor);

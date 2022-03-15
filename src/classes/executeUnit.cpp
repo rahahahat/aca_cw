@@ -108,7 +108,11 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
             << "Stalling Pipeline"
             << termcolor::reset
             << std::endl;
-            pipeline->stallPipeline();
+            pipeline->stallPipeline(); 
+            Event<int> event = Event<int>();
+            event.set(PipelineEvents::StallPipelineEvent);
+            event.payload = 200;
+            this->dispatch(event);
             return;
         }
         instrPtr->src1 = processor->registers[instrPtr->rs];
@@ -140,6 +144,11 @@ void ExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
             << termcolor::reset
             << std::endl;
             pipeline->stallPipeline();
+            // Event<int> *event = new Event<int>();
+            // event->setType(PipelineEvents::StallPipelineEvent);
+            // event->payload = 0;
+            // event->cast = Cast::ScalarPipeline;
+            // this->dispatch(event);
             return;
         }
         instrPtr->src1 = processor->registers[instrPtr->rs];

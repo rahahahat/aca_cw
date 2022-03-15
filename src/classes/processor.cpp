@@ -1,5 +1,8 @@
 #include "processor.h"
 #include "termcolor.h"
+#include <functional>
+#include <iostream>
+
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
 /*---------------------------------------------------*/
@@ -8,6 +11,7 @@ Processor::Processor() {
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
+
 };
 
 void Processor::loadProgram(std::string fn) {
@@ -39,6 +43,8 @@ Processor* Processor::fabricate() {
     processor->attachProcUnit(en);
     processor->attachProcUnit(mrf);
     processor->attachProcUnit(wb);
+    auto func = std::bind(&ScalarPipeline::stallPipelineOnEvent, pipeline, std::placeholders::_1);
+    EventWrapper::getEventWrapperInstance()->addEventListerner(PipelineEvents::StallPipelineEvent, func);
 
     return processor;
 }

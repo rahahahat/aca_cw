@@ -7,7 +7,8 @@
 
 using namespace Instructions;
 
-Instruction::Instruction() {
+Instruction::Instruction(): num_cycles(0)
+{
     rd = $noreg;
     rs = $noreg;
     rt = $noreg;
@@ -15,7 +16,8 @@ Instruction::Instruction() {
     stage = FETCH;
 };
 
-Instruction::Instruction(std::string instr) {
+Instruction::Instruction(std::string instr): num_cycles(0)
+{
     rd = $noreg;
     rs = $noreg;
     rt = $noreg;
@@ -23,8 +25,31 @@ Instruction::Instruction(std::string instr) {
     stage = FETCH;
 };
 
+Instruction::Instruction(std::string instr, int cycles): num_cycles(cycles)
+{
+    rd = $noreg;
+    rs = $noreg;
+    rt = $noreg;
+    instrString = instr;
+    stage = FETCH;
+};
 
-void Instruction::nextPipeStage() {
+int Instruction::getCurrCycle()
+{
+    return curr_cycle;
+}
+
+void Instruction::incrementCycle() 
+{
+    if (curr_cycle < num_cycles)
+    {
+        curr_cycle++;
+    }
+    return;
+}
+
+void Instruction::nextPipeStage()
+{
     switch (stage) {
         case FETCH:
             stage = DECODE;
@@ -43,6 +68,7 @@ void Instruction::nextPipeStage() {
     };
 };
 
-pipestage Instruction::getCurrentPipeStage() {
+pipestage Instruction::getCurrentPipeStage()
+{
     return stage;
 };

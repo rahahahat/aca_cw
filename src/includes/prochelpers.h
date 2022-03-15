@@ -2,28 +2,71 @@
 #include <map>
 #include <string>
 #include "isa.h"
-
+#include <tuple>
 #ifndef _SCOREBOARD_DEFINED_
 #define _SCOREBOARD_DEFINED_
 
-class Scoreboard
+class ProcHelper {};
+
+
+class ScoreboardEntry {
+    private:
+        std::string tag;
+        Register reg;
+        int valid;
+        int value;
+    public:
+        ScoreboardEntry(Register r);
+        int isValid()
+        {
+            return valid;
+        };
+        int getValue()
+        {
+            return value;
+        };
+        void updateValue(int val)
+        {
+            value = val;
+            return;
+        };
+        void updateValidity(int validity)
+        {
+            if (validity != valid)
+            {
+                valid = validity;
+            }
+            return;
+        };
+        void updateTag(std::string tag_name)
+        {
+            tag = tag_name;
+            return;
+        };
+        std::string getTag()
+        {
+            return tag;
+        };
+};
+
+class Scoreboard: public ProcHelper
 {
     private:
-        std::map<Register, int> board;
-        std::map<Register, int> savedState;
+        std::map<Register, ScoreboardEntry*> board;
+        std::map<Register, ScoreboardEntry*> savedState;
     public:
         Scoreboard();
         void saveState();
         void restoreState();
         void equaliseSavedState();
-        void validate(Register r);
+        void validate(Register r, int value);
         void inValidate(Register r);
-        int isValid(Register r);
+        std::pair<int, int> isValid(Register r);
         int getSize();
         void memDump();
 };
 
-class ResultForwarder
+class ResultForwarder: ProcHelper
 {
     private:
         std::map<Register, int> valueMap;
@@ -37,6 +80,24 @@ class ResultForwarder
         std::pair<int, int> getValue(Register r);
         int getSize();
         void memDump();
+};
+
+typedef std::tuple<std::string, int, int> registerEntry;
+
+class ReservationStationEntry
+{
+    public:
+        const std::string tag;
+        int isReserved;
+        registerEntry src_one;
+        registerEntry src_two;
+};
+
+class ReservationStation : ProcHelper 
+{ 
+    public:
+        ReservationStation();
+
 };
 
 #endif

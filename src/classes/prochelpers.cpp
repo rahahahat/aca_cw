@@ -1,50 +1,60 @@
 #include "prochelpers.h"
 #include "constants.h"
 #include "termcolor.h"
+
+ScoreboardEntry::ScoreboardEntry(Register r)
+{
+    reg = r;
+    valid = 1;
+    value = 0;
+    tag = "";
+};
+
 Scoreboard::Scoreboard()
 {
     board = {
-        {$r0, 1},
-        {$r1, 1},
-        {$r2, 1},
-        {$r3, 1},
-        {$r4, 1},
-        {$r5, 1},
-        {$r6, 1},
-        {$r7, 1},
-        {$r8, 1},
-        {$r9, 1},
-        {$r10, 1},
-        {$r11, 1},
-        {$r12, 1},
-        {$r13, 1},
-        {$r14, 1},
-        {$r15, 1},
-        {$r16, 1},
-        {$r17, 1},
-        {$r18, 1},
-        {$r19, 1},
-        {$r20, 1},
-        {$r21, 1},
-        {$r22, 1},
-        {$r23, 1},
-        {$r24, 1},
-        {$r25, 1},
-        {$r26, 1},
-        {$r27, 1},
-        {$r28, 1},
-        {$r29, 1},
-        {$r30, 1},
-        {$r31, 1},
-        {$pc, 1}
+        {$r0, new ScoreboardEntry($r0)},
+        {$r1, new ScoreboardEntry($r1)},
+        {$r2, new ScoreboardEntry($r2)},
+        {$r3, new ScoreboardEntry($r3)},
+        {$r4, new ScoreboardEntry($r4)},
+        {$r5, new ScoreboardEntry($r5)},
+        {$r6, new ScoreboardEntry($r6)},
+        {$r7, new ScoreboardEntry($r7)},
+        {$r8, new ScoreboardEntry($r8)},
+        {$r9, new ScoreboardEntry($r9)},
+        {$r10, new ScoreboardEntry($r10)},
+        {$r11, new ScoreboardEntry($r11)},
+        {$r12, new ScoreboardEntry($r12)},
+        {$r13, new ScoreboardEntry($r13)},
+        {$r14, new ScoreboardEntry($r14)},
+        {$r15, new ScoreboardEntry($r15)},
+        {$r16, new ScoreboardEntry($r16)},
+        {$r17, new ScoreboardEntry($r17)},
+        {$r18, new ScoreboardEntry($r18)},
+        {$r19, new ScoreboardEntry($r19)},
+        {$r20, new ScoreboardEntry($r20)},
+        {$r21, new ScoreboardEntry($r21)},
+        {$r22, new ScoreboardEntry($r22)},
+        {$r23, new ScoreboardEntry($r23)},
+        {$r24, new ScoreboardEntry($r24)},
+        {$r25, new ScoreboardEntry($r25)},
+        {$r26, new ScoreboardEntry($r26)},
+        {$r27, new ScoreboardEntry($r27)},
+        {$r28, new ScoreboardEntry($r28)},
+        {$r29, new ScoreboardEntry($r29)},
+        {$r30, new ScoreboardEntry($r30)},
+        {$r31, new ScoreboardEntry($r31)},
+        {$pc, new ScoreboardEntry($pc)}
     };
-}
+};
 
-void Scoreboard::validate(Register r)
+void Scoreboard::validate(Register r, int value)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        itr->second = 1;
+        itr->second->updateValidity(1);
+        itr->second->updateValue(value);
         return;
     }
     return;
@@ -54,19 +64,19 @@ void Scoreboard::inValidate(Register r)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        itr->second = 0;
+        itr->second->updateValidity(0);
         return;
     }
     return;
 }
 
-int Scoreboard::isValid(Register r) 
+std::pair<int, int> Scoreboard::isValid(Register r) 
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        return itr->second;
+        return std::pair<int, int>(itr->second->isValid(), itr->second->getValue());
     }
-    return 0;
+    return std::pair<int, int>(0,0);
 }
 
 int Scoreboard::getSize()
@@ -76,14 +86,14 @@ int Scoreboard::getSize()
 
 void Scoreboard::saveState()
 {
-    savedState = std::map<Register, int>(board);
+    savedState = std::map<Register, ScoreboardEntry*>(board);
     return;
 }
 
 void Scoreboard::restoreState()
 {
-    board = std::map<Register, int>(savedState);
-    savedState = std::map<Register, int>();
+    board = std::map<Register, ScoreboardEntry*>(savedState);
+    savedState = std::map<Register, ScoreboardEntry*>();
     return;
 }
 
