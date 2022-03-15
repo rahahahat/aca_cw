@@ -61,7 +61,6 @@ class Processor: public EventDispatcher
         int32_t instrMemSize = 0;
         Processor();
         void loadInstructionIntoMemory(std::string instruction);
-
         void attachPipeline(Pipeline *pipe);
         void attachProcHelper(ResultForwarder *rf);
         void attachProcHelper(Scoreboard *sb);

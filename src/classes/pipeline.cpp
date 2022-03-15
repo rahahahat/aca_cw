@@ -42,20 +42,19 @@ pipelineType ScalarPipeline::getType() {
 }
 
 void ScalarPipeline::addInstructionToPipeline(int id) {
-    if (!processor->scoreboard->isValid($pc)) return;
-    std::cout
-    << termcolor::bold
-    << termcolor::yellow
-    << "Placing new instruction in pipeline"
-    << termcolor::reset
-    << std::endl;
-    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    new_inst->id = id;
-    return;
+    // if (!processor->scoreboard->isValid($pc)) return;
+    // std::cout
+    // << termcolor::bold
+    // << termcolor::yellow
+    // << "Placing new instruction in pipeline"
+    // << termcolor::reset
+    // << std::endl;
+    // Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    // new_inst->id = id;
+    // return;
 };
 
 void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) {
-    std::cout << REDB "\nPutting new insruction in pipeline" NC << "\n" <<std::endl;
     instructions->add(instrPtr);
     return;
 };
@@ -116,7 +115,6 @@ int ScalarPipeline::stalled() {
 
 void ScalarPipeline::flushPipelineOnBranchOrJump()
 {
-    std::cout << termcolor::bold << termcolor::red << "FLUSHING ON BRANCH" << termcolor::reset << std::endl;
     if (flushNode != NULL || flush != 1)
     {
         instructions->flushAfterNode(flushNode);

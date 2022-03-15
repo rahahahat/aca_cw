@@ -89,13 +89,34 @@ class ScalarPipeline: public Pipeline {
         virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline();
-        void stallPipelineOnEvent(const EventBase& base);
+        virtual void stallPipelineOnEvent(const EventBase& base);
         virtual void flushPipeline();
         virtual void flushPipelineOnEvent(const EventBase& base);
         virtual void flushPipelineOnBranchOrJump();
         virtual void resume();
         virtual int stalled();
         virtual pipelineType getType();
+};
+
+class ScalarOoOPipeline: public ScalarPipeline
+{
+        private:
+            const int exc_units;
+            const int mem_units;
+            const int wrb_units;
+        public:
+            ScalarOoOPipeline(int e_units, int w_units, int m_units)
+                :exc_units(e_units), wrb_units(w_units), mem_units(m_units) {};
+            virtual void addInstructionToPipeline(Instructions::Instruction *instr);
+            virtual void pipeInstructionsToProcessor();
+            virtual void stallPipeline();
+            void stallPipelineOnEvent(const EventBase& base);
+            virtual void flushPipeline();
+            virtual void flushPipelineOnEvent(const EventBase& base);
+            virtual void flushPipelineOnBranchOrJump();
+            virtual void resume();
+            virtual int stalled();
+            virtual pipelineType getType();
 };
 
 #endif

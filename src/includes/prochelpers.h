@@ -3,10 +3,12 @@
 #include <string>
 #include "isa.h"
 #include <tuple>
+#include "events.h"
+#include <array>
 #ifndef _SCOREBOARD_DEFINED_
 #define _SCOREBOARD_DEFINED_
 
-class ProcHelper {};
+class ProcHelper: public EventDispatcher {};
 
 
 class ScoreboardEntry {
@@ -82,22 +84,30 @@ class ResultForwarder: ProcHelper
         void memDump();
 };
 
-typedef std::tuple<std::string, int, int> registerEntry;
-
-class ReservationStationEntry
+namespace rs
 {
-    public:
-        const std::string tag;
-        int isReserved;
-        registerEntry src_one;
-        registerEntry src_two;
-};
+    typedef std::tuple<std::string, int, int> registerEntry;
+    
+    class ReservationStationEntry
+    {
+        public:
+            ReservationStationEntry(std::string tag_name);
+            const std::string tag;
+            int isReserved;
+            registerEntry src_one;
+            registerEntry src_two;
+    };
 
-class ReservationStation : ProcHelper 
-{ 
-    public:
-        ReservationStation();
+    class ReservationStation: public ProcHelper
+    { 
+        private:
+            std::map<std::string, ReservationStationEntry*> entries;
+        public:
+            ReservationStation();
+            bool hasEmptyEntries();
+            ReservationStationEntry* getEntry(std::string tag_name);
+    };
+}
 
-};
 
-#endif
+#endif;
