@@ -86,7 +86,7 @@ class ResultForwarder: ProcHelper
 
 namespace rs
 {
-    typedef std::tuple<std::string, int, int> registerEntry;
+    typedef std::tuple<std::string, int, int> rsv_entry;
     
     class ReservationStationEntry
     {
@@ -94,8 +94,9 @@ namespace rs
             ReservationStationEntry(std::string tag_name);
             const std::string tag;
             int isReserved;
-            registerEntry src_one;
-            registerEntry src_two;
+            rsv_entry src_one;
+            rsv_entry src_two;
+            InstructionType instr_type;
     };
 
     class ReservationStation: public ProcHelper

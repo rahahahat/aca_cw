@@ -2,13 +2,21 @@
 #include "constants.h"
 #include "termcolor.h"
 
-DecodeUnit::DecodeUnit(Pipeline *pl) 
+DecodeUnit::DecodeUnit(Pipeline *pl, int units): ProcUnit(units)
 {
     pipeline = pl;
     return;
 };
 
-void DecodeUnit::decode(Instructions::Instruction *instrPtr)
+void DecodeUnit::run(Instructions::Instruction *instrPtr)
+{
+    pre(instrPtr);
+    decode(instrPtr);
+    post(instrPtr);
+    return;
+};
+
+void ScalarDecodeUnit::pre(Instructions::Instruction *instrPtr)
 {
     std::cout 
     << termcolor::green
@@ -17,6 +25,18 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
     << termcolor::reset 
     << instrPtr->instrString 
     << std::endl;
+    return;
+};
+
+void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
+{
+    invalidateDestReg(instrPtr);
+    return;
+}
+
+
+void DecodeUnit::decode(Instructions::Instruction *instrPtr)
+{
     std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
     std::pair<Opcodes, InstructionType> InsPair;
     if (!instrPtr->instrString.compare("")) {
@@ -40,7 +60,6 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
         case End:
             return;
     };
-    invalidateDestReg(instrPtr);
 };
 
 void DecodeUnit::decodeRTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair) 

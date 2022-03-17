@@ -8,7 +8,7 @@
 #ifndef _PROCESSOR_INCLUDED_
 #define _PROCESSOR_INCLUDED_
 #include "parser.h"
-#include "procUnits.h"
+#include "procUnit.h"
 #include "pipeline.h"
 #include "events.h"
 #include "prochelpers.h"
