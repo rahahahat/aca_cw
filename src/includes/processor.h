@@ -8,10 +8,10 @@
 #ifndef _PROCESSOR_INCLUDED_
 #define _PROCESSOR_INCLUDED_
 #include "parser.h"
-#include "procUnit.h"
 #include "pipeline.h"
 #include "events.h"
 #include "prochelpers.h"
+#include "procUnit.h"
 
 class DecodeUnit;
 class FetchUnit;
@@ -24,12 +24,11 @@ class Parser;
 class Processor: public EventDispatcher
 {
     private:
+        // {ProcUnit, std::pair<init,int>(total_units, available_units)} (Execute, MemoryAccess and WriteBack units)
+        std::map<pipestage, std::pair<int, int>*> num_proc_units;
         Pipeline *pipeline;
-        DecodeUnit *dUnit;
-        ExecuteUnit *eUnit;
-        MemRefUnit *mrUnit;
-        WriteBackUnit *wbUnit;
         Parser *parser;
+        // std::map<pipestage, ProcUnit*> proc_units;
 
         void fetch(Instructions::Instruction *instrPtr);
         void decode(Instructions::Instruction *instrPtr);
@@ -50,7 +49,6 @@ class Processor: public EventDispatcher
         int clock;
         static Processor* fabricate();
         static void destroy(Processor *processor);
-        FetchUnit *fUnit;
         ResultForwarder *resultForwarder;
         Scoreboard *scoreboard;
         std::map<std::string, int> labelMap;
@@ -64,11 +62,6 @@ class Processor: public EventDispatcher
         void attachPipeline(Pipeline *pipe);
         void attachProcHelper(ResultForwarder *rf);
         void attachProcHelper(Scoreboard *sb);
-        void attachProcUnit(FetchUnit *pu);
-        void attachProcUnit(DecodeUnit *pu);
-        void attachProcUnit(ExecuteUnit *pu);
-        void attachProcUnit(MemRefUnit *pu);
-        void attachProcUnit(WriteBackUnit *pu);
         void runProgram();
         void loadProgram(std::string fn);
         void runInstr(Instructions::Instruction *instr);

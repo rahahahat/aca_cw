@@ -17,14 +17,12 @@ class ProcUnit: public EventDispatcher
         virtual void populateResultForwarder(Instructions::Instruction *instrPtr) {};
         virtual void validateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
-        virtual void pre(Instructions::Instruction *instrPtr);
-        virtual void post(Instructions::Instruction *instrPtr);
+        virtual void pre(Instructions::Instruction *instrPtr) {};
+        virtual void post(Instructions::Instruction *instrPtr) {};
     public:
-        const int total_units;
-        int available_units;
         void attachToProcessor(Processor *proc);
-        virtual void run(Instructions::Instruction * instr) {};
-        ProcUnit(int units);
+        virtual void run(Instructions::Instruction *instr) {};
+        ProcUnit();
 };
 
 #endif

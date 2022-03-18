@@ -25,28 +25,40 @@ void Processor::loadProgram(std::string fn) {
 
 Processor* Processor::fabricate() {
 
-    ScalarPipeline *pipeline = new ScalarPipeline();
-    Scoreboard *scoreboard = new Scoreboard();
-    ResultForwarder *resultForwarder = new ResultForwarder();
+    // ScalarPipeline *pipeline = new ScalarPipeline();
+    // Scoreboard *scoreboard = new Scoreboard();
+    // ResultForwarder *resultForwarder = new ResultForwarder();
     Processor *processor = new Processor();
-    pipeline->attachToProcessor(processor);
-    processor->attachPipeline(pipeline);
-    FetchUnit *fn = new FetchUnit(pipeline);
-    DecodeUnit *dn = new DecodeUnit(pipeline);
-    ExecuteUnit *en = new ExecuteUnit(pipeline);
-    MemRefUnit *mrf = new MemRefUnit(pipeline);
-    WriteBackUnit *wb = new WriteBackUnit(pipeline);
-    processor->attachProcHelper(resultForwarder);
-    processor->attachProcHelper(scoreboard);
-    processor->attachProcUnit(fn);
-    processor->attachProcUnit(dn);
-    processor->attachProcUnit(en);
-    processor->attachProcUnit(mrf);
-    processor->attachProcUnit(wb);
-    auto func = std::bind(&ScalarPipeline::stallPipelineOnEvent, pipeline, std::placeholders::_1);
-    EventWrapper::getEventWrapperInstance()->addEventListerner(PipelineEvents::StallPipelineEvent, func);
+    processor->num_proc_units = {
+        {EXECUTE, new std::pair<int, int>(1,1)},
+        {MEMORYACCESS, new std::pair<int, int>(1,1)},
+        {WRITEBACK, new std::pair<int, int>(1,1)},
+    };
+    // processor->proc_units = {
+    //     {FETCH, new FetchUnit(NULL, 1)},
+    //     {DECODE, new ODecodeUnit(NULL, 1)},
+    //     {EXECUTE, new OExecuteUnit(NULL, 1)},
+    //     {MEMORYACCESS, new MemoryUnit(NULL, 1)},
+    //     {WRITEBACK, new WriteBackUnit(NULL, 1)}
+    // };
+    // pipeline->attachToProcessor(processor);
+    // processor->attachPipeline(pipeline);
+    // FetchUnit *fn = new FetchUnit(pipeline);
+    // DecodeUnit *dn = new DecodeUnit(pipeline);
+    // ExecuteUnit *en = new ExecuteUnit(pipeline);
+    // MemRefUnit *mrf = new MemRefUnit(pipeline);
+    // WriteBackUnit *wb = new WriteBackUnit(pipeline);
+    // processor->attachProcHelper(resultForwarder);
+    // processor->attachProcHelper(scoreboard);
+    // processor->attachProcUnit(fn);
+    // processor->attachProcUnit(dn);
+    // processor->attachProcUnit(en);
+    // processor->attachProcUnit(mrf);
+    // processor->attachProcUnit(wb);
+    // auto func = std::bind(&ScalarPipeline::stallPipelineOnEvent, pipeline, std::placeholders::_1);
+    // EventWrapper::getEventWrapperInstance()->addEventListerner(PipelineEvents::StallPipelineEvent, func);
 
-    return processor;
+    return NULL;
 }
  
 void Processor::destroy(Processor *processor) {
@@ -54,11 +66,6 @@ void Processor::destroy(Processor *processor) {
     delete processor->resultForwarder;
     delete processor->scoreboard;
     delete processor->pipeline;
-    delete processor->fUnit;
-    delete processor->dUnit;
-    delete processor->eUnit;
-    delete processor->mrUnit;
-    delete processor->wbUnit;
     delete processor;
     return;
 }
@@ -74,40 +81,6 @@ void Processor::loadInstructionIntoMemory(std::string instruction) {
     }
     instructionMemory[instrMemSize] = instruction;
     instrMemSize++;
-    return;
-};
-
-void Processor::attachProcUnit(FetchUnit *pu) {
-
-    fUnit = pu;
-    fUnit->attachToProcessor(this);
-    return;
-}
-
-void Processor::attachProcUnit(DecodeUnit *pu) {
-
-    dUnit = pu;
-    dUnit->attachToProcessor(this);
-    return;
-}
-
-void Processor::attachProcUnit(ExecuteUnit *pu) {
-
-    eUnit = pu;
-    eUnit->attachToProcessor(this);
-    return;
-}
-void Processor::attachProcUnit(MemRefUnit *pu) {
-
-    mrUnit = pu;
-    mrUnit->attachToProcessor(this);
-    return;
-}
-
-void Processor::attachProcUnit(WriteBackUnit *pu) {
-
-    wbUnit = pu;
-    wbUnit->attachToProcessor(this);
     return;
 };
 
@@ -131,31 +104,31 @@ void Processor::attachProcHelper(Scoreboard *sb)
 
 void Processor::fetch(Instructions::Instruction *instrPtr) {
 
-    fUnit->fetch(instrPtr);
+    // proc_units[FETCH]->run(instrPtr);
     return;
 }
 
 void Processor::decode(Instructions::Instruction *instrPtr) {
 
-    dUnit->decode(instrPtr);
+    // proc_units[DECODE]->run(instrPtr);
     return;
 }
 
 void Processor::execute(Instructions::Instruction *instrPtr) {
 
-    eUnit->execute(instrPtr);
+    // proc_units[EXECUTE]->run(instrPtr);
     return;
 }
 
 void Processor::memref(Instructions::Instruction *instrPtr) {
 
-    mrUnit->memref(instrPtr);
+    // proc_units[MEMORYACCESS]->run(instrPtr);
     return;
 }
 
 void Processor::writeback(Instructions::Instruction *instrPtr) {
 
-    wbUnit->writeback(instrPtr);
+    // proc_units[WRITEBACK]->run(instrPtr);
     return;
 }
 
@@ -164,23 +137,18 @@ void Processor::runInstr(Instructions::Instruction *instrPtr) {
     switch (instrPtr->stage)
     {
     case FETCH:
-        // std::cout << "Fetching: " << instrPtr->id << std::endl;
         fetch(instrPtr);
         break;
     case DECODE:
-        // std::cout << "Decoding: " << instrPtr->instrString << std::endl;
         decode(instrPtr);
         break;
     case EXECUTE:
-        // std::cout << "Executing: " << instrPtr->instrString << std::endl;
         execute(instrPtr);
         break;
     case MEMORYACCESS:
-        // std::cout << "Memory accessing: " << instrPtr->instrString << std::endl;
         memref(instrPtr);
         break;
     case WRITEBACK:
-        // std::cout << "writing back: " << instrPtr->instrString << std::endl;
         writeback(instrPtr);
         break;
     default:
@@ -212,10 +180,10 @@ void Processor::runProgram() {
         << std::endl;
         pipeline->pipeInstructionsToProcessor();
         pipeline->removeCompletedInstructions();
-        if (pipeline->flush)
-        {
-            pipeline->flushPipelineOnBranchOrJump();
-        }
+        // if (pipeline->flush)
+        // {
+        //     pipeline->flushPipelineOnBranchOrJump();
+        // }
         if (PC < instrMemSize && pipeline->getInstrSize() < 5)
         {    
             pipeline->addInstructionToPipeline(count);
@@ -235,9 +203,6 @@ void Processor::runProgram() {
         << std::endl;
         std::cout << std::endl;
     }
-    // resultForwarder->memDump();
-    // scoreboard->memDump();
-    // regDump();
     std::cout << "Program has ended!" << std::endl;
     std::cout << "Clock: " << clock << std::endl;
     return;

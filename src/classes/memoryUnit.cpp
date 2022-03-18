@@ -1,22 +1,18 @@
 #include "procUnits.h"
 
-MemoryUnit::MemoryUnit(Pipeline *pl, int units): ProcUnit(units)
-{
-    pipeline = pl;
-    return;
-};
-
 void MemoryUnit::load(Instructions::Instruction *instrPtr)
 {
     instrPtr->temp = processor->DataMemory[instrPtr->temp];
     return;
-}
+};
 
 void MemoryUnit::store(Instructions::Instruction *instrPtr)
 {
     processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
     return;
-}
+};
+
+MemoryUnit::MemoryUnit(Pipeline *pl) {};
 
 // void MemoryUnit::memref(Instructions::Instruction *instrPtr) 
 // {

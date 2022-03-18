@@ -12,24 +12,9 @@
 #include "termcolor.h"
 #include <cassert>
 
-
-// Event<T> *new_event = dynamic_cast<T*>(event);
-
-void printBold(EventBase *base)
-{
-    Event<int> *new_event = dynamic_cast<Event<int>*>(base);
-    std::cout << "Hello1" << new_event->payload << std::endl;
-}
-
 int main(int argc, char* argv[]) {
-    std::cout << termcolor::on_green << "Starting" << termcolor::reset << std::endl;
-    Processor *processor = Processor::fabricate();
-    processor->loadProgram("./factorial.txt");
-    std::cout << "ProgramSize: " << processor->instrMemSize <<std::endl;
     // processor->DataMemory[0] = 1;
     // processor->DataMemory[1] = 1;
-    processor->runProgram();
-    Processor::destroy(processor);
 
     // EventWrapper* eventWrapper = EventWrapper::getEventWrapperInstance();
     // EventDispatcher dispatch1 = EventDispatcher();

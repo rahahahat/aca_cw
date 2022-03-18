@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "termcolor.h"
 
-DecodeUnit::DecodeUnit(Pipeline *pl, int units): ProcUnit(units)
+DecodeUnit::DecodeUnit(Pipeline *pl)
 {
     pipeline = pl;
     return;

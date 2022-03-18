@@ -17,7 +17,6 @@ TMP_INC_DIRS := $(INC_DIRS)
 INC_DIRS = $(filter-out ./src/lib/% -I./.git%, $(TMP_INC_DIRS))
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) 
 
-
 CPPFLAGS ?= $(INC_FLAGS) -Wall
 CXX=g++
 

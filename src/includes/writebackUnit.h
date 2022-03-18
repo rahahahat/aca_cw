@@ -7,7 +7,7 @@ class WriteBackUnit: public ProcUnit
         virtual void pre(Instructions::Instruction *instr) {};
         virtual void post(Instructions::Instruction *instr) {};
     public:
-        WriteBackUnit(Pipeline *pl, int units);
+        WriteBackUnit(Pipeline *pl);
         virtual void writeback(Instructions::Instruction *instrPtr) {};
 
         virtual void run(Instructions::Instruction * instr);

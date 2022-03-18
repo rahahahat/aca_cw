@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "termcolor.h"
 
-ExecuteUnit::ExecuteUnit(Pipeline *pl, int units): ProcUnit(units)
+ExecuteUnit::ExecuteUnit(Pipeline *pl)
 {   
     pipeline = pl;
     return;
@@ -112,7 +112,22 @@ void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
     }
 };
 
-/* ------------------------ ScalarExecuteUnit ------------------------- */
+/* ---------------------------------------------------------------------------------------- */
+/* ----------------------------------    0ExecuteUnit   ----------------------------------- */
+/* ---------------------------------------------------------------------------------------- */
+
+
+
+
+
+
+
+
+
+
+/* ---------------------------------------------------------------------------------------- */
+/* ---------------------------------- ScalarExecuteUnit ----------------------------------- */
+/* ---------------------------------------------------------------------------------------- */
 
 // void ScalarExecuteUnit::populateInstrSources(Instructions::Instruction *instrPtr)
 // {

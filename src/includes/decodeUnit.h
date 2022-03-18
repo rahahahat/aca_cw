@@ -13,8 +13,9 @@ class DecodeUnit: public ProcUnit
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void decode(Instructions::Instruction *instrPtr);
     public:
-        DecodeUnit(Pipeline *pl, int units);
-        virtual void run(Instructions::Instruction * instr) {}
+        DecodeUnit(Pipeline *pl);
+        void attachToProcessor(Processor *proc);
+        virtual void run(Instructions::Instruction *instr);
 };
 
 // class ScalarDecodeUnit: public DecodeUnit {
@@ -32,7 +33,7 @@ class DecodeUnit: public ProcUnit
 class ODecodeUnit: public DecodeUnit
 {
     public:
-        ODecodeUnit(Pipeline *pl, int units): DecodeUnit(pl, units) {};
+        ODecodeUnit(Pipeline *pl): DecodeUnit(pl) {};
         virtual void run(Instructions::Instruction *instr);
         virtual void decode(Instructions::Instruction *instr);
 };

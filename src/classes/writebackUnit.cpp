@@ -1,6 +1,6 @@
 #include "procUnits.h"
 
-WriteBackUnit::WriteBackUnit(Pipeline *pl, int units) : ProcUnit(units)
+WriteBackUnit::WriteBackUnit(Pipeline *pl)
 {
     pipeline = pl;
     return;

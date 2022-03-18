@@ -11,9 +11,27 @@ class ExecuteUnit: public ProcUnit
         virtual void pre(Instructions::Instruction *instr) {};
         virtual void post(Instructions::Instruction *instr) {};
     public:
-        ExecuteUnit(Pipeline *pl, int units);
+        ExecuteUnit(Pipeline *pl);
+        virtual void run(Instructions::Instruction * instr);
+        void attachToProcessor(Processor *proc);
+};
+
+class OExecuteUnit: public ExecuteUnit
+{
+    protected:
+        virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
+        virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
+        virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
+        virtual void executeInstrType(Instructions::Instruction *instrPtr) {};
+        virtual void execute(Instructions::Instruction *instrPtr) {};
+        virtual void pre(Instructions::Instruction *instr) {};
+        virtual void post(Instructions::Instruction *instr) {};
+    public:
+        OExecuteUnit(Pipeline *pl): ExecuteUnit(pl) {};
         virtual void run(Instructions::Instruction * instr);
 };
+
+
 
 // class ScalarExecuteUnit: public ProcUnit
 // {

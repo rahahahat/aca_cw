@@ -249,7 +249,7 @@ rs::ReservationStation::ReservationStation()
 
 rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_name)
 {
-    if (tag_name.at(0) > 112 || tag_name.at(0) < 97) return;
+    if (tag_name.at(0) > 112 || tag_name.at(0) < 97) return NULL;
     return entries.at(tag_name);
 }
 

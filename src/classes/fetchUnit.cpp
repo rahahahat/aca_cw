@@ -1,6 +1,6 @@
 #include "procUnits.h"
 
-FetchUnit::FetchUnit(Pipeline *pl, int units): ProcUnit(units)
+FetchUnit::FetchUnit(Pipeline *pl)
 {
     pipeline = pl;
     return;

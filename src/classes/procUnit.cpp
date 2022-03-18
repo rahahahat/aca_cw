@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "termcolor.h"
 
-ProcUnit::ProcUnit(int units): total_units(units)
+ProcUnit::ProcUnit()
 {
     processor = NULL;
     pipeline = NULL;
@@ -12,4 +12,5 @@ ProcUnit::ProcUnit(int units): total_units(units)
 void ProcUnit::attachToProcessor(Processor *proc)
 {
     processor = proc;
+    return;
 }

@@ -6,31 +6,76 @@
 #include <chrono>
 #include <functional>
 
-int Pipeline::completedInstr(Instructions::Instruction *instrPtr) { 
+int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
+{
     if (instrPtr->stage == DONE) return 1;
     return 0;
 }
 
-void Pipeline::attachToProcessor(Processor *proc) { 
+void Pipeline::attachToProcessor(Processor *proc)
+{ 
     processor = proc; return;
 };
 
-pipelineType Pipeline::getType() {
+pipelineType Pipeline::getType()
+{
     return None; 
 }
 
-int Pipeline::isEmpty() {
+int Pipeline::isEmpty()
+{
     return instructions->size == 0;
 }
 
-void Pipeline::removeCompletedInstructions() {
+void Pipeline::removeCompletedInstructions()
+{
     instructions->flushCompletedInstructions();
 }
 
-int Pipeline::getInstrSize() {
+int Pipeline::getInstrSize()
+{
     return instructions->size;
 }
 
+void Pipeline::resume()
+{
+    stall = 0;
+    return;
+}
+
+int Pipeline::stalled()
+{
+    return (stall == 1);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* ------------------------------------- OoOPipeline -------------------------------------- */
+/* ---------------------------------------------------------------------------------------- */
+
+void OoOPipeline::stallPipelineOnEvent(const EventBase& base)
+{
+    stall = true;
+    static_cast<const Event<int>&>(base);
+    return;
+}
+
+void OoOPipeline::flushPipelineOnEvent(const EventBase& base)
+{
+    flush = true;
+    const Event<PipelineLLNode*>& new_event = static_cast<const Event<PipelineLLNode*>&>(base);
+    this->instructions->flushAfterNode(new_event.payload);
+    return;
+}
+
+
+
+
+
+/* ---------------------------------------------------------------------------------------- */
+/* ----------------------------------- ScalarPipeline ------------------------------------- */
+/* ---------------------------------------------------------------------------------------- */
+
+/*
 ScalarPipeline::ScalarPipeline() {
     instructions = new PipelineLL();
     processor = NULL;
@@ -42,16 +87,16 @@ pipelineType ScalarPipeline::getType() {
 }
 
 void ScalarPipeline::addInstructionToPipeline(int id) {
-    // if (!processor->scoreboard->isValid($pc)) return;
-    // std::cout
-    // << termcolor::bold
-    // << termcolor::yellow
-    // << "Placing new instruction in pipeline"
-    // << termcolor::reset
-    // << std::endl;
-    // Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    // new_inst->id = id;
-    // return;
+    if (!processor->scoreboard->isValid($pc)) return;
+    std::cout
+    << termcolor::bold
+    << termcolor::yellow
+    << "Placing new instruction in pipeline"
+    << termcolor::reset
+    << std::endl;
+    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    new_inst->id = id;
+    return;
 };
 
 void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) {
@@ -123,3 +168,4 @@ void ScalarPipeline::flushPipelineOnBranchOrJump()
     }
     return;
 }
+*/

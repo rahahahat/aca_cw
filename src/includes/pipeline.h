@@ -61,62 +61,55 @@ class Pipeline: public EventDispatcher {
         PipelineLL* instructions;
         PipelineLLNode *flushNode;
         static int completedInstr(Instructions::Instruction *instPtr);
-        int stall;
+        bool stall;
+        bool flush;
     public:
-        int flush;
         virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual void addInstructionToPipeline(int id) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
-        // virtual void stallPipelineOnEvent(EventBase& base) {};
-        virtual void flushPipeline() {}
+        virtual void stallPipelineOnEvent(const EventBase& base) {};
         virtual void flushPipelineOnEvent(const EventBase& base) {};
         virtual void flushPipelineOnBranchOrJump() {};
-        virtual void resume() {};
-        virtual int stalled() {};
-        virtual pipelineType getType();
-        int isEmpty();
-        void removeCompletedInstructions();
-        int getInstrSize();
-
-};
-
-class ScalarPipeline: public Pipeline {
-    public:
-        ScalarPipeline();
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr);
-        virtual void addInstructionToPipeline(int id);
-        virtual void pipeInstructionsToProcessor();
-        virtual void stallPipeline();
-        virtual void stallPipelineOnEvent(const EventBase& base);
-        virtual void flushPipeline();
-        virtual void flushPipelineOnEvent(const EventBase& base);
-        virtual void flushPipelineOnBranchOrJump();
         virtual void resume();
         virtual int stalled();
         virtual pipelineType getType();
+        virtual int isEmpty();
+        virtual void removeCompletedInstructions();
+        virtual int getInstrSize();
 };
 
-class ScalarOoOPipeline: public ScalarPipeline
+// class ScalarPipeline: public Pipeline {
+//     public:
+//         ScalarPipeline();
+//         virtual void addInstructionToPipeline(Instructions::Instruction *instr);
+//         virtual void addInstructionToPipeline(int id);
+//         virtual void pipeInstructionsToProcessor();
+//         virtual void stallPipeline();
+//         virtual void stallPipelineOnEvent(const EventBase& base);
+//         virtual void flushPipeline();
+//         virtual void flushPipelineOnEvent(const EventBase& base);
+//         virtual void flushPipelineOnBranchOrJump();
+//         virtual void resume();
+//         virtual int stalled();
+//         virtual pipelineType getType();
+// };
+
+class OoOPipeline: public Pipeline
 {
-        private:
-            const int exc_units;
-            const int mem_units;
-            const int wrb_units;
-        public:
-            ScalarOoOPipeline(int e_units, int w_units, int m_units)
-                :exc_units(e_units), wrb_units(w_units), mem_units(m_units) {};
-            virtual void addInstructionToPipeline(Instructions::Instruction *instr);
-            virtual void pipeInstructionsToProcessor();
-            virtual void stallPipeline();
-            void stallPipelineOnEvent(const EventBase& base);
-            virtual void flushPipeline();
-            virtual void flushPipelineOnEvent(const EventBase& base);
-            virtual void flushPipelineOnBranchOrJump();
-            virtual void resume();
-            virtual int stalled();
-            virtual pipelineType getType();
+    public:
+        OoOPipeline();
+        virtual void addInstructionToPipeline(Instructions::Instruction *instr);
+        virtual void pipeInstructionsToProcessor();
+        virtual void removeCompletedInstructions();
+        virtual void stallPipelineOnEvent(const EventBase& base);
+        virtual void flushPipelineOnEvent(const EventBase& base);
+        virtual void resume();
+        virtual int stalled();
+        virtual int isEmpty();
+        virtual int getInstrSize();
+        virtual pipelineType getType();
 };
 
 #endif
