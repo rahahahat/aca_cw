@@ -16,25 +16,6 @@ void DecodeUnit::run(Instructions::Instruction *instrPtr)
     return;
 };
 
-void ScalarDecodeUnit::pre(Instructions::Instruction *instrPtr)
-{
-    std::cout 
-    << termcolor::green
-    << termcolor::bold
-    << "Decoding Instruction: "
-    << termcolor::reset 
-    << instrPtr->instrString 
-    << std::endl;
-    return;
-};
-
-void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
-{
-    invalidateDestReg(instrPtr);
-    return;
-}
-
-
 void DecodeUnit::decode(Instructions::Instruction *instrPtr)
 {
     std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
@@ -117,19 +98,41 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
     return;
 };
 
-void DecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
-{   
-    Opcodes opcode = instrPtr->opcode;
-    if (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL) return;
-    if (instrPtr->type == RType) {
-        processor->resultForwarder->removeValue(instrPtr->rd);
-        processor->scoreboard->inValidate(instrPtr->rd);
-        return;
-    }
-    if (instrPtr->type == IType) {
-        processor->resultForwarder->removeValue(instrPtr->rt);
-        processor->scoreboard->inValidate(instrPtr->rt);
-        return;
-    }
-    return;
-}
+// void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
+// {   
+//     Opcodes opcode = instrPtr->opcode;
+//     if (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL) return;
+//     if (instrPtr->type == RType) {
+//         processor->resultForwarder->removeValue(instrPtr->rd);
+//         processor->scoreboard->inValidate(instrPtr->rd);
+//         return;
+//     }
+//     if (instrPtr->type == IType) {
+//         processor->resultForwarder->removeValue(instrPtr->rt);
+//         processor->scoreboard->inValidate(instrPtr->rt);
+//         return;
+//     }
+//     return;
+// }
+
+// void ScalarDecodeUnit::pre(Instructions::Instruction *instrPtr)
+// {
+//     std::cout 
+//     << termcolor::green
+//     << termcolor::bold
+//     << "Decoding Instruction: "
+//     << termcolor::reset 
+//     << instrPtr->instrString 
+//     << std::endl;
+//     return;
+// };
+
+// void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
+// {
+//     invalidateDestReg(instrPtr);
+//     return;
+// }
+
+
+
+

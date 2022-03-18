@@ -14,14 +14,14 @@ class MemoryUnit: public ProcUnit
         virtual void run(Instructions::Instruction * instr);
 };
 
-class ScalarMemoryUnit: public MemoryUnit
-{
-    protected:
-        virtual void pre(Instructions::Instruction *instrPtr);
-        virtual void post(Instructions::Instruction *instrPtr);
-        virtual void populateResultForwarder(Instructions::Instruction *instrPtr);
-    public:
-        ScalarMemoryUnit(Pipeline *pl, int units): MemoryUnit(pl, units) {};
-        virtual void memref(Instructions::Instruction *instrPtr);
-        virtual void run(Instructions::Instruction * instr);
-};
+// class ScalarMemoryUnit: public MemoryUnit
+// {
+//     protected:
+//         virtual void pre(Instructions::Instruction *instrPtr);
+//         virtual void post(Instructions::Instruction *instrPtr);
+//         virtual void populateResultForwarder(Instructions::Instruction *instrPtr);
+//     public:
+//         ScalarMemoryUnit(Pipeline *pl, int units): MemoryUnit(pl, units) {};
+//         virtual void memref(Instructions::Instruction *instrPtr);
+//         virtual void run(Instructions::Instruction * instr);
+// };

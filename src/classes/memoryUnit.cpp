@@ -6,7 +6,7 @@ MemoryUnit::MemoryUnit(Pipeline *pl, int units): ProcUnit(units)
     return;
 };
 
-void MemoryUnit::load(Instructions::Instructions *instrPtr)
+void MemoryUnit::load(Instructions::Instruction *instrPtr)
 {
     instrPtr->temp = processor->DataMemory[instrPtr->temp];
     return;
