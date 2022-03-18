@@ -11,12 +11,30 @@ class DecodeUnit: public ProcUnit
         virtual void post(Instructions::Instruction *instrPtr) {};
         virtual void pre(Instructions::Instruction *instrPtr) {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
-        virtual void decode(Instructions::Instruction *instrPtr);
+        void decode(Instructions::Instruction *instrPtr);
     public:
         DecodeUnit(Pipeline *pl);
         void attachToProcessor(Processor *proc);
         virtual void run(Instructions::Instruction *instr);
 };
+
+class ODecodeUnit: public DecodeUnit
+{
+    private:
+        void hello()
+        {
+            std::cout << "derived hello" << std::endl;
+        }
+    protected:
+        void decode(Instructions::Instruction *instr);
+    public:
+        ODecodeUnit(Pipeline *pl);
+        void run(Instructions::Instruction *instr) {
+            hello();
+        };
+};
+
+
 
 // class ScalarDecodeUnit: public DecodeUnit {
 
@@ -29,13 +47,3 @@ class DecodeUnit: public ProcUnit
 //         virtual void decode(Instructions::Instruction *instrPtr);
 //         virtual void run(Instructions::Instruction * instr);
 // };
-
-class ODecodeUnit: public DecodeUnit
-{
-    public:
-        ODecodeUnit(Pipeline *pl): DecodeUnit(pl) {};
-        virtual void run(Instructions::Instruction *instr);
-        virtual void decode(Instructions::Instruction *instr);
-};
-
-

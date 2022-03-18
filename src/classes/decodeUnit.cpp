@@ -10,9 +10,10 @@ DecodeUnit::DecodeUnit(Pipeline *pl)
 
 void DecodeUnit::run(Instructions::Instruction *instrPtr)
 {
-    pre(instrPtr);
-    decode(instrPtr);
-    post(instrPtr);
+    std::cout << "Base run" << std::endl;
+    // pre(instrPtr);
+    // decode(instrPtr);
+    // post(instrPtr);
     return;
 };
 
@@ -133,6 +134,5 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
 //     return;
 // }
 
-
-
+ODecodeUnit::ODecodeUnit(Pipeline *pl): DecodeUnit(pl) {};
 

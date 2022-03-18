@@ -13,6 +13,9 @@
 #include <cassert>
 
 int main(int argc, char* argv[]) {
+    DecodeUnit *du = new ODecodeUnit(NULL);
+    du->run(NULL);
+    
     // processor->DataMemory[0] = 1;
     // processor->DataMemory[1] = 1;
 
