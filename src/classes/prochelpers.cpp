@@ -253,6 +253,8 @@ rs::ReservationStation::ReservationStation(Scoreboard* sb)
         {"tag31", new ReservationStationEntry("tag31")},
         {"tag32", new ReservationStationEntry("tag32")},
     };
+    auto func = std::bind(&rs::ReservationStation::reserveEntryOnEvent, this, std::placeholders::_1);
+    EventWrapper::getEventWrapperInstance()->addEventListerner("ABC", func);
 };
 
 rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_name)
