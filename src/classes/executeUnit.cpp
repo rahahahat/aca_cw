@@ -1,6 +1,9 @@
-#include "procUnits.h"
+#include "procUnit.h"
+#include "executeUnit.h"
 #include "constants.h"
 #include "termcolor.h"
+#include "processor.h"
+#include "pipeline.h"
 
 ExecuteUnit::ExecuteUnit(Pipeline *pl)
 {   

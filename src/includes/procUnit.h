@@ -1,10 +1,9 @@
+
 #ifndef _PROCUNITS_DEFINED_
 #define _PROCUNITS_DEFINED_
 
-#include "processor.h"
-#include "pipeline.h"
+#include "instruction.h"
 #include "events.h"
-
 
 class Processor;
 class Pipeline;

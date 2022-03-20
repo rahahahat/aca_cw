@@ -13,13 +13,9 @@
 #include "prochelpers.h"
 #include "procUnit.h"
 
-class DecodeUnit;
-class FetchUnit;
-class ExecuteUnit;
-class MemRefUnit;
-class WriteBackUnit;
 class Pipeline;
 class Parser;
+class ProcUnit;
 
 class Processor: public EventDispatcher
 {
@@ -28,7 +24,8 @@ class Processor: public EventDispatcher
         std::map<pipestage, std::pair<int, int>*> num_proc_units;
         Pipeline *pipeline;
         Parser *parser;
-        // std::map<pipestage, ProcUnit*> proc_units;
+        std::map<pipestage, ProcUnit*> proc_units;
+        ProcUnit *abc;
 
         void fetch(Instructions::Instruction *instrPtr);
         void decode(Instructions::Instruction *instrPtr);

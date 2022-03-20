@@ -1,6 +1,0 @@
-#include "procUnit.h"
-#include "fetchUnit.h"
-#include "decodeUnit.h"
-#include "executeUnit.h"
-#include "memoryUnit.h"
-#include "writebackUnit.h"

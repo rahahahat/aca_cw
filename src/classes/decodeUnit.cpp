@@ -1,6 +1,8 @@
-#include "procUnits.h"
+#include "procUnit.h"
+#include "decodeUnit.h"
 #include "constants.h"
 #include "termcolor.h"
+#include "processor.h"
 
 DecodeUnit::DecodeUnit(Pipeline *pl)
 {
@@ -99,6 +101,8 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
     return;
 };
 
+
+
 // void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
 // {   
 //     Opcodes opcode = instrPtr->opcode;
@@ -136,3 +140,18 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
 
 ODecodeUnit::ODecodeUnit(Pipeline *pl): DecodeUnit(pl) {};
 
+void ODecodeUnit::post(Instructions::Instruction *instrPtr)
+{
+    instrPtr->stage = ISSUE;
+    putInstrIntoRS(instrPtr);
+    return;
+}
+
+void ODecodeUnit::putInstrIntoRS(Instructions::Instruction *instrPtr)
+{
+    Event<Instructions::Instruction*> event = Event<Instructions::Instruction*>();
+    event.set(ProcUnitEvents::POPULATE_RS);
+    event.payload = instrPtr;
+    dispatch(event);
+    return;
+}

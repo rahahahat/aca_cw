@@ -1,4 +1,7 @@
-#include "procUnits.h"
+#include "procUnit.h"
+#include "fetchUnit.h"
+#include "processor.h"
+#include "pipeline.h"
 
 FetchUnit::FetchUnit(Pipeline *pl)
 {

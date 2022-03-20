@@ -14,6 +14,7 @@ Instruction::Instruction(): num_cycles(0)
     rt = $noreg;
     instrString = "";
     stage = FETCH;
+    isReadyToExecute = false;
 };
 
 Instruction::Instruction(std::string instr): num_cycles(0)
@@ -23,6 +24,7 @@ Instruction::Instruction(std::string instr): num_cycles(0)
     rt = $noreg;
     instrString = instr;
     stage = FETCH;
+    isReadyToExecute = false;
 };
 
 Instruction::Instruction(std::string instr, int cycles): num_cycles(cycles)
@@ -32,6 +34,7 @@ Instruction::Instruction(std::string instr, int cycles): num_cycles(cycles)
     rt = $noreg;
     instrString = instr;
     stage = FETCH;
+    isReadyToExecute = false;
 };
 
 int Instruction::getCurrCycle()

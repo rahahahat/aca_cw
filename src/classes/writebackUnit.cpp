@@ -1,4 +1,5 @@
-#include "procUnits.h"
+#include "procUnit.h"
+#include "writebackUnit.h"
 
 WriteBackUnit::WriteBackUnit(Pipeline *pl)
 {

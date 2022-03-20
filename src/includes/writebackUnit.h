@@ -1,5 +1,8 @@
 #include "procUnit.h"
 
+#ifndef _WBUNIT_DEFINED_
+#define _WBUNIT_DEFINED_
+
 class WriteBackUnit: public ProcUnit
 {
     protected:
@@ -24,3 +27,4 @@ class WriteBackUnit: public ProcUnit
 //         virtual void writeback(Instructions::Instruction *instrPtr);
 //         virtual void run(Instructions::Instruction *instr);
 // };
+#endif;

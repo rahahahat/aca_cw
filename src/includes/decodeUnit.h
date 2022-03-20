@@ -1,4 +1,9 @@
 #include "procUnit.h"
+#include "util.h"
+
+#ifndef _DECODEUNIT_DEFINED_
+#define _DECODEUNIT_DEFINED_
+
 
 class DecodeUnit: public ProcUnit
 {
@@ -11,7 +16,7 @@ class DecodeUnit: public ProcUnit
         virtual void post(Instructions::Instruction *instrPtr) {};
         virtual void pre(Instructions::Instruction *instrPtr) {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
-        void decode(Instructions::Instruction *instrPtr);
+        virtual void decode(Instructions::Instruction *instrPtr);
     public:
         DecodeUnit(Pipeline *pl);
         void attachToProcessor(Processor *proc);
@@ -21,19 +26,14 @@ class DecodeUnit: public ProcUnit
 class ODecodeUnit: public DecodeUnit
 {
     private:
-        void hello()
-        {
-            std::cout << "derived hello" << std::endl;
-        }
+        void putInstrIntoRS(Instructions::Instruction *instrPtr);
     protected:
-        void decode(Instructions::Instruction *instr);
+        virtual void post(Instructions::Instruction *instrPtr);
     public:
         ODecodeUnit(Pipeline *pl);
-        void run(Instructions::Instruction *instr) {
-            hello();
-        };
 };
 
+#endif;
 
 
 // class ScalarDecodeUnit: public DecodeUnit {

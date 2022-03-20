@@ -2,6 +2,11 @@
 #include "termcolor.h"
 #include <functional>
 #include <iostream>
+#include "fetchUnit.h"
+#include "decodeUnit.h"
+#include "executeUnit.h"
+#include "memoryUnit.h"
+#include "writebackUnit.h"
 
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
@@ -25,7 +30,7 @@ void Processor::loadProgram(std::string fn) {
 
 Processor* Processor::fabricate() {
 
-    // ScalarPipeline *pipeline = new ScalarPipeline();
+    OoOPipeline *pipeline = new OoOPipeline();
     // Scoreboard *scoreboard = new Scoreboard();
     // ResultForwarder *resultForwarder = new ResultForwarder();
     Processor *processor = new Processor();
@@ -34,22 +39,15 @@ Processor* Processor::fabricate() {
         {MEMORYACCESS, new std::pair<int, int>(1,1)},
         {WRITEBACK, new std::pair<int, int>(1,1)},
     };
-    // processor->proc_units = {
-    //     {FETCH, new FetchUnit(NULL, 1)},
-    //     {DECODE, new ODecodeUnit(NULL, 1)},
-    //     {EXECUTE, new OExecuteUnit(NULL, 1)},
-    //     {MEMORYACCESS, new MemoryUnit(NULL, 1)},
-    //     {WRITEBACK, new WriteBackUnit(NULL, 1)}
-    // };
-    // pipeline->attachToProcessor(processor);
-    // processor->attachPipeline(pipeline);
-    // FetchUnit *fn = new FetchUnit(pipeline);
-    // DecodeUnit *dn = new DecodeUnit(pipeline);
-    // ExecuteUnit *en = new ExecuteUnit(pipeline);
-    // MemRefUnit *mrf = new MemRefUnit(pipeline);
-    // WriteBackUnit *wb = new WriteBackUnit(pipeline);
-    // processor->attachProcHelper(resultForwarder);
-    // processor->attachProcHelper(scoreboard);
+    processor->proc_units = {
+        {FETCH, new FetchUnit(NULL)},
+        {DECODE, new ODecodeUnit(NULL)},
+        {EXECUTE, new OExecuteUnit(NULL)},
+        {MEMORYACCESS, new MemoryUnit(NULL)},
+        {WRITEBACK, new WriteBackUnit(NULL)}
+    };
+    pipeline->attachToProcessor(processor);
+    processor->attachPipeline(pipeline);
     // processor->attachProcUnit(fn);
     // processor->attachProcUnit(dn);
     // processor->attachProcUnit(en);

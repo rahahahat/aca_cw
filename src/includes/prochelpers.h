@@ -5,6 +5,8 @@
 #include <tuple>
 #include "events.h"
 #include <array>
+#include "instruction.h"
+
 #ifndef _SCOREBOARD_DEFINED_
 #define _SCOREBOARD_DEFINED_
 
@@ -58,11 +60,12 @@ class Scoreboard: public ProcHelper
         std::map<Register, ScoreboardEntry*> savedState;
     public:
         Scoreboard();
+        ScoreboardEntry* getEntry(Register r);
         void saveState();
         void restoreState();
         void equaliseSavedState();
         void validate(Register r, int value);
-        void inValidate(Register r);
+        void inValidate(Register r, std::string tag_name);
         std::pair<int, int> isValid(Register r);
         int getSize();
         void memDump();
@@ -102,11 +105,18 @@ namespace rs
     class ReservationStation: public ProcHelper
     { 
         private:
+            Scoreboard* scoreboard;
             std::map<std::string, ReservationStationEntry*> entries;
+            void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
+            void reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
+            void reserve(Instructions::Instruction *instrPtr);
         public:
-            ReservationStation();
-            bool hasEmptyEntries();
+            ReservationStation(Scoreboard* sb);
             ReservationStationEntry* getEntry(std::string tag_name);
+            ReservationStationEntry* hasEmptyEntries();
+            ScoreboardEntry* getScoreboardEntry(Register r);
+            void print();
+            void reserveEntryOnEvent(const EventBase& base);
     };
 }
 

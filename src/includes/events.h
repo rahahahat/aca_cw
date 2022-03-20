@@ -59,6 +59,7 @@ class EventWrapper
         };
         void disptachEventToListerner(const EventBase& base) const
         {
+
             eventType type = base.get();
             if (listeners.find(type) == listeners.end()) return;
             auto&& funcs = listeners.at(type);
@@ -81,7 +82,6 @@ class EventDispatcher
         };
         void dispatch(const EventBase& base)
         {
-            std:: cout << "indispatcher" << base.get() << std::endl;
             eventWrapper->disptachEventToListerner(base);
             return;
         };

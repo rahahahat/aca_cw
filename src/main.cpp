@@ -1,8 +1,8 @@
 #include "parser.h"
 #include "constants.h"
 #include "processor.h"
+#include "prochelpers.h"
 #include "pipeline.h"
-#include "procUnits.h"
 #include "instruction.h"
 #include "isa.h"
 #include "util.h"
@@ -13,8 +13,9 @@
 #include <cassert>
 
 int main(int argc, char* argv[]) {
-    DecodeUnit *du = new ODecodeUnit(NULL);
-    du->run(NULL);
+    Processor *proc = Processor::fabricate();
+    // DecodeUnit *du = new ODecodeUnit(NULL);
+    // du->run(NULL);
     
     // processor->DataMemory[0] = 1;
     // processor->DataMemory[1] = 1;

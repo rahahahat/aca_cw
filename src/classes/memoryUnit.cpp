@@ -1,4 +1,7 @@
-#include "procUnits.h"
+#include "procUnit.h"
+#include "memoryUnit.h"
+#include "processor.h"
+#include "pipeline.h"
 
 void MemoryUnit::load(Instructions::Instruction *instrPtr)
 {

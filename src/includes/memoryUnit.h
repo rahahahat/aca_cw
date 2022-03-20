@@ -1,5 +1,8 @@
 #include "procUnit.h"
 
+#ifndef _MEMORYUNIT_DEFINED_
+#define _MEMORYUNIT_DEFINED_
+
 class MemoryUnit: public ProcUnit
 {
     protected:
@@ -26,3 +29,5 @@ class MemoryUnit: public ProcUnit
 //         virtual void memref(Instructions::Instruction *instrPtr);
 //         virtual void run(Instructions::Instruction * instr);
 // };
+
+#endif;

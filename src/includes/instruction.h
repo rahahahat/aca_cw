@@ -22,6 +22,7 @@ namespace Instructions {
             int temp;
             int src1;
             int src2;
+            bool isReadyToExecute;
             InstructionType type;
             Opcodes opcode;
             std::string instrString;

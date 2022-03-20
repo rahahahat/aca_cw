@@ -6,6 +6,14 @@
 #include <chrono>
 #include <functional>
 
+Pipeline::Pipeline()
+{
+    instructions = new PipelineLL();
+    processor = NULL;
+    stall = 0;
+    flush = 0;
+}
+
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
 {
     if (instrPtr->stage == DONE) return 1;
