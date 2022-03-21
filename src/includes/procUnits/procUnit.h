@@ -1,4 +1,3 @@
-
 #ifndef _PROCUNITS_DEFINED_
 #define _PROCUNITS_DEFINED_
 
@@ -7,6 +6,10 @@
 
 class Processor;
 class Pipeline;
+
+namespace ProcUnitEvents {
+    const std::string POPULATE_RS = "put_instruction_into_reservation_station";
+};
 
 class ProcUnit: public EventDispatcher
 {

@@ -43,6 +43,7 @@ class Processor: public EventDispatcher
             }
             return instance;
         }
+        rs::ReservationStation* rs;
         int clock;
         static Processor* fabricate();
         static void destroy(Processor *processor);

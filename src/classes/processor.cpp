@@ -32,6 +32,7 @@ Processor* Processor::fabricate() {
 
     OoOPipeline *pipeline = new OoOPipeline();
     // Scoreboard *scoreboard = new Scoreboard();
+    // rs::ReservationStation* rs = new rs::ReservationStation(scoreboard);
     // ResultForwarder *resultForwarder = new ResultForwarder();
     Processor *processor = new Processor();
     processor->num_proc_units = {

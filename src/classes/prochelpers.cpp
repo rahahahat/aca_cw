@@ -211,48 +211,23 @@ void ResultForwarder::memDump()
 rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): tag(tag_name)
 {
     isReserved = 0;
-    src_one = std::tuple<std::string, int, int>("~", 0, 0);
-    src_two = std::tuple<std::string, int, int>("~", 0, 0);
+    src_one = std::make_tuple("~", 0, 0);
+    src_two = std::make_tuple("~", 0, 0);
     return;
 }
 
 rs::ReservationStation::ReservationStation(Scoreboard* sb)
 {
     scoreboard = sb;
-    entries = {
-        {"tag01", new ReservationStationEntry("tag01")},
-        {"tag02", new ReservationStationEntry("tag02")},
-        {"tag03", new ReservationStationEntry("tag03")},
-        {"tag04", new ReservationStationEntry("tag04")},
-        {"tag05", new ReservationStationEntry("tag05")},
-        {"tag06", new ReservationStationEntry("tag06")},
-        {"tag07", new ReservationStationEntry("tag07")},
-        {"tag08", new ReservationStationEntry("tag08")},
-        {"tag09", new ReservationStationEntry("tag09")},
-        {"tag10", new ReservationStationEntry("tag10")},
-        {"tag11", new ReservationStationEntry("tag11")},
-        {"tag12", new ReservationStationEntry("tag12")},
-        {"tag13", new ReservationStationEntry("tag13")},
-        {"tag14", new ReservationStationEntry("tag14")},
-        {"tag15", new ReservationStationEntry("tag15")},
-        {"tag16", new ReservationStationEntry("tag16")},
-        {"tag17", new ReservationStationEntry("tag17")},
-        {"tag18", new ReservationStationEntry("tag18")},
-        {"tag19", new ReservationStationEntry("tag19")},
-        {"tag20", new ReservationStationEntry("tag20")},
-        {"tag21", new ReservationStationEntry("tag21")},
-        {"tag22", new ReservationStationEntry("tag22")},
-        {"tag23", new ReservationStationEntry("tag23")},
-        {"tag24", new ReservationStationEntry("tag24")},
-        {"tag25", new ReservationStationEntry("tag25")},
-        {"tag26", new ReservationStationEntry("tag26")},
-        {"tag27", new ReservationStationEntry("tag27")},
-        {"tag28", new ReservationStationEntry("tag28")},
-        {"tag29", new ReservationStationEntry("tag29")},
-        {"tag30", new ReservationStationEntry("tag30")},
-        {"tag31", new ReservationStationEntry("tag31")},
-        {"tag32", new ReservationStationEntry("tag32")},
-    };
+    size = 64;
+    for (int x = 0; x < size; x++)
+    {
+        int tagIndex = x+1;
+        std::stringstream ss;
+        tagIndex < 10 ? ss << "tag0"<< tagIndex : ss << "tag"<< tagIndex;
+        std::string tag = ss.str();
+        entries.insert(std::pair<std::string, ReservationStationEntry*>(tag, new ReservationStationEntry(tag)));
+    }
     auto func = std::bind(&rs::ReservationStation::reserveEntryOnEvent, this, std::placeholders::_1);
     EventWrapper::getEventWrapperInstance()->addEventListerner("ABC", func);
 };
@@ -267,7 +242,10 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 {
     for (auto const& pair : entries)
     {
-        if (!pair.second->isReserved) return pair.second;
+        if (!pair.second->isReserved)
+        {
+            return pair.second;
+        }
     }
     return NULL;
 }
@@ -299,12 +277,11 @@ ScoreboardEntry* rs::ReservationStation::getScoreboardEntry(Register r)
 
 void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
-    entry->isReserved = false;
+    entry->isReserved = true;
     entry->instr_type = instrPtr->type;
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
     ScoreboardEntry* sb_entry_two = getScoreboardEntry(instrPtr->rt);
     
-    std::cout << sb_entry_one << std::endl;
     std::get<0>(entry->src_one) = sb_entry_one->getTag();
     std::get<1>(entry->src_one) = sb_entry_one->isValid();
     std::get<2>(entry->src_one) = sb_entry_one->getValue();

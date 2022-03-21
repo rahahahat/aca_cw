@@ -105,6 +105,7 @@ namespace rs
     class ReservationStation: public ProcHelper
     { 
         private:
+            int size;
             Scoreboard* scoreboard;
             std::map<std::string, ReservationStationEntry*> entries;
             void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
@@ -121,4 +122,4 @@ namespace rs
 }
 
 
-#endif;
+#endif

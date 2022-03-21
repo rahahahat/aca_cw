@@ -33,8 +33,7 @@ class ODecodeUnit: public DecodeUnit
         ODecodeUnit(Pipeline *pl);
 };
 
-#endif;
-
+#endif
 
 // class ScalarDecodeUnit: public DecodeUnit {
 
