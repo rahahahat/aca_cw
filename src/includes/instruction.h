@@ -10,9 +10,11 @@ namespace Instructions {
 
     class Instruction {
         private:
-            const int num_cycles;
+            int num_cycles;
             int curr_cycle;
         public:
+            void setNumCycle(int cycle);
+            void decrementCycle();
             Register rs;
             pipestage stage;
             Register rt;
@@ -22,16 +24,15 @@ namespace Instructions {
             int temp;
             int src1;
             int src2;
+            std::string tag;
             bool isReadyToExecute;
             InstructionType type;
             Opcodes opcode;
             std::string instrString;
             Instruction();
             Instruction(std::string instr);
-            Instruction(std::string instr, int cycles);
             pipestage getCurrentPipeStage();
             void nextPipeStage();
-            void incrementCycle();
             int getCurrCycle();
     };
 }

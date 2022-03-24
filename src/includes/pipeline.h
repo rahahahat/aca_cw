@@ -66,8 +66,8 @@ class Pipeline: public EventDispatcher {
     public:
         Pipeline();
         virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
-        virtual void addInstructionToPipeline(int id) {};
-        virtual void pipeInstructionsToProcessor() {};
+        virtual void addInstructionToPipeline(int id);
+        virtual void pipeInstructionsToProcessor();
         virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline() {};
         virtual void stallPipelineOnEvent(const EventBase& base) {};
@@ -97,11 +97,11 @@ class Pipeline: public EventDispatcher {
 //         virtual pipelineType getType();
 // };
 
+
 class OoOPipeline: public Pipeline
 {
     public:
         OoOPipeline(): Pipeline() {};
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual void pipeInstructionsToProcessor() {};
         virtual void stallPipelineOnEvent(const EventBase& base);
         virtual void flushPipelineOnEvent(const EventBase& base);

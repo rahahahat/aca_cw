@@ -21,5 +21,6 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
     << std::endl;
     instrPtr->instrString = instr;
     processor->PC++;
+    Event<Instructions::Instruction*> event = Event<Instructions::Instruction*>();
     return instrPtr;
 };

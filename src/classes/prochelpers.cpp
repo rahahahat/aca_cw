@@ -255,6 +255,7 @@ void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
     rs::ReservationStationEntry* entry = hasEmptyEntries();
     if (!hasEmptyEntries()) return;
     instrPtr->stage = EXECUTE;
+    instrPtr->tag = entry->tag;
     switch (instrPtr->type)
     {
     case RType:
@@ -296,7 +297,7 @@ void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instru
 
 void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
-    entry->isReserved = false;
+    entry->isReserved = true;
     entry->instr_type = instrPtr->type;
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rt);
 
@@ -308,10 +309,49 @@ void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instru
     return;
 }
 
+void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
+{
+    entry->isReserved = true;
+    entry->instr_type = instrPtr->type;
+
+    std::get<0>(entry->src_one) = "~";
+    std::get<1>(entry->src_one) = 1;
+    std::get<2>(entry->src_one) = 0;
+
+    std::get<0>(entry->src_two) = "~";
+    std::get<1>(entry->src_two) = 1;
+    std::get<2>(entry->src_two) = 0;
+
+    return;
+}
+
+
 void rs::ReservationStation::reserveEntryOnEvent(const EventBase& base)
 {
     const Event<Instructions::Instruction*>& event = static_cast<const Event<Instructions::Instruction*>&>(base);
     reserve(event.payload);
+    return;
+}
+
+void rs::ReservationStation::populateInstruction(Instructions::Instruction *instrPtr)
+{
+    std::string rs_tag = instrPtr->tag;
+    rs::ReservationStationEntry* rs_entry = getEntry(rs_tag);
+    if (!rs_entry->isReserved) return;
+    int isValid = std::get<1>(rs_entry->src_one) && std::get<1>(rs_entry->src_two);
+    if (!isValid) return;
+    switch(instrPtr->type)
+    {
+        case RType:
+            instrPtr->src2 = std::get<2>(rs_entry->src_two);
+            instrPtr->src1 = std::get<2>(rs_entry->src_one);
+            break;
+        case IType:
+        // TODO: Verify ITYPE instruction source in decode and execute
+            instrPtr->src1 = std::get<2>(rs_entry->src_one);
+            break;
+    }
+    instrPtr->isReadyToExecute = true;
     return;
 }
 

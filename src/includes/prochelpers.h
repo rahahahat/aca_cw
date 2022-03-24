@@ -89,6 +89,7 @@ class ResultForwarder: ProcHelper
 
 namespace rs
 {
+    // tag, valid, value
     typedef std::tuple<std::string, int, int> rsv_entry;
     
     class ReservationStationEntry
@@ -110,6 +111,7 @@ namespace rs
             std::map<std::string, ReservationStationEntry*> entries;
             void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
+            void reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserve(Instructions::Instruction *instrPtr);
         public:
             ReservationStation(Scoreboard* sb);
@@ -118,6 +120,7 @@ namespace rs
             ScoreboardEntry* getScoreboardEntry(Register r);
             void print();
             void reserveEntryOnEvent(const EventBase& base);
+            void populateInstruction(Instructions::Instruction *instrPtr);
     };
 }
 

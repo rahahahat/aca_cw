@@ -56,6 +56,42 @@ int Pipeline::stalled()
     return (stall == 1);
 }
 
+void Pipeline::addInstructionToPipeline(int id)
+{
+    std::cout
+    << termcolor::bold
+    << termcolor::yellow
+    << "Placing new instruction in pipeline"
+    << termcolor::reset
+    << std::endl;
+    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    new_inst->id = id;
+    return;
+};
+
+void Pipeline::pipeInstructionsToProcessor()
+{
+    std::cout 
+    << termcolor::on_blue
+    << termcolor::bold
+    << "Number of Instructions in Pipeline: "
+    << instructions->size 
+    << termcolor::reset
+    << "\n"
+    << std::endl;
+    resume();
+    PipelineLLNode *curr = instructions->head;
+    while(curr != NULL)
+    {
+        Instructions::Instruction *instr = curr->payload;
+        processor->runInstr(instr);
+        if (flush) flushNode = curr;
+        if (stalled()) break;
+        curr = curr->next;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
 /* ---------------------------------------------------------------------------------------- */
 /* ------------------------------------- OoOPipeline -------------------------------------- */
 /* ---------------------------------------------------------------------------------------- */
@@ -77,8 +113,6 @@ void OoOPipeline::flushPipelineOnEvent(const EventBase& base)
 
 
 
-
-
 /* ---------------------------------------------------------------------------------------- */
 /* ----------------------------------- ScalarPipeline ------------------------------------- */
 /* ---------------------------------------------------------------------------------------- */
@@ -94,18 +128,6 @@ pipelineType ScalarPipeline::getType() {
     return Scalar;
 }
 
-void ScalarPipeline::addInstructionToPipeline(int id) {
-    if (!processor->scoreboard->isValid($pc)) return;
-    std::cout
-    << termcolor::bold
-    << termcolor::yellow
-    << "Placing new instruction in pipeline"
-    << termcolor::reset
-    << std::endl;
-    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    new_inst->id = id;
-    return;
-};
 
 void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) {
     instructions->add(instrPtr);

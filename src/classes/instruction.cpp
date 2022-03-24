@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 #include "instruction.h"
 #include "pipeline.h"
@@ -7,7 +8,7 @@
 
 using namespace Instructions;
 
-Instruction::Instruction(): num_cycles(0)
+Instruction::Instruction()
 {
     rd = $noreg;
     rs = $noreg;
@@ -17,17 +18,7 @@ Instruction::Instruction(): num_cycles(0)
     isReadyToExecute = false;
 };
 
-Instruction::Instruction(std::string instr): num_cycles(0)
-{
-    rd = $noreg;
-    rs = $noreg;
-    rt = $noreg;
-    instrString = instr;
-    stage = FETCH;
-    isReadyToExecute = false;
-};
-
-Instruction::Instruction(std::string instr, int cycles): num_cycles(cycles)
+Instruction::Instruction(std::string instr)
 {
     rd = $noreg;
     rs = $noreg;
@@ -40,15 +31,6 @@ Instruction::Instruction(std::string instr, int cycles): num_cycles(cycles)
 int Instruction::getCurrCycle()
 {
     return curr_cycle;
-}
-
-void Instruction::incrementCycle() 
-{
-    if (curr_cycle < num_cycles)
-    {
-        curr_cycle++;
-    }
-    return;
 }
 
 void Instruction::nextPipeStage()
@@ -70,6 +52,25 @@ void Instruction::nextPipeStage()
             stage = DONE;
     };
 };
+
+void Instruction::setNumCycle(int cycles)
+{
+    if (num_cycles == 0)
+    {
+        num_cycles = cycles;
+    }
+    return;
+}
+
+void Instruction::decrementCycle()
+{
+    if (curr_cycle > 0)
+    {
+        curr_cycle--;
+        return;
+    }
+    throw std::runtime_error("Instruction execution cycle cannot be below 0");
+}
 
 pipestage Instruction::getCurrentPipeStage()
 {

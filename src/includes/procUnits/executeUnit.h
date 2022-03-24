@@ -10,7 +10,7 @@ class ExecuteUnit: public ProcUnit
         virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
-        virtual void executeInstrType(Instructions::Instruction *instrPtr) {};
+        virtual void executeInstrType(Instructions::Instruction *instrPtr);
         virtual void execute(Instructions::Instruction *instrPtr) {};
         virtual void pre(Instructions::Instruction *instr) {};
         virtual void post(Instructions::Instruction *instr) {};
@@ -22,14 +22,12 @@ class ExecuteUnit: public ProcUnit
 
 class OExecuteUnit: public ExecuteUnit
 {
+    private:
+        rs::ReservationStation *reservation_station;
     protected:
-        void executeRTypeInstruction(Instructions::Instruction *instrPtr) {};
-        void executeITypeInstruction(Instructions::Instruction *instrPtr) {};
-        void executeJTypeInstruction(Instructions::Instruction *instrPtr) {};
-        void executeInstrType(Instructions::Instruction *instrPtr) {};
-        virtual void execute(Instructions::Instruction *instrPtr) {};
-        virtual void pre(Instructions::Instruction *instr) {};
-        virtual void post(Instructions::Instruction *instr) {};
+        virtual void execute(Instructions::Instruction *instrPtr);
+        virtual void pre(Instructions::Instruction *instr);
+        virtual void post(Instructions::Instruction *instr);
     public:
         OExecuteUnit(Pipeline *pl): ExecuteUnit(pl) {};
         virtual void run(Instructions::Instruction * instr) {};

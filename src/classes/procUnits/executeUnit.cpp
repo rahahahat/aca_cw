@@ -115,18 +115,57 @@ void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
     }
 };
 
+void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
+{
+    switch(instrPtr->type)
+    {
+        case RType:
+            executeRTypeInstruction(instrPtr);
+            break;
+        case IType:
+            executeITypeInstruction(instrPtr);
+            break;
+        case JType:
+            executeJTypeInstruction(instrPtr);
+            break;
+        default:
+            return;
+        // TODO: HALT Instruction logic needs to be added
+            // processor->scoreboard->inValidate($pc);
+            // pipeline->flush = 1;
+            // pipeline->stallPipeline();
+            // instrPtr->nextPipeStage();
+            // return;
+    };
+    return;
+};
+
 /* ---------------------------------------------------------------------------------------- */
 /* ----------------------------------    0ExecuteUnit   ----------------------------------- */
 /* ---------------------------------------------------------------------------------------- */
 
+void OExecuteUnit::pre(Instructions::Instruction *instrPtr)
+{
+    reservation_station->populateInstruction(instrPtr);
+    return;
+}
 
+void OExecuteUnit::execute(Instructions::Instruction *instrPtr)
+{
+    if (!instrPtr->isReadyToExecute) return;
+    instrPtr->decrementCycle();
+    if (instrPtr->getCurrCycle() > 0) return;
+    executeInstrType(instrPtr);
+    return;
+}
 
-
-
-
-
-
-
+void OExecuteUnit::post(Instructions::Instruction *instrPtr)
+{
+    if (!!instrPtr->getCurrCycle()) return; 
+    // TODO: Should we broadcast here or in the writeback unit?
+    // TODO: When should the scoreboard be invalidated and what should broadcast do?
+    return;
+}
 
 /* ---------------------------------------------------------------------------------------- */
 /* ---------------------------------- ScalarExecuteUnit ----------------------------------- */

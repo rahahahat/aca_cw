@@ -41,21 +41,5 @@ int main(int argc, char* argv[]) {
     rs->dispatch(event2);
     rs->dispatch(event3);
     rs->print();
-    // DecodeUnit *du = new ODecodeUnit(NULL);
-    // du->run(NULL);
-    
-    // processor->DataMemory[0] = 1;
-    // processor->DataMemory[1] = 1;
-
-    // EventWrapper* eventWrapper = EventWrapper::getEventWrapperInstance();
-    // EventDispatcher dispatch1 = EventDispatcher();
-    // function_ptr func_ptr = &printBold;
-    // eventType type = "printbold";
-    // eventWrapper->addEventListerner(type, func_ptr);
-    // Event<int> *event = new Event<int>();
-    // event->setType(type);
-    // event->payload = 1;
-    // // eventWrapper.disptachEventToListerner(event);
-    // dispatch1.dispatch(event);
     return 0;
 }

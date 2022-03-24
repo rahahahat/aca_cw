@@ -102,35 +102,67 @@ void Processor::attachProcHelper(Scoreboard *sb)
 }
 
 void Processor::fetch(Instructions::Instruction *instrPtr) {
-
-    // proc_units[FETCH]->run(instrPtr);
+    std::pair<int, int> *num_units = num_proc_units[FETCH];
+    if (num_units->second > 0)
+    {
+        num_units->second -= 1;
+        proc_units[FETCH]->run(instrPtr);
+        return;
+    }
     return;
 }
 
 void Processor::decode(Instructions::Instruction *instrPtr) {
-
-    // proc_units[DECODE]->run(instrPtr);
-    return;
+    std::pair<int, int> *num_units = num_proc_units[DECODE];
+    if (num_units->second > 0)
+    {
+        num_units->second -= 1;
+        proc_units[DECODE]->run(instrPtr);
+        return;
+    }
 }
 
 void Processor::execute(Instructions::Instruction *instrPtr) {
 
-    // proc_units[EXECUTE]->run(instrPtr);
-    return;
+    std::pair<int, int> *num_units = num_proc_units[EXECUTE];
+    if (num_units->second > 0)
+    {
+        num_units->second -= 1;
+        proc_units[EXECUTE]->run(instrPtr);
+        return;
+    }
 }
 
 void Processor::memref(Instructions::Instruction *instrPtr) {
 
-    // proc_units[MEMORYACCESS]->run(instrPtr);
-    return;
+    std::pair<int, int> *num_units = num_proc_units[MEMORYACCESS];
+    if (num_units->second > 0)
+    {
+        num_units->second -= 1;
+        proc_units[MEMORYACCESS]->run(instrPtr);
+        return;
+    }
 }
 
 void Processor::writeback(Instructions::Instruction *instrPtr) {
 
-    // proc_units[WRITEBACK]->run(instrPtr);
-    return;
+    std::pair<int, int> *num_units = num_proc_units[WRITEBACK];
+    if (num_units->second > 0)
+    {
+        num_units->second -= 1;
+        proc_units[WRITEBACK]->run(instrPtr);
+        return;
+    }
 }
 
+void Processor::resetProcResources()
+{
+    for (auto it = num_proc_units.begin(); it != num_proc_units.end(); it++)
+    {
+        it->second->second = it->second->first;
+    }
+    return;
+}
 void Processor::runInstr(Instructions::Instruction *instrPtr) {
 
     switch (instrPtr->stage)
@@ -153,6 +185,7 @@ void Processor::runInstr(Instructions::Instruction *instrPtr) {
     default:
         return;
     }
+    // TODO: Extra PipeStages added new logic needs to be added
     if (!pipeline->stalled()) {
         instrPtr->nextPipeStage();
     }
@@ -183,14 +216,14 @@ void Processor::runProgram() {
         // {
         //     pipeline->flushPipelineOnBranchOrJump();
         // }
-        if (PC < instrMemSize && pipeline->getInstrSize() < 5)
+        if (PC < instrMemSize)
         {    
             pipeline->addInstructionToPipeline(count);
             count += 1;
         };
-        resultForwarder->memDump();
-        scoreboard->memDump();
-        regDump();
+        // resultForwarder->memDump();
+        // scoreboard->memDump();
+        // regDump();
         std::cout
         << termcolor::bold
         << "Clock cycle: "

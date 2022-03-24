@@ -25,7 +25,6 @@ class Processor: public EventDispatcher
         Pipeline *pipeline;
         Parser *parser;
         std::map<pipestage, ProcUnit*> proc_units;
-        ProcUnit *abc;
 
         void fetch(Instructions::Instruction *instrPtr);
         void decode(Instructions::Instruction *instrPtr);
@@ -33,6 +32,7 @@ class Processor: public EventDispatcher
         void memref(Instructions::Instruction *instrPtr);
         void writeback(Instructions::Instruction *instrPtr);
 
+        void resetProcResources();
     public:
         static Processor* getProcessorInstance()
         {
