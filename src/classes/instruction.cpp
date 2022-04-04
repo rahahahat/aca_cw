@@ -16,6 +16,7 @@ Instruction::Instruction()
     instrString = "";
     stage = FETCH;
     isReadyToExecute = false;
+    immediateOrAddress = -1;
 };
 
 Instruction::Instruction(std::string instr)
@@ -26,6 +27,7 @@ Instruction::Instruction(std::string instr)
     instrString = instr;
     stage = FETCH;
     isReadyToExecute = false;
+    immediateOrAddress = -1;
 };
 
 int Instruction::getCurrCycle()

@@ -1,0 +1,9 @@
+{
+  "program": "factorial.txt",
+  "proc_units": {
+    "fetch": 1,
+    "decode": 2,
+    "execute": 2,
+    "memory": 2
+  }
+}

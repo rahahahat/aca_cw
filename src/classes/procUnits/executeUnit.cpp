@@ -5,11 +5,7 @@
 #include "processor.h"
 #include "pipeline.h"
 
-ExecuteUnit::ExecuteUnit(Pipeline *pl)
-{   
-    pipeline = pl;
-    return;
-};
+ExecuteUnit::ExecuteUnit() {};
 
 void ExecuteUnit::run(Instructions::Instruction *instr)
 {
@@ -146,7 +142,7 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
 
 void OExecuteUnit::pre(Instructions::Instruction *instrPtr)
 {
-    reservation_station->populateInstruction(instrPtr);
+    populateRS(instrPtr);
     return;
 }
 
@@ -161,9 +157,30 @@ void OExecuteUnit::execute(Instructions::Instruction *instrPtr)
 
 void OExecuteUnit::post(Instructions::Instruction *instrPtr)
 {
-    if (!!instrPtr->getCurrCycle()) return; 
-    // TODO: Should we broadcast here or in the writeback unit?
-    // TODO: When should the scoreboard be invalidated and what should broadcast do?
+    if (!!instrPtr->getCurrCycle()) return;
+    Opcodes opcode = instrPtr->opcode;
+    instrPtr->stage = WRITEBACK;
+    if (opcode == LW || opcode == SW)
+    {
+        instrPtr->stage = MEMORYACCESS;
+    }
+    Event<rsEventData> event = Event<rsEventData>();
+    event.set(instrPtr->tag);
+    event.payload.tag_name = instrPtr->tag;
+    event.payload.value = instrPtr->temp;
+    dispatch(event);
+    return;
+}
+
+void OExecuteUnit::populateRS(Instructions::Instruction *instrPtr)
+{ 
+    processor->getRS()->populateInstruction(instrPtr);
+    return;
+}
+
+void OExecuteUnit::validateRS(Instructions::Instruction *instrPtr)
+{ 
+    processor->getRS()->validate(instrPtr);
     return;
 }
 

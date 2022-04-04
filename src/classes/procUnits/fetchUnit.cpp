@@ -3,11 +3,7 @@
 #include "processor.h"
 #include "pipeline.h"
 
-FetchUnit::FetchUnit(Pipeline *pl)
-{
-    pipeline = pl;
-    return;
-};
+FetchUnit::FetchUnit() {};
 
 Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
 {
@@ -21,6 +17,6 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
     << std::endl;
     instrPtr->instrString = instr;
     processor->PC++;
-    Event<Instructions::Instruction*> event = Event<Instructions::Instruction*>();
+    instrPtr->stage = DECODE;
     return instrPtr;
 };

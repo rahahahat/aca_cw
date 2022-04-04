@@ -1,7 +1,19 @@
 #include "prochelpers.h"
 #include "constants.h"
 #include "termcolor.h"
+#include "processor.h"
 #include <sstream>
+
+ProcHelper::ProcHelper(bool force_null)
+{
+    if (force_null) 
+    {
+        processor = NULL;
+        return;
+    }
+    processor = Processor::getProcessorInstance();
+    return;
+}
 
 ScoreboardEntry::ScoreboardEntry(Register r)
 {
@@ -11,7 +23,7 @@ ScoreboardEntry::ScoreboardEntry(Register r)
     tag = "~";
 };
 
-Scoreboard::Scoreboard()
+Scoreboard::Scoreboard(bool force_null): ProcHelper(force_null)
 {
     board = {
         {$r0, new ScoreboardEntry($r0)},
@@ -50,10 +62,11 @@ Scoreboard::Scoreboard()
     };
 };
 
-void Scoreboard::validate(Register r, int value)
+void Scoreboard::validate(Register r, int value, std::string tag)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
+        if (!tag.compare(itr->second->getTag())) return;
         itr->second->updateValidity(1);
         itr->second->updateValue(value);
         return;
@@ -208,15 +221,49 @@ void ResultForwarder::memDump()
     std::cout << std::endl;
 }
 
+// TODO: validate all rs entries waiting for a tag on validate.
 rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): tag(tag_name)
 {
-    isReserved = 0;
-    src_one = std::make_tuple("~", 0, 0);
-    src_two = std::make_tuple("~", 0, 0);
+    isReserved = false;
+
+    tag_one = "~";
+    valid_one = 0;
+    val_one = 0;
+
+    tag_two = "~";
+    valid_two = 0;
+    val_two = 0;
+
+    valid_result = false;
     return;
 }
 
-rs::ReservationStation::ReservationStation(Scoreboard* sb)
+void rs::ReservationStationEntry::validateSourcesOnEvent(const EventBase& base)
+{
+    const Event<rsEventData>& event = static_cast<const Event<rsEventData>&>(base);
+    std::string tag = event.payload.tag_name;
+    int value = event.payload.value;
+    validateSources(tag, value);
+    EventWrapper::getEventWrapperInstance()->removeEventListener(tag);
+    return;
+}
+
+void rs::ReservationStationEntry::validateSources(std::string tag, int value)
+{
+    if (!tag_one.compare(tag))
+    {
+        valid_one = 1;
+        val_one = value;
+    }
+    if (!tag_two.compare(tag))
+    {
+        valid_two = 1;
+        val_two = value;
+    }
+    return;
+}
+
+rs::ReservationStation::ReservationStation(Scoreboard* sb, bool force_null): ProcHelper(force_null)
 {
     scoreboard = sb;
     size = 64;
@@ -228,14 +275,12 @@ rs::ReservationStation::ReservationStation(Scoreboard* sb)
         std::string tag = ss.str();
         entries.insert(std::pair<std::string, ReservationStationEntry*>(tag, new ReservationStationEntry(tag)));
     }
-    auto func = std::bind(&rs::ReservationStation::reserveEntryOnEvent, this, std::placeholders::_1);
-    EventWrapper::getEventWrapperInstance()->addEventListerner("ABC", func);
 };
 
 rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_name)
 {
-    if (tag_name.at(0) > 112 || tag_name.at(0) < 97) return NULL;
-    return entries.at(tag_name);
+    // if (tag_name.at(0) > 112 || tag_name.at(0) < 97) return NULL;
+    return entries[tag_name];
 }
 
 rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
@@ -253,28 +298,34 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
     rs::ReservationStationEntry* entry = hasEmptyEntries();
-    if (!hasEmptyEntries()) return;
+    if (hasEmptyEntries() == NULL) 
+    {
+        // TODO: Stall pipeline if no reservation entry is available.
+        processor->getPipeline()->stallPipeline();
+        return;
+    }
     instrPtr->stage = EXECUTE;
     instrPtr->tag = entry->tag;
     switch (instrPtr->type)
     {
     case RType:
         reserveRType(entry, instrPtr);
-        return;
+        break;
     case IType:
         reserveIType(entry, instrPtr);
-        return;
+        break;
+    case JType:
+        reserveJType(entry, instrPtr);
+        break;
     default:
         return;
     }
 }
-
+    
 ScoreboardEntry* rs::ReservationStation::getScoreboardEntry(Register r)
 {
     return scoreboard->getEntry(r);
 }
-
-
 
 void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
@@ -282,30 +333,69 @@ void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instru
     entry->instr_type = instrPtr->type;
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
     ScoreboardEntry* sb_entry_two = getScoreboardEntry(instrPtr->rt);
-    
-    std::get<0>(entry->src_one) = sb_entry_one->getTag();
-    std::get<1>(entry->src_one) = sb_entry_one->isValid();
-    std::get<2>(entry->src_one) = sb_entry_one->getValue();
+    entry->tag_one = sb_entry_one->getTag();
+    entry->valid_one= sb_entry_one->isValid();
+    entry->val_one = sb_entry_one->getValue();
 
-    std::get<0>(entry->src_two) = sb_entry_two->getTag();
-    std::get<1>(entry->src_two) = sb_entry_two->isValid();
-    std::get<2>(entry->src_two) = sb_entry_two->getValue();
+    entry->tag_two = sb_entry_two->getTag();
+    entry->valid_two = sb_entry_two->isValid();
+    entry->val_two = sb_entry_two->getValue();
 
     scoreboard->inValidate(instrPtr->rd, entry->tag);
+    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
+    if (!entry->valid_one) 
+    {   
+        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
+    }
+    if (!entry->valid_two) 
+    { 
+        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_two, func);
+    }
     return;
 }
+void rs::ReservationStation::reserveNoDest(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
+{
+    ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
+    ScoreboardEntry* sb_entry_two = getScoreboardEntry(instrPtr->rt);
+    entry->tag_one = sb_entry_one->getTag();
+    entry->valid_one= sb_entry_one->isValid();
+    entry->val_one = sb_entry_one->getValue();
+
+    entry->tag_two = sb_entry_two->getTag();
+    entry->valid_two = sb_entry_two->isValid();
+    entry->val_two = sb_entry_two->getValue();
+
+    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
+    if (!entry->valid_one) 
+    {   
+        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
+    }
+    if (!entry->valid_two) 
+    { 
+        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_two, func);
+    }
+    return;
+};
 
 void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
     entry->isReserved = true;
     entry->instr_type = instrPtr->type;
-    ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rt);
+    Opcodes opcode = instrPtr->opcode;
+    if (opcode == SW || opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE)
+    {
+        reserveNoDest(entry, instrPtr);
+        return;
+    }
+    ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
 
-    std::get<0>(entry->src_one) = sb_entry_one->getTag();
-    std::get<1>(entry->src_one) = sb_entry_one->isValid();
-    std::get<2>(entry->src_one) = sb_entry_one->getValue();
+    entry->tag_one = sb_entry_one->getTag();
+    entry->valid_one = sb_entry_one->isValid();
+    entry->val_one = sb_entry_one->getValue();
 
-    scoreboard->inValidate(instrPtr->rs, entry->tag);
+    scoreboard->inValidate(instrPtr->rt, entry->tag);
+    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
+    if (!entry->valid_one) EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
     return;
 }
 
@@ -314,13 +404,13 @@ void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instru
     entry->isReserved = true;
     entry->instr_type = instrPtr->type;
 
-    std::get<0>(entry->src_one) = "~";
-    std::get<1>(entry->src_one) = 1;
-    std::get<2>(entry->src_one) = 0;
+    entry->tag_one = "~";
+    entry->valid_one = 1;
+    entry->val_one = 0;
 
-    std::get<0>(entry->src_two) = "~";
-    std::get<1>(entry->src_two) = 1;
-    std::get<2>(entry->src_two) = 0;
+    entry->tag_two = "~";
+    entry->valid_two = 1;
+    entry->val_two = 0;
 
     return;
 }
@@ -338,56 +428,78 @@ void rs::ReservationStation::populateInstruction(Instructions::Instruction *inst
     std::string rs_tag = instrPtr->tag;
     rs::ReservationStationEntry* rs_entry = getEntry(rs_tag);
     if (!rs_entry->isReserved) return;
-    int isValid = std::get<1>(rs_entry->src_one) && std::get<1>(rs_entry->src_two);
+    int isValid = rs_entry->valid_one && rs_entry->valid_two;
     if (!isValid) return;
     switch(instrPtr->type)
     {
         case RType:
-            instrPtr->src2 = std::get<2>(rs_entry->src_two);
-            instrPtr->src1 = std::get<2>(rs_entry->src_one);
+            instrPtr->src2 = rs_entry->val_two;
+            instrPtr->src1 = rs_entry->val_one;
             break;
         case IType:
         // TODO: Verify ITYPE instruction source in decode and execute
-            instrPtr->src1 = std::get<2>(rs_entry->src_one);
+            instrPtr->src1 = rs_entry->val_one;
             break;
     }
     instrPtr->isReadyToExecute = true;
     return;
 }
 
+void rs::ReservationStation::validate(Instructions::Instruction *instrPtr)
+{
+    auto itr = entries.find(instrPtr->tag);
+    if (itr == entries.end()) return;
+    itr->second->result = instrPtr->temp;
+    itr->second->valid_result = true;
+    return;
+}
+
+void rs::ReservationStation::remove(Instructions::Instruction* instrPtr)
+{
+    rs::ReservationStationEntry* entry = entries[instrPtr->tag];
+    entry->isReserved = false;
+    entry->tag_one = "~";
+    entry->val_one = 0;
+    entry->valid_one = 0;
+    entry->tag_two = "~";
+    entry->valid_two = 0;
+    entry->val_two = 0;
+    return;
+}
+
 void rs::ReservationStation::print()
 {
-    for (auto const& entry : entries)
-    {
-        std::cout
-        << termcolor::red << termcolor:: bold
-        << "Tag: "
-        << entry.first
-        << termcolor::reset
-        << termcolor:: green << termcolor:: bold
-        << "     | "
-        << "tag: "
-        << std::get<0>(entry.second->src_one)
-        << " | "
-        << "valid: "
-        << std::get<1>(entry.second->src_one)
-        << " | "
-        << "value: "
-        << std::get<2>(entry.second->src_one)
-        << " |"
-        << termcolor::reset
-        << termcolor::blue << termcolor:: bold
-        << "     | "
-        << "tag: "
-        << std::get<0>(entry.second->src_two)
-        << " | "
-        << "valid: "
-        << std::get<1>(entry.second->src_two)
-        << " | "
-        << "value: "
-        << std::get<2>(entry.second->src_two)
-        << " |"
-        << termcolor::reset
-        << std::endl;
-    }
+    // for (auto const& entry : entries)
+    // {
+    //     std::cout
+    //     << termcolor::red << termcolor:: bold
+    //     << "Tag: "
+    //     << entry.first
+    //     << termcolor::reset
+    //     << termcolor:: green << termcolor:: bold
+    //     << "     | "
+    //     << "tag: "
+    //     << std::get<0>(entry.second->src_one)
+    //     << " | "
+    //     << "valid: "
+    //     << std::get<1>(entry.second->src_one)
+    //     << " | "
+    //     << "value: "
+    //     << std::get<2>(entry.second->src_one)
+    //     << " |"
+    //     << termcolor::reset
+    //     << termcolor::blue << termcolor:: bold
+    //     << "     | "
+    //     << "tag: "
+    //     << std::get<0>(entry.second->src_two)
+    //     << " | "
+    //     << "valid: "
+    //     << std::get<1>(entry.second->src_two)
+    //     << " | "
+    //     << "value: "
+    //     << std::get<2>(entry.second->src_two)
+    //     << " |"
+    //     << termcolor::reset
+    //     << std::endl;
+    // }
 }

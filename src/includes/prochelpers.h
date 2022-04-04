@@ -10,7 +10,19 @@
 #ifndef _SCOREBOARD_DEFINED_
 #define _SCOREBOARD_DEFINED_
 
-class ProcHelper: public EventDispatcher {};
+#include "processor.h"
+
+struct rsEventData
+{
+    std::string tag_name;
+    int value;
+};
+
+class ProcHelper: public EventDispatcher {
+    public:
+        ProcHelper(bool force_null);
+        Processor *processor;
+};
 
 
 class ScoreboardEntry {
@@ -59,12 +71,12 @@ class Scoreboard: public ProcHelper
         std::map<Register, ScoreboardEntry*> board;
         std::map<Register, ScoreboardEntry*> savedState;
     public:
-        Scoreboard();
+        Scoreboard(bool force_null);
         ScoreboardEntry* getEntry(Register r);
         void saveState();
         void restoreState();
         void equaliseSavedState();
-        void validate(Register r, int value);
+        void validate(Register r, int value, std::string tag);
         void inValidate(Register r, std::string tag_name);
         std::pair<int, int> isValid(Register r);
         int getSize();
@@ -77,6 +89,7 @@ class ResultForwarder: ProcHelper
         std::map<Register, int> valueMap;
         std::map<Register, int> savedState;
     public:
+        ResultForwarder(): ProcHelper(true) {};
         void saveState();
         void restoreState();
         void equaliseSavedState();
@@ -89,18 +102,29 @@ class ResultForwarder: ProcHelper
 
 namespace rs
 {
-    // tag, valid, value
-    typedef std::tuple<std::string, int, int> rsv_entry;
-    
+   
     class ReservationStationEntry
     {
         public:
             ReservationStationEntry(std::string tag_name);
-            const std::string tag;
-            int isReserved;
-            rsv_entry src_one;
-            rsv_entry src_two;
+
             InstructionType instr_type;
+            const std::string tag;
+            int result;
+            bool isReserved;
+            bool valid_result;
+
+            std::string tag_one;
+            int valid_one;
+            int val_one;
+
+            std::string tag_two;
+            int valid_two;
+            int val_two;
+
+            void validateSourcesOnEvent(const EventBase& base);
+            void validateSources(std::string tag, int value);
+
     };
 
     class ReservationStation: public ProcHelper
@@ -112,15 +136,18 @@ namespace rs
             void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
-            void reserve(Instructions::Instruction *instrPtr);
+            void reserveNoDest(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
         public:
-            ReservationStation(Scoreboard* sb);
+            ReservationStation(Scoreboard* sb, bool force_null);
             ReservationStationEntry* getEntry(std::string tag_name);
             ReservationStationEntry* hasEmptyEntries();
             ScoreboardEntry* getScoreboardEntry(Register r);
             void print();
             void reserveEntryOnEvent(const EventBase& base);
             void populateInstruction(Instructions::Instruction *instrPtr);
+            void validate(Instructions::Instruction *instrPtr);
+            void remove(Instructions::Instruction* instrPtr);
+            void reserve(Instructions::Instruction *instrPtr);
     };
 }
 

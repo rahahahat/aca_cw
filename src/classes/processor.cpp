@@ -6,7 +6,6 @@
 #include "decodeUnit.h"
 #include "executeUnit.h"
 #include "memoryUnit.h"
-#include "writebackUnit.h"
 
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
@@ -30,45 +29,67 @@ void Processor::loadProgram(std::string fn) {
 
 Processor* Processor::fabricate() {
 
-    OoOPipeline *pipeline = new OoOPipeline();
-    // Scoreboard *scoreboard = new Scoreboard();
-    // rs::ReservationStation* rs = new rs::ReservationStation(scoreboard);
-    // ResultForwarder *resultForwarder = new ResultForwarder();
-    Processor *processor = new Processor();
-    processor->num_proc_units = {
-        {EXECUTE, new std::pair<int, int>(1,1)},
-        {MEMORYACCESS, new std::pair<int, int>(1,1)},
-        {WRITEBACK, new std::pair<int, int>(1,1)},
-    };
-    processor->proc_units = {
-        {FETCH, new FetchUnit(NULL)},
-        {DECODE, new ODecodeUnit(NULL)},
-        {EXECUTE, new OExecuteUnit(NULL)},
-        {MEMORYACCESS, new MemoryUnit(NULL)},
-        {WRITEBACK, new WriteBackUnit(NULL)}
-    };
-    pipeline->attachToProcessor(processor);
-    processor->attachPipeline(pipeline);
-    // processor->attachProcUnit(fn);
-    // processor->attachProcUnit(dn);
-    // processor->attachProcUnit(en);
-    // processor->attachProcUnit(mrf);
-    // processor->attachProcUnit(wb);
-    // auto func = std::bind(&ScalarPipeline::stallPipelineOnEvent, pipeline, std::placeholders::_1);
-    // EventWrapper::getEventWrapperInstance()->addEventListerner(PipelineEvents::StallPipelineEvent, func);
+    std::ifstream i("config.json");
+    i >> config;
 
-    return NULL;
+    Processor *processor = Processor::getProcessorInstance();
+    Pipeline *pipeline = new OoOPipeline();
+    Scoreboard *scoreboard = new Scoreboard(false);
+    rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
+
+    processor->num_proc_units = {
+        {FETCHUNIT, new std::pair<int, int>(1,config["proc_units"]["fetch"].get<int>())},
+        {DECODEUNIT, new std::pair<int, int>(1,config["proc_units"]["decode"].get<int>())},
+        {EXECUTEUNIT, new std::pair<int, int>(1,config["proc_units"]["execute"].get<int>())},
+        {MEMORYUNIT, new std::pair<int, int>(1,config["proc_units"]["memory"].get<int>())},
+    };
+
+    processor->proc_units = {
+        {FETCHUNIT, new FetchUnit()},
+        {DECODEUNIT, new ODecodeUnit()},
+        {EXECUTEUNIT, new OExecuteUnit()},
+        {MEMORYUNIT, new MemoryUnit()}
+    };
+    
+    processor->attachPipeline(pipeline);
+    return processor;
 }
- 
+
 void Processor::destroy(Processor *processor) {
 
-    delete processor->resultForwarder;
+    // delete processor->resultForwarder;
     delete processor->scoreboard;
     delete processor->pipeline;
     delete processor;
     return;
 }
 
+Pipeline* Processor::getPipeline()
+{
+    return pipeline;
+}
+
+ProcUnit* Processor::getProcUnit(ProcUnitTypes unit)
+{
+    auto itr = proc_units.find(unit);
+    if (itr == proc_units.end()) return NULL;
+    return itr->second;
+}
+
+Scoreboard* Processor::getSB()
+{
+    return scoreboard;
+}
+
+rs::ReservationStation* Processor::getRS()
+{
+    return reservation_station;
+}
+
+LSQueue* Processor::getLsq()
+{
+    return lsq;
+}
 
 void Processor::loadInstructionIntoMemory(std::string instruction) {
 
@@ -89,11 +110,11 @@ void Processor::attachPipeline(Pipeline *pipe) {
     return;
 };
 
-void Processor::attachProcHelper(ResultForwarder *rf) {
+// void Processor::attachProcHelper(ResultForwarder *rf) {
 
-    resultForwarder = rf;
-    return;
-}
+//     resultForwarder = rf;
+//     return;
+// }
 
 void Processor::attachProcHelper(Scoreboard *sb)
 {
@@ -102,55 +123,55 @@ void Processor::attachProcHelper(Scoreboard *sb)
 }
 
 void Processor::fetch(Instructions::Instruction *instrPtr) {
-    std::pair<int, int> *num_units = num_proc_units[FETCH];
+    std::pair<int, int> *num_units = num_proc_units[FETCHUNIT];
     if (num_units->second > 0)
     {
         num_units->second -= 1;
-        proc_units[FETCH]->run(instrPtr);
+        proc_units[FETCHUNIT]->run(instrPtr);
         return;
     }
     return;
 }
 
 void Processor::decode(Instructions::Instruction *instrPtr) {
-    std::pair<int, int> *num_units = num_proc_units[DECODE];
+    std::pair<int, int> *num_units = num_proc_units[DECODEUNIT];
     if (num_units->second > 0)
     {
         num_units->second -= 1;
-        proc_units[DECODE]->run(instrPtr);
+        proc_units[DECODEUNIT]->run(instrPtr);
         return;
     }
 }
 
 void Processor::execute(Instructions::Instruction *instrPtr) {
 
-    std::pair<int, int> *num_units = num_proc_units[EXECUTE];
+    std::pair<int, int> *num_units = num_proc_units[EXECUTEUNIT];
     if (num_units->second > 0)
     {
         num_units->second -= 1;
-        proc_units[EXECUTE]->run(instrPtr);
+        proc_units[EXECUTEUNIT]->run(instrPtr);
         return;
     }
 }
 
 void Processor::memref(Instructions::Instruction *instrPtr) {
 
-    std::pair<int, int> *num_units = num_proc_units[MEMORYACCESS];
+    std::pair<int, int> *num_units = num_proc_units[MEMORYUNIT];
     if (num_units->second > 0)
     {
         num_units->second -= 1;
-        proc_units[MEMORYACCESS]->run(instrPtr);
+        proc_units[MEMORYUNIT]->run(instrPtr);
         return;
     }
 }
 
 void Processor::writeback(Instructions::Instruction *instrPtr) {
 
-    std::pair<int, int> *num_units = num_proc_units[WRITEBACK];
+    std::pair<int, int> *num_units = num_proc_units[MEMORYUNIT];
     if (num_units->second > 0)
     {
         num_units->second -= 1;
-        proc_units[WRITEBACK]->run(instrPtr);
+        proc_units[MEMORYUNIT]->run(instrPtr);
         return;
     }
 }
@@ -163,6 +184,7 @@ void Processor::resetProcResources()
     }
     return;
 }
+
 void Processor::runInstr(Instructions::Instruction *instrPtr) {
 
     switch (instrPtr->stage)
@@ -184,10 +206,6 @@ void Processor::runInstr(Instructions::Instruction *instrPtr) {
         break;
     default:
         return;
-    }
-    // TODO: Extra PipeStages added new logic needs to be added
-    if (!pipeline->stalled()) {
-        instrPtr->nextPipeStage();
     }
 }
 
@@ -216,7 +234,7 @@ void Processor::runProgram() {
         // {
         //     pipeline->flushPipelineOnBranchOrJump();
         // }
-        if (PC < instrMemSize)
+        if (PC < instrMemSize && !pipeline->stalled() && pipeline->canFetch())
         {    
             pipeline->addInstructionToPipeline(count);
             count += 1;
@@ -291,3 +309,4 @@ void Processor::regDump() {
     }
     std::cout << std::endl;
 }
+

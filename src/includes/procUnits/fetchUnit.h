@@ -6,7 +6,7 @@ class ProcUnit;
 class FetchUnit: public ProcUnit 
 {
     public:
-        FetchUnit(Pipeline *pl);
+        FetchUnit();
         Instructions::Instruction* fetch(Instructions::Instruction *instrPtr);
 };
 

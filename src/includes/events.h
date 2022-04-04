@@ -57,19 +57,33 @@ class EventWrapper
             }
             return instance;
         };
+
         void disptachEventToListerner(const EventBase& base) const
         {
-
+            std::cout << "comes here" << std::endl;
             eventType type = base.get();
             if (listeners.find(type) == listeners.end()) return;
             auto&& funcs = listeners.at(type);
+            std::cout << "comes here2" << std::endl;
             for (auto && func: funcs)
             {
                 func(base);
             }
+            std::cout << "comes here3" << std::endl;
         };
 
-        void addEventListerner(const eventType type, function_ptr&& func_ptr);
+        void addEventListerner(const eventType type, function_ptr&& func_ptr)
+        {
+            listeners[type].push_back(func_ptr);
+            return;
+        };
+
+        void removeEventListener(const eventType type)
+        {
+            auto itr = listeners.find(type);
+            if (itr != listeners.end()) listeners.erase(itr);
+            return;
+        };
 };
 
 class EventDispatcher
@@ -83,6 +97,7 @@ class EventDispatcher
         void dispatch(const EventBase& base)
         {
             eventWrapper->disptachEventToListerner(base);
+
             return;
         };
 };

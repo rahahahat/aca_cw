@@ -6,13 +6,12 @@
 
 ProcUnit::ProcUnit()
 {
-    processor = NULL;
-    pipeline = NULL;
+    processor = Processor::getProcessorInstance();
     return;
 }
 
-void ProcUnit::attachToProcessor(Processor *proc)
+bool ProcUnit::isInstrBranch(Instructions::Instruction *instrPtr)
 {
-    processor = proc;
-    return;
+    Opcodes opcode = instrPtr->opcode;
+    return (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL); 
 }

@@ -4,18 +4,16 @@
 #include "termcolor.h"
 #include "processor.h"
 
-DecodeUnit::DecodeUnit(Pipeline *pl)
+DecodeUnit::DecodeUnit()
 {
-    pipeline = pl;
     return;
 };
 
 void DecodeUnit::run(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Base run" << std::endl;
-    // pre(instrPtr);
-    // decode(instrPtr);
-    // post(instrPtr);
+    pre(instrPtr);
+    decode(instrPtr);
+    post(instrPtr);
     return;
 };
 
@@ -67,8 +65,6 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
         case BNE:
         case BL:
         case BGTE:
-            processor->resultForwarder->saveState();
-            processor->scoreboard->saveState();
             label = splitInstr.back();
             instrPtr->immediateOrAddress = processor->labelMap.at(label); //label
             splitInstr.pop_back();
@@ -92,8 +88,6 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
 void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair) 
 {
     // Instruction format: opcode address
-    processor->resultForwarder->saveState();
-    processor->scoreboard->saveState();
     std::string label;
     label = splitInstr.back();
     instrPtr->immediateOrAddress = processor->labelMap.at(label);
@@ -138,20 +132,13 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
 //     return;
 // }
 
-ODecodeUnit::ODecodeUnit(Pipeline *pl): DecodeUnit(pl) {};
+ODecodeUnit::ODecodeUnit() {};
 
 void ODecodeUnit::post(Instructions::Instruction *instrPtr)
 {
     instrPtr->stage = ISSUE;
-    putInstrIntoRS(instrPtr);
-    return;
-}
-
-void ODecodeUnit::putInstrIntoRS(Instructions::Instruction *instrPtr)
-{
-    Event<Instructions::Instruction*> event = Event<Instructions::Instruction*>();
-    event.set(ProcUnitEvents::POPULATE_RS);
-    event.payload = instrPtr;
-    dispatch(event);
+    processor->getRS()->reserve(instrPtr);
+    if (isInstrBranch(instrPtr)) processor->getPipeline()->stopFetch();
+    if (instrPtr->opcode == LW || instrPtr->opcode == SW) processor->getLsq()->addToQueue(instrPtr);
     return;
 }

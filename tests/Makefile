@@ -2,7 +2,7 @@ TARGET_EXEC ?= tests
 
 BUILD_DIR ?= build
 
-VPATH = ../src/classes ../tests/ $(shell find . -type d)
+VPATH = ../src/classes ../tests/ ../src/classes/procUnits $(shell find . -type d)
 SRCS := $(shell find ../src/classes -name \*.cpp) $(shell find ./ -name \*.cpp)
 
 CPP_OBJS := $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
@@ -10,14 +10,14 @@ CPP_OBJS := $(patsubst %.cpp, $(BUILD_DIR)/%.o, $(notdir $(SRCS)))
 INC_DIRS := $(shell find ../src/includes -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -Wall -std=c++11
+CPPFLAGS ?= $(INC_FLAGS) -Wall -std=c++11 
 CXX=g++
 
 $(TARGET_EXEC): $(CPP_OBJS)
-	$(CXX) $(CPPFLAGS) -o build/$@ $^
+	$(CXX) $(CPPFLAGS) -o build/$@ $^ -lbfd -ldl -DBACKWARD_HAS_BFD=1
 
 build/%.o: %.cpp
-	$(CXX) -c $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CPPFLAGS) $< -o $@ -lbfd -ldl -DBACKWARD_HAS_BFD=1
 
 .PHONY: clean
 

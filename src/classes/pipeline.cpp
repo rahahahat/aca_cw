@@ -9,9 +9,10 @@
 Pipeline::Pipeline()
 {
     instructions = new PipelineLL();
-    processor = NULL;
+    processor = Processor::getProcessorInstance();
     stall = 0;
     flush = 0;
+    fetch = true;
 }
 
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
@@ -22,12 +23,36 @@ int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
 
 void Pipeline::attachToProcessor(Processor *proc)
 { 
-    processor = proc; return;
+    processor = proc;
+    return;
 };
 
 pipelineType Pipeline::getType()
 {
     return None; 
+}
+
+void Pipeline::stopFetch()
+{
+    std::cout << termcolor::bold << termcolor::bright_red
+    << "Stopping fetch until branch has been executed"
+    << termcolor::reset << std::endl;
+    fetch = false;
+    return;
+}
+
+bool Pipeline::canFetch()
+{
+    return fetch;
+}
+
+void Pipeline::resumeFetch()
+{
+    std::cout << termcolor::bold << termcolor::bright_red
+    << "Resuming fetch!"
+    << termcolor::reset << std::endl;
+    fetch = true;
+    return;
 }
 
 int Pipeline::isEmpty()
@@ -45,9 +70,9 @@ int Pipeline::getInstrSize()
     return instructions->size;
 }
 
-void Pipeline::resume()
+void Pipeline::resumePipeline()
 {
-    stall = 0;
+    stall = false;
     return;
 }
 
@@ -69,26 +94,37 @@ void Pipeline::addInstructionToPipeline(int id)
     return;
 };
 
+void Pipeline::stallPipeline()
+{
+    stall = true;
+    return;
+}
+
 void Pipeline::pipeInstructionsToProcessor()
 {
-    std::cout 
-    << termcolor::on_blue
-    << termcolor::bold
-    << "Number of Instructions in Pipeline: "
-    << instructions->size 
-    << termcolor::reset
-    << "\n"
-    << std::endl;
-    resume();
+    std::cout << termcolor::on_blue << termcolor::bold
+    << "Number of Instructions in Pipeline: " << instructions->size 
+    << termcolor::reset << std::endl << std::endl;
+
     PipelineLLNode *curr = instructions->head;
     while(curr != NULL)
     {
         Instructions::Instruction *instr = curr->payload;
         processor->runInstr(instr);
-        if (flush) flushNode = curr;
-        if (stalled()) break;
+        // if (flush) flushNode = curr;
+        // if (stalled()) break;
         curr = curr->next;
     }
+    if (processor->getPipeline()->stalled())
+    {
+        if (processor->getRS()->hasEmptyEntries() != NULL)
+        {
+            resumePipeline();
+            return;
+        }
+
+    }
+    if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
@@ -96,20 +132,20 @@ void Pipeline::pipeInstructionsToProcessor()
 /* ------------------------------------- OoOPipeline -------------------------------------- */
 /* ---------------------------------------------------------------------------------------- */
 
-void OoOPipeline::stallPipelineOnEvent(const EventBase& base)
-{
-    stall = true;
-    static_cast<const Event<int>&>(base);
-    return;
-}
+// void OoOPipeline::stallPipelineOnEvent(const EventBase& base)
+// {
+//     stall = true;
+//     static_cast<const Event<int>&>(base);
+//     return;
+// }
 
-void OoOPipeline::flushPipelineOnEvent(const EventBase& base)
-{
-    flush = true;
-    const Event<PipelineLLNode*>& new_event = static_cast<const Event<PipelineLLNode*>&>(base);
-    this->instructions->flushAfterNode(new_event.payload);
-    return;
-}
+// void OoOPipeline::flushPipelineOnEvent(const EventBase& base)
+// {
+//     flush = true;
+//     const Event<PipelineLLNode*>& new_event = static_cast<const Event<PipelineLLNode*>&>(base);
+//     this->instructions->flushAfterNode(new_event.payload);
+//     return;
+// }
 
 
 

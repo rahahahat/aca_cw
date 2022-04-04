@@ -10,6 +10,7 @@
 #include "events.h"
 #include "processor.h"
 
+// TODO: Add instructions to Load/Store Queue
 
 namespace PipelineEvents
 {
@@ -63,22 +64,26 @@ class Pipeline: public EventDispatcher {
         static int completedInstr(Instructions::Instruction *instPtr);
         bool stall;
         bool flush;
+        bool fetch;
     public:
         Pipeline();
         virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual void addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void attachToProcessor(Processor *proc);
-        virtual void stallPipeline() {};
+        virtual void stallPipeline();
         virtual void stallPipelineOnEvent(const EventBase& base) {};
         virtual void flushPipelineOnEvent(const EventBase& base) {};
         virtual void flushPipelineOnBranchOrJump() {};
-        virtual void resume();
+        virtual void resumePipeline();
         virtual int stalled();
         virtual pipelineType getType();
         virtual int isEmpty();
         virtual void removeCompletedInstructions();
         virtual int getInstrSize();
+        virtual void stopFetch();
+        virtual void resumeFetch();
+        bool canFetch();
 };
 
 // class ScalarPipeline: public Pipeline {
@@ -97,14 +102,11 @@ class Pipeline: public EventDispatcher {
 //         virtual pipelineType getType();
 // };
 
-
 class OoOPipeline: public Pipeline
 {
+    
     public:
-        OoOPipeline(): Pipeline() {};
         virtual void pipeInstructionsToProcessor() {};
-        virtual void stallPipelineOnEvent(const EventBase& base);
-        virtual void flushPipelineOnEvent(const EventBase& base);
 };
 
 #endif

@@ -18,19 +18,17 @@ class DecodeUnit: public ProcUnit
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void decode(Instructions::Instruction *instrPtr);
     public:
-        DecodeUnit(Pipeline *pl);
+        DecodeUnit();
         void attachToProcessor(Processor *proc);
         virtual void run(Instructions::Instruction *instr);
 };
 
 class ODecodeUnit: public DecodeUnit
 {
-    private:
-        void putInstrIntoRS(Instructions::Instruction *instrPtr);
     protected:
         virtual void post(Instructions::Instruction *instrPtr);
     public:
-        ODecodeUnit(Pipeline *pl);
+        ODecodeUnit();
 };
 
 #endif

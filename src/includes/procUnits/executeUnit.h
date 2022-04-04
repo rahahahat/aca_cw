@@ -6,30 +6,31 @@
 
 class ExecuteUnit: public ProcUnit
 {
+    private:
     protected:
         virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeInstrType(Instructions::Instruction *instrPtr);
         virtual void execute(Instructions::Instruction *instrPtr) {};
-        virtual void pre(Instructions::Instruction *instr) {};
-        virtual void post(Instructions::Instruction *instr) {};
+        virtual void pre(Instructions::Instruction *instrPtr) {};
+        virtual void post(Instructions::Instruction *instrPtr) {};
     public:
-        ExecuteUnit(Pipeline *pl);
-        virtual void run(Instructions::Instruction * instr);
+        ExecuteUnit();
+        virtual void run(Instructions::Instruction * instrPtr);
         void attachToProcessor(Processor *proc);
 };
 
 class OExecuteUnit: public ExecuteUnit
 {
-    private:
-        rs::ReservationStation *reservation_station;
     protected:
         virtual void execute(Instructions::Instruction *instrPtr);
-        virtual void pre(Instructions::Instruction *instr);
-        virtual void post(Instructions::Instruction *instr);
+        virtual void pre(Instructions::Instruction *instrPtr);
+        virtual void post(Instructions::Instruction *instrPtr);
+        virtual void populateRS(Instructions::Instruction *instrPtr);
+        virtual void validateRS(Instructions::Instruction *instrPtr);
     public:
-        OExecuteUnit(Pipeline *pl): ExecuteUnit(pl) {};
+        OExecuteUnit(): ExecuteUnit() {};
         virtual void run(Instructions::Instruction * instr) {};
 };
 
