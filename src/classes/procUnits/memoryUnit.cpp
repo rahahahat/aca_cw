@@ -12,19 +12,24 @@ void MemoryUnit::load(Instructions::Instruction *instrPtr)
 void MemoryUnit::store(Instructions::Instruction *instrPtr)
 {
     processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
-    instrPtr->stage = DONE;
     return;
 };
 
 void MemoryUnit::writeback(Instructions::Instruction *instrPtr)
 {
+    if (isInstrBranch(instrPtr))
+    {
+        processor->PC = instrPtr->immediateOrAddress;
+        return;
+    }
+
     switch(instrPtr->type)
     {
         case IType:
-            processor->registers[instrPtr->rd] = instrPtr->temp;
+            processor->registers[instrPtr->rt] = instrPtr->temp;
             break;
         case RType:
-            processor->registers[instrPtr->rt] = instrPtr->temp;
+            processor->registers[instrPtr->rd] = instrPtr->temp;
             break;
         case JType:
             processor->PC = instrPtr->immediateOrAddress;
@@ -37,7 +42,7 @@ void OMemoryUnit::pre(Instructions::Instruction *instrPtr)
 {
     if (instrPtr->opcode == LW || instrPtr->opcode == SW)
     {
-        can_run = lsq->isOpValid(instrPtr);
+        can_run = processor->getLsq()->isOpValid(instrPtr);
         return;
     }
     can_run = true;
@@ -46,18 +51,32 @@ void OMemoryUnit::pre(Instructions::Instruction *instrPtr)
 
 void OMemoryUnit::run(Instructions::Instruction *instrPtr)
 {
+    std::string stage;
+    if (instrPtr->stage == MEMORYACCESS) stage = "Access";
+    if (instrPtr->stage == WRITEBACK) stage = "Writeback";
+
+    std::cout << termcolor::bold << termcolor::blue
+    << "Memory Accessing instructions: " 
+    << instrPtr->instrString
+    << " (" << stage << ")"
+    << termcolor::reset << std::endl;
+
+    pre(instrPtr);
+
     if (!can_run) return;
     if (instrPtr->opcode == SW)
     {
         store(instrPtr);
-        return;
     }
-    if (instrPtr->opcode == LW && instrPtr->stage == MEMORYACCESS)
+    else if (instrPtr->opcode == LW && instrPtr->stage == MEMORYACCESS)
     {
         load(instrPtr);
-        return;
+    } 
+    else {
+        writeback(instrPtr);
     }
-    writeback(instrPtr);
+
+    post(instrPtr);
     return;
 }
 
@@ -66,13 +85,13 @@ void OMemoryUnit::post(Instructions::Instruction *instrPtr)
     can_run = false;
     if (instrPtr->stage == WRITEBACK)
     {
-        if (isInstrBranch(instrPtr)) processor->getPipeline()->resumeFetch();
+        if (isInstrBranch(instrPtr)) processor->getPipeline()->resumePipeline();
         instrPtr->stage = DONE;
     }
     if (instrPtr->stage == MEMORYACCESS)
     {
         instrPtr->stage = WRITEBACK;
-        if (instrPtr->opcode == SW) 
+        if (instrPtr->opcode == SW)
         {
             instrPtr->stage = DONE;
             processor->getRS()->remove(instrPtr);
@@ -80,9 +99,7 @@ void OMemoryUnit::post(Instructions::Instruction *instrPtr)
         }
         return;
     }
-    if (instrPtr->type == RType) processor->getSB()->validate(instrPtr->rd, instrPtr->temp, instrPtr->tag);
-    if (instrPtr->type == IType) processor->getSB()->validate(instrPtr->rt, instrPtr->temp, instrPtr->tag);
-    processor->getRS()->remove(instrPtr);
+    if (instrPtr->type != JType) processor->getRS()->remove(instrPtr);
     return;
 }
 

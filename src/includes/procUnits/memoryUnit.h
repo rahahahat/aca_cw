@@ -15,7 +15,9 @@ class MemoryUnit: public ProcUnit
         virtual void writeback(Instructions::Instruction *instrPtr);
     public:
         MemoryUnit() {};
-        virtual void run(Instructions::Instruction *instrPtr) {};
+        virtual void run(Instructions::Instruction *instrPtr) {
+            std::cout << "This one executes" << std::endl;
+        };
 };
 
 class OMemoryUnit: public MemoryUnit
@@ -30,10 +32,9 @@ class OMemoryUnit: public MemoryUnit
         OMemoryUnit() 
         {
             can_run = false;
-            lsq = processor->getLsq();
+            lsq = NULL;
         };
-        
-        virtual void run(Instructions::Instruction *instrPtr);
+        void run(Instructions::Instruction *instrPtr);
 };
 
 // class ScalarMemoryUnit: public MemoryUnit

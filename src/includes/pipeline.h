@@ -56,6 +56,10 @@ enum pipelineType {
     None, Scalar
 };
 
+enum StallSource {
+    NoSrc, Branch, RS, ROB, Halt
+};
+
 class Pipeline: public EventDispatcher {
     protected:
         Processor *processor;
@@ -64,26 +68,21 @@ class Pipeline: public EventDispatcher {
         static int completedInstr(Instructions::Instruction *instPtr);
         bool stall;
         bool flush;
-        bool fetch;
+        StallSource stalled_by;
     public:
         Pipeline();
-        virtual void addInstructionToPipeline(Instructions::Instruction *instr) {};
-        virtual void addInstructionToPipeline(int id);
+        virtual Instructions::Instruction* addInstructionToPipeline(Instructions::Instruction *instr) {};
+        virtual Instructions::Instruction* addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void attachToProcessor(Processor *proc);
-        virtual void stallPipeline();
-        virtual void stallPipelineOnEvent(const EventBase& base) {};
-        virtual void flushPipelineOnEvent(const EventBase& base) {};
+        virtual void stallPipeline(StallSource by);
         virtual void flushPipelineOnBranchOrJump() {};
-        virtual void resumePipeline();
+        virtual void resumePipeline(StallSource);
         virtual int stalled();
         virtual pipelineType getType();
         virtual int isEmpty();
         virtual void removeCompletedInstructions();
         virtual int getInstrSize();
-        virtual void stopFetch();
-        virtual void resumeFetch();
-        bool canFetch();
 };
 
 // class ScalarPipeline: public Pipeline {
@@ -106,7 +105,7 @@ class OoOPipeline: public Pipeline
 {
     
     public:
-        virtual void pipeInstructionsToProcessor() {};
+        virtual void pipeInstructionsToProcessor();
 };
 
 #endif

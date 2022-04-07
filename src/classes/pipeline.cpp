@@ -5,6 +5,8 @@
 #include <thread>
 #include <chrono>
 #include <functional>
+#include <cassert>
+#include <stdexcept>
 
 Pipeline::Pipeline()
 {
@@ -12,7 +14,6 @@ Pipeline::Pipeline()
     processor = Processor::getProcessorInstance();
     stall = 0;
     flush = 0;
-    fetch = true;
 }
 
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
@@ -32,29 +33,6 @@ pipelineType Pipeline::getType()
     return None; 
 }
 
-void Pipeline::stopFetch()
-{
-    std::cout << termcolor::bold << termcolor::bright_red
-    << "Stopping fetch until branch has been executed"
-    << termcolor::reset << std::endl;
-    fetch = false;
-    return;
-}
-
-bool Pipeline::canFetch()
-{
-    return fetch;
-}
-
-void Pipeline::resumeFetch()
-{
-    std::cout << termcolor::bold << termcolor::bright_red
-    << "Resuming fetch!"
-    << termcolor::reset << std::endl;
-    fetch = true;
-    return;
-}
-
 int Pipeline::isEmpty()
 {
     return instructions->size == 0;
@@ -70,18 +48,24 @@ int Pipeline::getInstrSize()
     return instructions->size;
 }
 
-void Pipeline::resumePipeline()
+void Pipeline::resumePipeline(StallSource from)
 {
-    stall = false;
+    if (stalled_by == NoSrc) return;
+    if (from == stalled_by)
+    {
+        stall = false;
+        stalled_by = NoSrc;
+        return;
+    }
     return;
 }
 
 int Pipeline::stalled()
 {
-    return (stall == 1);
+    return (stall == 1 && stalled_by != NoSrc);
 }
 
-void Pipeline::addInstructionToPipeline(int id)
+Instructions::Instruction* Pipeline::addInstructionToPipeline(int id)
 {
     std::cout
     << termcolor::bold
@@ -91,41 +75,56 @@ void Pipeline::addInstructionToPipeline(int id)
     << std::endl;
     Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
     new_inst->id = id;
-    return;
+    return new_inst;
 };
 
-void Pipeline::stallPipeline()
+void Pipeline::stallPipeline(StallSource by)
 {
-    stall = true;
-    return;
+    if (by == stalled_by) return;
+    if (by == NoSrc) 
+    {
+        stalled_by = by;
+        stall = true;
+        return;
+    }
+    std::stringstream ss;
+    ss
+    << "Pipeline has already been stalled by: "
+    << std::to_string(stalled_by) << "."
+    << "All operations causing a stall should"
+    << "not execute further until previous"
+    << "stall is resolved."
+    << "Extra stall caused by: "
+    << by;
+
+    throw std::runtime_error(ss.str());
 }
 
 void Pipeline::pipeInstructionsToProcessor()
 {
-    std::cout << termcolor::on_blue << termcolor::bold
-    << "Number of Instructions in Pipeline: " << instructions->size 
-    << termcolor::reset << std::endl << std::endl;
+    // std::cout << termcolor::on_blue << termcolor::bold
+    // << "Number of Instructions in Pipeline: " << instructions->size 
+    // << termcolor::reset << std::endl << std::endl;
 
-    PipelineLLNode *curr = instructions->head;
-    while(curr != NULL)
-    {
-        Instructions::Instruction *instr = curr->payload;
-        processor->runInstr(instr);
-        // if (flush) flushNode = curr;
-        // if (stalled()) break;
-        curr = curr->next;
-    }
-    if (processor->getPipeline()->stalled())
-    {
-        if (processor->getRS()->hasEmptyEntries() != NULL)
-        {
-            resumePipeline();
-            return;
-        }
+    // PipelineLLNode *curr = instructions->head;
 
-    }
-    if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // while(curr != NULL)
+    // {
+    //     Instructions::Instruction *instr = curr->payload;
+    //     processor->runInstr(instr);
+    //     curr = curr->next;
+    // }
+    // 
+    // if (stalled())
+    // {
+    //     if (processor->getRS()->hasEmptyEntries() != NULL)
+    //     {
+    //         resumePipeline();
+    //         return;
+    //     }
+    // }
+    // if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline();
+    // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
 /* ---------------------------------------------------------------------------------------- */
@@ -235,3 +234,30 @@ void ScalarPipeline::flushPipelineOnBranchOrJump()
     return;
 }
 */
+
+void OoOPipeline::pipeInstructionsToProcessor()
+{
+    std::cout << termcolor::on_blue << termcolor::bold
+    << "Number of Instructions in Pipeline: " << instructions->size 
+    << termcolor::reset << std::endl << std::endl;
+
+    PipelineLLNode *curr = instructions->head;
+    while(curr != NULL)
+    {
+        Instructions::Instruction *instr = curr->payload;
+        processor->runInstr(instr);
+        curr = curr->next;
+    }
+    // TODO: logic to differentiate between pipeline stall and branch stall
+    if (stalled())
+    {
+        if (processor->getRS()->hasEmptyEntries() != NULL)
+        {
+            resumePipeline(RS);
+            return;
+        }
+        return;
+    }
+    if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline(RS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+}

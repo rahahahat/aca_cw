@@ -32,7 +32,6 @@ LSQueue::LSQueue()
 
 void LSQueue::addToQueue(Instructions::Instruction *instrPtr)
 {
-    total_entries += 1;
     LSQNode *node = new LSQNode(instrPtr, total_entries);
     queue->add(node);
     return;
@@ -45,7 +44,6 @@ bool LSQueue::isOpValid(Instructions::Instruction *instrPtr)
     while(head != NULL)
     {
         LSQNode *l_node = head->payload;
-        addr_set.insert(l_node->getAddress());
         if (instrPtr == l_node->getInstruction())
         {
             auto itr = addr_set.find(l_node->getAddress());
@@ -57,6 +55,7 @@ bool LSQueue::isOpValid(Instructions::Instruction *instrPtr)
             addr_set.clear();
             return true;
         }
+        addr_set.insert(l_node->getAddress());
         head = head->next;
     }
     // TODO: Add panic or warning for load/store instruction not in queue.

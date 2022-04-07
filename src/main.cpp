@@ -17,7 +17,13 @@
 
 int main(int argc, char* argv[]) {
 
-    Processor::fabricate();
+    std::ifstream i("config.json");
+    i >> config;
+    Processor *processor = Processor::fabricate();
+    processor->DataMemory[1] = 2;
+    processor->loadProgram(config["program"].get<std::string>());
+    processor->runProgram();
+    processor->regDump();
     // backward::SignalHandling sh;
     // Scoreboard *sb = new Scoreboard(false);
     

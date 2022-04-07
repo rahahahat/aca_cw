@@ -27,31 +27,48 @@ void Processor::loadProgram(std::string fn) {
     return;
 }
 
+void Processor::attachLSQ(LSQueue  *queue)
+{
+    lsq = queue;
+    return;
+}
+
 Processor* Processor::fabricate() {
 
     std::ifstream i("config.json");
     i >> config;
-
+    std::cout << config["program"] << std::endl;
+    
     Processor *processor = Processor::getProcessorInstance();
     Pipeline *pipeline = new OoOPipeline();
     Scoreboard *scoreboard = new Scoreboard(false);
     rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
-
+    LSQueue *queue = new LSQueue();
+    Parser *parser = new Parser(processor);
+    int num_fetch_units = config["proc_units"]["fetch"].get<int>();
+    int num_decode_units = config["proc_units"]["decode"].get<int>();
+    int num_exec_units = config["proc_units"]["execute"].get<int>();
+    int num_mem_units = config["proc_units"]["memory"].get<int>();
     processor->num_proc_units = {
-        {FETCHUNIT, new std::pair<int, int>(1,config["proc_units"]["fetch"].get<int>())},
-        {DECODEUNIT, new std::pair<int, int>(1,config["proc_units"]["decode"].get<int>())},
-        {EXECUTEUNIT, new std::pair<int, int>(1,config["proc_units"]["execute"].get<int>())},
-        {MEMORYUNIT, new std::pair<int, int>(1,config["proc_units"]["memory"].get<int>())},
+        {FETCHUNIT, new std::pair<int, int>(num_fetch_units,num_fetch_units)},
+        {DECODEUNIT, new std::pair<int, int>(num_decode_units, num_decode_units)},
+        {EXECUTEUNIT, new std::pair<int, int>(num_exec_units, num_exec_units)},
+        {MEMORYUNIT, new std::pair<int, int>(num_mem_units, num_mem_units)},
     };
 
     processor->proc_units = {
         {FETCHUNIT, new FetchUnit()},
         {DECODEUNIT, new ODecodeUnit()},
         {EXECUTEUNIT, new OExecuteUnit()},
-        {MEMORYUNIT, new MemoryUnit()}
+        {MEMORYUNIT, new OMemoryUnit()}
     };
-    
+
+    processor->attachParser(parser);
     processor->attachPipeline(pipeline);
+    processor->attachProcHelper(rs);
+    processor->attachProcHelper(scoreboard);
+    processor->attachLSQ(queue);
+
     return processor;
 }
 
@@ -91,6 +108,12 @@ LSQueue* Processor::getLsq()
     return lsq;
 }
 
+void Processor::attachParser(Parser *psr)
+{
+    parser = psr;
+    return;
+}
+
 void Processor::loadInstructionIntoMemory(std::string instruction) {
 
     const char ch = instruction.back();
@@ -122,10 +145,18 @@ void Processor::attachProcHelper(Scoreboard *sb)
     return;
 }
 
+void Processor::attachProcHelper(rs::ReservationStation* rs)
+{
+    reservation_station = rs;
+    return;
+}
+
 void Processor::fetch(Instructions::Instruction *instrPtr) {
     std::pair<int, int> *num_units = num_proc_units[FETCHUNIT];
+    
     if (num_units->second > 0)
     {
+        
         num_units->second -= 1;
         proc_units[FETCHUNIT]->run(instrPtr);
         return;
@@ -213,10 +244,9 @@ void Processor::runProgram() {
 
     int count = 0;
     // Starting execution by putting instruction in pipeline
-    Instructions::Instruction instr = Instructions::Instruction();
-    pipeline->addInstructionToPipeline(count);
     count += 1;
-    while(!pipeline->isEmpty())
+    bool isPipelineEmpty = false;
+    while(!isPipelineEmpty)
     {
         clock++;
         std::cout
@@ -230,18 +260,19 @@ void Processor::runProgram() {
         << std::endl;
         pipeline->pipeInstructionsToProcessor();
         pipeline->removeCompletedInstructions();
+        resetProcResources();
         // if (pipeline->flush)
         // {
         //     pipeline->flushPipelineOnBranchOrJump();
         // }
-        if (PC < instrMemSize && !pipeline->stalled() && pipeline->canFetch())
-        {    
-            pipeline->addInstructionToPipeline(count);
+        if (PC < instrMemSize && !pipeline->stalled())
+        {   
+            fetch(pipeline->addInstructionToPipeline(count));
             count += 1;
         };
         // resultForwarder->memDump();
         // scoreboard->memDump();
-        // regDump();
+        regDump();
         std::cout
         << termcolor::bold
         << "Clock cycle: "
@@ -252,6 +283,7 @@ void Processor::runProgram() {
         << termcolor::reset
         << std::endl;
         std::cout << std::endl;
+        isPipelineEmpty = pipeline->isEmpty();
     }
     std::cout << "Program has ended!" << std::endl;
     std::cout << "Clock: " << clock << std::endl;

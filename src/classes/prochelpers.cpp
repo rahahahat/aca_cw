@@ -66,7 +66,7 @@ void Scoreboard::validate(Register r, int value, std::string tag)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        if (!tag.compare(itr->second->getTag())) return;
+        if (tag.compare(itr->second->getTag()) != 0) return;
         itr->second->updateValidity(1);
         itr->second->updateValue(value);
         return;
@@ -298,10 +298,10 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
     rs::ReservationStationEntry* entry = hasEmptyEntries();
-    if (hasEmptyEntries() == NULL) 
+    if (entry == NULL && !processor->getPipeline()->stalled())
     {
         // TODO: Stall pipeline if no reservation entry is available.
-        processor->getPipeline()->stallPipeline();
+        processor->getPipeline()->stallPipeline(RS);
         return;
     }
     instrPtr->stage = EXECUTE;
@@ -392,6 +392,7 @@ void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instru
     entry->tag_one = sb_entry_one->getTag();
     entry->valid_one = sb_entry_one->isValid();
     entry->val_one = sb_entry_one->getValue();
+    entry->valid_two = 1;
 
     scoreboard->inValidate(instrPtr->rt, entry->tag);
     auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
@@ -469,37 +470,37 @@ void rs::ReservationStation::remove(Instructions::Instruction* instrPtr)
 
 void rs::ReservationStation::print()
 {
-    // for (auto const& entry : entries)
-    // {
-    //     std::cout
-    //     << termcolor::red << termcolor:: bold
-    //     << "Tag: "
-    //     << entry.first
-    //     << termcolor::reset
-    //     << termcolor:: green << termcolor:: bold
-    //     << "     | "
-    //     << "tag: "
-    //     << std::get<0>(entry.second->src_one)
-    //     << " | "
-    //     << "valid: "
-    //     << std::get<1>(entry.second->src_one)
-    //     << " | "
-    //     << "value: "
-    //     << std::get<2>(entry.second->src_one)
-    //     << " |"
-    //     << termcolor::reset
-    //     << termcolor::blue << termcolor:: bold
-    //     << "     | "
-    //     << "tag: "
-    //     << std::get<0>(entry.second->src_two)
-    //     << " | "
-    //     << "valid: "
-    //     << std::get<1>(entry.second->src_two)
-    //     << " | "
-    //     << "value: "
-    //     << std::get<2>(entry.second->src_two)
-    //     << " |"
-    //     << termcolor::reset
-    //     << std::endl;
-    // }
+    for (auto const& entry : entries)
+    {
+        std::cout
+        << termcolor::red << termcolor:: bold
+        << "Tag: "
+        << entry.first
+        << termcolor::reset
+        << termcolor:: green << termcolor:: bold
+        << "     | "
+        << "tag: "
+        << entry.second->tag_one
+        << " | "
+        << "valid: "
+        << entry.second->valid_one
+        << " | "
+        << "value: "
+        << entry.second->val_one
+        << " |"
+        << termcolor::reset
+        << termcolor::blue << termcolor:: bold
+        << "     | "
+        << "tag: "
+        << entry.second->tag_two
+        << " | "
+        << "valid: "
+        << entry.second->valid_two
+        << " | "
+        << "value: "
+        << entry.second->val_two
+        << " |"
+        << termcolor::reset
+        << std::endl;
+    }
 }

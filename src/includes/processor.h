@@ -27,6 +27,7 @@ class Pipeline;
 class Parser;
 class ProcUnit;
 class Scoreboard;
+
 namespace rs 
 {
     class ReservationStation;
@@ -35,6 +36,7 @@ namespace rs
 class Processor: public EventDispatcher
 {
     private:
+        // TODO: reset procunit count at the end of clock cycle.
         // {ProcUnit, std::pair<init,int>(total_units, available_units)} (Execute, MemoryAccess and WriteBack units)
         std::map<ProcUnitTypes, std::pair<int, int>*> num_proc_units;
         Pipeline *pipeline;
@@ -74,13 +76,20 @@ class Processor: public EventDispatcher
         int32_t instrMemSize = 0;
         Processor();
         void loadInstructionIntoMemory(std::string instruction);
-        void attachPipeline(Pipeline *pipe);
+
         // void attachProcHelper(ResultForwarder *rf);
-        void attachProcHelper(Scoreboard *sb);
+        
         void runProgram();
         void loadProgram(std::string fn);
         void runInstr(Instructions::Instruction *instr);
         void regDump();
+
+        void attachParser(Parser *parser);
+        void attachPipeline(Pipeline *pipe);
+        void attachProcHelper(Scoreboard *sb);
+        void attachProcHelper(rs::ReservationStation* rs);
+        void attachLSQ(LSQueue  *lsq);
+
         Pipeline* getPipeline();
         ProcUnit* getProcUnit(ProcUnitTypes unit);
         LSQueue* getLsq();

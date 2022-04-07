@@ -9,6 +9,11 @@ ExecuteUnit::ExecuteUnit() {};
 
 void ExecuteUnit::run(Instructions::Instruction *instr)
 {
+
+    std::cout << termcolor::bold << termcolor::blue
+    << "Executing instruction: " << instr->instrString
+    << std::endl;
+
     pre(instr);
     execute(instr);
     post(instr);
@@ -64,10 +69,10 @@ void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
         instrPtr->temp = instrPtr->src1 + immediate;
         break;
     case LW:
-        instrPtr->temp = instrPtr->src1 + immediate;
+        instrPtr->immediateOrAddress = instrPtr->src1 + immediate;
         break;
     case SW:
-        instrPtr->temp = instrPtr->src1 + immediate;
+        instrPtr->immediateOrAddress = instrPtr->src1 + immediate;
         break;
     case ANDI:
         instrPtr->temp = instrPtr->src1 & immediate;
@@ -112,7 +117,7 @@ void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
 };
 
 void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
-{
+{   
     switch(instrPtr->type)
     {
         case RType:
@@ -125,7 +130,6 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
             executeJTypeInstruction(instrPtr);
             break;
         default:
-            return;
         // TODO: HALT Instruction logic needs to be added
             // processor->scoreboard->inValidate($pc);
             // pipeline->flush = 1;
@@ -142,6 +146,12 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
 
 void OExecuteUnit::pre(Instructions::Instruction *instrPtr)
 {
+    if (instrPtr->type == End)
+    {
+        instrPtr->isReadyToExecute = true;
+        return;
+    }
+    if (instrPtr->isReadyToExecute) return;
     populateRS(instrPtr);
     return;
 }
@@ -150,14 +160,14 @@ void OExecuteUnit::execute(Instructions::Instruction *instrPtr)
 {
     if (!instrPtr->isReadyToExecute) return;
     instrPtr->decrementCycle();
-    if (instrPtr->getCurrCycle() > 0) return;
+    if (instrPtr->getCurrCycle() != 0) return;
     executeInstrType(instrPtr);
     return;
 }
 
 void OExecuteUnit::post(Instructions::Instruction *instrPtr)
 {
-    if (!!instrPtr->getCurrCycle()) return;
+    if (instrPtr->getCurrCycle() != 0) return;
     Opcodes opcode = instrPtr->opcode;
     instrPtr->stage = WRITEBACK;
     if (opcode == LW || opcode == SW)
@@ -169,6 +179,8 @@ void OExecuteUnit::post(Instructions::Instruction *instrPtr)
     event.payload.tag_name = instrPtr->tag;
     event.payload.value = instrPtr->temp;
     dispatch(event);
+    if (instrPtr->type == RType) processor->getSB()->validate(instrPtr->rd, instrPtr->temp, instrPtr->tag);
+    if (instrPtr->type == IType) processor->getSB()->validate(instrPtr->rt, instrPtr->temp, instrPtr->tag);
     return;
 }
 

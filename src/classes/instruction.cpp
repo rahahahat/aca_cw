@@ -17,6 +17,8 @@ Instruction::Instruction()
     stage = FETCH;
     isReadyToExecute = false;
     immediateOrAddress = -1;
+    num_cycles = 2;
+    curr_cycle = 2;
 };
 
 Instruction::Instruction(std::string instr)
@@ -28,6 +30,8 @@ Instruction::Instruction(std::string instr)
     stage = FETCH;
     isReadyToExecute = false;
     immediateOrAddress = -1;
+    num_cycles = 2;
+    curr_cycle = 2;
 };
 
 int Instruction::getCurrCycle()
@@ -57,10 +61,11 @@ void Instruction::nextPipeStage()
 
 void Instruction::setNumCycle(int cycles)
 {
-    if (num_cycles == 0)
-    {
-        num_cycles = cycles;
-    }
+    // if (num_cycles == 0)
+    // {
+    curr_cycle = cycles;
+    num_cycles = cycles;
+    // }
     return;
 }
 

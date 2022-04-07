@@ -31,7 +31,6 @@ class OExecuteUnit: public ExecuteUnit
         virtual void validateRS(Instructions::Instruction *instrPtr);
     public:
         OExecuteUnit(): ExecuteUnit() {};
-        virtual void run(Instructions::Instruction * instr) {};
 };
 
 #endif

@@ -5,6 +5,11 @@
 
 FetchUnit::FetchUnit() {};
 
+void FetchUnit::run(Instructions::Instruction* instrPtr)
+{
+    fetch(instrPtr);
+}
+
 Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
 {
     std::string instr = processor->instructionMemory[processor->PC];

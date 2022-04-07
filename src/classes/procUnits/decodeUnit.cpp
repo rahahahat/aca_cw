@@ -11,6 +11,10 @@ DecodeUnit::DecodeUnit()
 
 void DecodeUnit::run(Instructions::Instruction *instrPtr)
 {
+    std::cout << termcolor::bold << termcolor::blue
+    << "Decoding instruction: " << instrPtr->instrString
+    << std::endl;
+
     pre(instrPtr);
     decode(instrPtr);
     post(instrPtr);
@@ -53,6 +57,9 @@ void DecodeUnit::decodeRTypeInstruction(Instructions::Instruction *instrPtr, std
     splitInstr.pop_back();
     instrPtr->rd = RegisterMap.at(splitInstr.back()); // dest
     splitInstr.pop_back();
+    if (instrPtr->opcode == MULT) instrPtr->setNumCycle(4);
+    instrPtr->setNumCycle(2);
+
 };
 
 void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair)
@@ -81,6 +88,7 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             splitInstr.pop_back();
             instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
             splitInstr.pop_back();
+            instrPtr->setNumCycle(2);
             return;
     };
 }
@@ -136,9 +144,21 @@ ODecodeUnit::ODecodeUnit() {};
 
 void ODecodeUnit::post(Instructions::Instruction *instrPtr)
 {
-    instrPtr->stage = ISSUE;
-    processor->getRS()->reserve(instrPtr);
-    if (isInstrBranch(instrPtr)) processor->getPipeline()->stopFetch();
-    if (instrPtr->opcode == LW || instrPtr->opcode == SW) processor->getLsq()->addToQueue(instrPtr);
-    return;
+    switch(instrPtr->type)
+    {
+        case JType:
+            instrPtr->stage = WRITEBACK;
+            return;
+        case End:
+            // TODO: Think about the stall guard here!
+            instrPtr->stage = EXECUTE;
+            if (!processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Halt);
+            return;
+        default:
+            instrPtr->stage = ISSUE;
+            processor->getRS()->reserve(instrPtr);
+            if (isInstrBranch(instrPtr) && !processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Branch);
+            if (instrPtr->opcode == LW || instrPtr->opcode == SW) processor->getLsq()->addToQueue(instrPtr);
+            return;
+    }
 }
