@@ -7,6 +7,7 @@
 ProcUnit::ProcUnit()
 {
     processor = Processor::getProcessorInstance();
+    busy = false;
     return;
 }
 

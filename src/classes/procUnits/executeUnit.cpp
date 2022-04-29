@@ -4,20 +4,17 @@
 #include "termcolor.h"
 #include "processor.h"
 #include "pipeline.h"
+#include "cdb.h"
 
-ExecuteUnit::ExecuteUnit() {};
-
-void ExecuteUnit::run(Instructions::Instruction *instr)
+// TODO: Make Execute unit unbusy
+// Incorporate branch resume logic
+ExecuteUnit::ExecuteUnit()
 {
-
-    std::cout << termcolor::bold << termcolor::blue
-    << "Executing instruction: " << instr->instrString
-    << std::endl;
-
-    pre(instr);
-    execute(instr);
-    post(instr);
-}
+    opcode = NOP;
+    src1 = 0;
+    src2 = 0;
+    immediate = 0;
+};
 
 void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
 {
@@ -88,6 +85,9 @@ void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
         break;
     case BNE:
         instrPtr->temp = instrPtr->src1 != instrPtr->src2;
+        std::cout << termcolor::green << termcolor::bold << instrPtr->instrString << " " << instrPtr->tag << std::endl;
+        std::cout << instrPtr->src1 << " " << instrPtr->src2 << std::endl;
+        std::cout << instrPtr->temp << termcolor::reset << std::endl;
         break;
     case BGTE:
         instrPtr->temp = instrPtr->src1 >= instrPtr->src2;
@@ -129,13 +129,8 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
         case JType:
             executeJTypeInstruction(instrPtr);
             break;
-        default:
-        // TODO: HALT Instruction logic needs to be added
-            // processor->scoreboard->inValidate($pc);
-            // pipeline->flush = 1;
-            // pipeline->stallPipeline();
-            // instrPtr->nextPipeStage();
-            // return;
+        default: // Halt
+            return;
     };
     return;
 };
@@ -144,57 +139,227 @@ void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
 /* ----------------------------------    0ExecuteUnit   ----------------------------------- */
 /* ---------------------------------------------------------------------------------------- */
 
-void OExecuteUnit::pre(Instructions::Instruction *instrPtr)
+void OExecuteUnit::pre()
 {
-    if (instrPtr->type == End)
+    if (busy) return;
+    if (!busy)
     {
-        instrPtr->isReadyToExecute = true;
+        busy = seekInstruction();
+        std::cout << busy << std::endl;
+
+    }
+    return;
+}
+
+
+void OExecuteUnit::run()
+{
+    // std::cout << termcolor::bold << termcolor::blue
+    // << "Executing instruction: " << termcolor::reset 
+    // << instr->instrString
+    // << " (cycle: " << instr->getCurrCycle() << ")"
+    // << " (" << instr->tag << ")"
+    // << std::endl;
+
+    // processor->getPipeline()->stepMode();
+    pre();
+    execute();
+    post();
+}
+
+void OExecuteUnit::post()
+{
+    // TODO: Add Jump support
+    if (num_cycles != 0) return;
+    if (isInstrBranch())
+    {
+        int addr = (result) ? immediate : processor->PC;
+        processor->getCDB()->broadcast($pc, rsTag, addr);
         return;
     }
-    if (instrPtr->isReadyToExecute) return;
-    populateRS(instrPtr);
+    busy = false;
+    processor->getCDB()->broadcast(destination, rsTag, result);
+    processor->getRS()->remove(rsTag);
     return;
 }
 
-void OExecuteUnit::execute(Instructions::Instruction *instrPtr)
+void OExecuteUnit::execute()
 {
-    if (!instrPtr->isReadyToExecute) return;
-    instrPtr->decrementCycle();
-    if (instrPtr->getCurrCycle() != 0) return;
-    executeInstrType(instrPtr);
+    num_cycles--;
+    if (num_cycles != 0) return;
+
+    std::cout << termcolor::bold << termcolor::bright_red << "Executing Instruction: "
+    << instrStr << termcolor::reset << std::endl;
+
+    executeInstrType();
     return;
 }
 
-void OExecuteUnit::post(Instructions::Instruction *instrPtr)
+bool OExecuteUnit::isInstrBranch()
 {
-    if (instrPtr->getCurrCycle() != 0) return;
-    Opcodes opcode = instrPtr->opcode;
-    instrPtr->stage = WRITEBACK;
-    if (opcode == LW || opcode == SW)
+    return (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL);
+}
+
+void OExecuteUnit::populateRSTags(Instructions::Instruction *instrPtr)
+{ 
+    // processor->getRS()->validate(instrPtr);
+    // return;
+}
+
+bool OExecuteUnit::seekInstruction()
+{
+    rs::ReservationStationEntry* rse = processor->getRS()->getValidInstruction();
+    if (rse == NULL) return false;
+
+    rsTag = rse->getTag();
+    opcode = rse->opcode;
+    type = rse->instr_type;
+    num_cycles = CycleMap.at(opcode);
+    instrStr = rse->instrStr;
+
+    // TODO: Add support for halt
+    if(opcode == HALT) return true;
+    if (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL)
     {
-        instrPtr->stage = MEMORYACCESS;
+        src1 = rse->value_pair.first;
+        src2 = rse->value_pair.second;
+        opcode = rse->opcode;
+        destination = $noreg;
+        immediate = rse->address;
     }
-    Event<rsEventData> event = Event<rsEventData>();
-    event.set(instrPtr->tag);
-    event.payload.tag_name = instrPtr->tag;
-    event.payload.value = instrPtr->temp;
-    dispatch(event);
-    if (instrPtr->type == RType) processor->getSB()->validate(instrPtr->rd, instrPtr->temp, instrPtr->tag);
-    if (instrPtr->type == IType) processor->getSB()->validate(instrPtr->rt, instrPtr->temp, instrPtr->tag);
+    else if (type == RType)
+    {
+        src1 = rse->value_pair.first;
+        src2 = rse->value_pair.second;
+        opcode = rse->opcode;
+        destination = rse->destination;
+    }
+    else if (type == IType)
+    {
+        src1 = rse->value_pair.first;
+        immediate = rse->value_pair.second;
+        opcode = rse->opcode;
+        destination = rse->destination;
+    }
+    else
+    {
+        immediate = rse->address;
+    }
+    std::cout << termcolor::bold << termcolor::red << "Seeking Instruction: "
+    << termcolor::white << rse->instrStr << termcolor::reset << std::endl;
+    return true;
+}
+
+void OExecuteUnit::executeRTypeInstruction()
+{
+    switch (opcode)
+    {
+    case ADD:
+    case ADDU:
+        result = src1 + src2;
+        break;
+    case SUB: 
+    case SUBU:
+        result = src1 - src2;
+        break;
+    case MULT:
+    case MULTU:
+        result = src1 * src2;
+        break;
+    case DIV:
+    case DIVU:
+        result = src1 / src2;
+        break;
+    case AND:
+        result = src1 & src2;
+        break;
+    case OR:
+        result = src1 | src2;
+        break;
+    case NOR:
+        result = ~(src1 | src2); 
+        break;
+    case XOR:
+        result = src1 ^ src2;
+        break;
+    default:
+        break;
+    }
+}
+
+void OExecuteUnit::executeITypeInstruction()
+{
+    switch (opcode)
+    {
+    case ADDI:
+    case ADDIU:
+        result = src1 + immediate;
+        break;
+    case ANDI:
+        result = src1 & immediate;
+        break;
+    case ORI:
+        result = src1 | immediate;
+        break;
+    case LSR:
+        result = src1 >> immediate;
+        break;
+    case BEQ:
+        result = src1 == src2;
+        break;
+    case BNE:
+        result = src1 != src2;
+        break;
+    case BGTE:
+        result = src1 >= src2;
+        break;
+    case BL:
+        result = src1 < src2;
+        break;
+    }
     return;
 }
 
-void OExecuteUnit::populateRS(Instructions::Instruction *instrPtr)
-{ 
-    processor->getRS()->populateInstruction(instrPtr);
+void OExecuteUnit::executeJTypeInstruction()
+{
+    switch (opcode)
+    {
+    case J:
+        result = immediate;
+        break;
+    case JR:
+        result = processor->PC - 1;
+        break;
+    default:
+        break;
+    }
+};
+
+void OExecuteUnit::executeInstrType()
+{
+    switch(type)
+    {
+        case RType:
+            executeRTypeInstruction();
+            break;
+        case IType:
+            executeITypeInstruction();
+            break;
+        case JType:
+            executeJTypeInstruction();
+            break;
+        default: // Halt
+            return;
+    };
     return;
+};
+
+void OExecuteUnit::nextTick()
+{
+    run();
 }
 
-void OExecuteUnit::validateRS(Instructions::Instruction *instrPtr)
-{ 
-    processor->getRS()->validate(instrPtr);
-    return;
-}
+
 
 /* ---------------------------------------------------------------------------------------- */
 /* ---------------------------------- ScalarExecuteUnit ----------------------------------- */

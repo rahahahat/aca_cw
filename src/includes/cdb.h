@@ -1,13 +1,26 @@
-#include "prochelpers.h"
-#include "lsq.h"
-#include "instruction.h"
+#ifndef _CDB_DEFINED_
+#define _CDB_DEFINED_
 
-class CDB
+#include "lsq.h"
+
+
+// class Processor;
+class Scoreboard;
+namespace rs {
+
+    class ReservationStation;
+}
+// class LSQueue;
+
+class CommonDataBus
 {
     public:
-        // ROB
-        rs::ReservationStation* rst;
-        LSQueue * load_store_queue;
-        Scoreboard *scoreboard;
-        void broadcast(Instructions::Instruction*);
+        CommonDataBus();
+        Processor *processor;
+        rs::ReservationStation* rsv;
+        Scoreboard* sb;
+        LSQueue *lsq;
+        void broadcast(Register destination, std::string tag, int value);
 };
+
+#endif

@@ -1,9 +1,17 @@
 {
-  "program": "factorial.txt",
-  "proc_units": {
-    "fetch": 2,
-    "decode": 2,
-    "execute": 2,
-    "memory": 2
-  }
+  "debug": true,
+  "stepMode": {
+    "enabled": true,
+    "till": 12,
+    "cycle": true,
+    "instruction": true
+  },
+  "program": "test.txt",
+  "procUnits": {
+    "fetch": 1,
+    "decode": 1,
+    "execute": 1,
+    "memory": 1
+  },
+  "takeBranch": false
 }

@@ -43,6 +43,7 @@ class LLNode {
 template <class T>
 class LinkedList {
     public:
+        int size;
         LinkedList<T>()
         {
             head = NULL;
@@ -50,7 +51,6 @@ class LinkedList {
             size = 0;
             return;
         };
-        int size;
         LLNode<T> *head;
         LLNode<T> *tail;
         T* pop()
@@ -80,18 +80,21 @@ class LinkedList {
         void add(T* value)
         {
             LLNode<T> *node = new LLNode<T>(value);
+            std::cout << size << std::endl;
+            std::cout << head << std::endl;
+
             if (head == NULL && size == 0)
             {
                 head = node;
                 tail = node;
-                size++;
+                size += 1;
                 return;
             }
             tail->next = node;
             node->prev = tail;
             node->next = NULL;
             tail = node;
-            size++;
+            size += 1;
             return;
         };
         T* remove(int i)
@@ -136,7 +139,7 @@ class LinkedList {
             delete curr;
             return ret_val;
         };
-        T* remove(LLNode<T> node)
+        T* remove(LLNode<T> *node)
         {
             if (node == NULL)
             {

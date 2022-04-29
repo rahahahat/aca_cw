@@ -1,8 +1,9 @@
 #ifndef _PIPESTAGE_INCLUDED_
 #define _PIPESTAGE_INCLUDED_
 
-enum pipestage {
-    FETCH, DECODE, ISSUE, EXECUTE, MEMORYACCESS, WRITEBACK, DONE, INIT
+enum pipestage 
+{
+    ISSUE, EXECUTE, COMMIT, DONE
 };
 
 #endif

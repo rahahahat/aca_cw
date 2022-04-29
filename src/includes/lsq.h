@@ -1,38 +1,46 @@
 #include "linkedlist.h"
 #include "processor.h"
 #include "instruction.h"
-#include "events.h"
+#include "prochelpers.h"
 
 #ifndef _LSQ_DEFINED_
 #define _LSQ_DEFINED_
 
-class LSQNode
+class LSQNode: public ReserveEntry
 {
-    private:
-        int entry_number;
-        Instructions::Instruction *instr;
     public:
-        LSQNode(Instructions::Instruction *instrPtr, int entry_num);
-        Instructions::Instruction* getInstruction();
-        int getEntryNumber();
+        int addr;
+        LSQNode(std::string str);
+        void populateSources(std::string tag, int value);
         int getAddress();
+        bool isBusy();
 };
 
 class LSQueue
 {
     private:
         Processor *processor;
-        int total_entries;
+        int capacity;
         LinkedList<LSQNode> *queue;
         int storeEntry(int addr);
         int loadEntry(int addr);
-        void addInstructionOnEvent(const EventBase& base);
-
+        void populateLoad(LSQNode* node, Instructions::Instruction *instrPtr);
+        void populateStore(LSQNode* node, Instructions::Instruction *instrPtr);
     public:
         LSQueue();
-        void addToQueue(Instructions::Instruction *instrPtr);
-        void removeFromQueue(Instructions::Instruction *instrPtr);
-        bool isOpValid(Instructions::Instruction *instrPtr);
+        LSQNode* addToQueue(Instructions::Instruction *instrPtr);
+        void removeFromQueue(std::string tag);
+        bool isOpValid(LSQNode *node);
+        bool isValidLoad(LSQNode *node);
+        bool isValidStore(LSQNode *node);
+        void populateTags(std::string tag, int value);
+        void calculateAddrs();
+        int getNumEntries();
+        bool hasCapacity();
+        LSQNode* getHead();
+        LSQNode* getValidInstruction();
+        void nextTick();
+        void print();
 };
 
 #endif

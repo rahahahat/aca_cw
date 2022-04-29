@@ -7,12 +7,7 @@
 
 class Processor;
 
-namespace ProcUnitEvents
-{
-    const std::string POPULATE_RS = "put_instruction_into_reservation_station";
-};
-
-class ProcUnit: public EventDispatcher
+class ProcUnit
 {
     protected:
         Processor *processor;
@@ -20,9 +15,14 @@ class ProcUnit: public EventDispatcher
         virtual void validateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void pre(Instructions::Instruction *instrPtr) {};
+        virtual void pre() {};
         virtual void post(Instructions::Instruction *instrPtr) {};
+        virtual void post() {};
     public:
+        bool busy;
         virtual void run(Instructions::Instruction *instr) {};
+        virtual void run() {};
+        virtual void nextTick() {};
         bool isInstrBranch(Instructions::Instruction *instrPtr);
         ProcUnit();
 };

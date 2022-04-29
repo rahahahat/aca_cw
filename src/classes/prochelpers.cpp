@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "termcolor.h"
 #include "processor.h"
+#include "termcolor.h"
 #include <sstream>
 
 ProcHelper::ProcHelper(bool force_null)
@@ -62,24 +63,36 @@ Scoreboard::Scoreboard(bool force_null): ProcHelper(force_null)
     };
 };
 
-void Scoreboard::validate(Register r, int value, std::string tag)
+bool Scoreboard::validate(Register r, int value, std::string tag)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        if (tag.compare(itr->second->getTag()) != 0) return;
-        itr->second->updateValidity(1);
-        itr->second->updateValue(value);
-        return;
+        if (tag.compare(itr->second->tag) != 0) return false;
+        itr->second->valid = 1;
+        itr->second->value = value;
+        return true;
     }
-    return;
+    return false;
 };
+
+void Scoreboard::invalidatePC()
+{
+    auto itr = board.find($pc);
+    if (itr != board.end()) itr->second->valid = 0;
+    return;
+}
+
+bool Scoreboard::isPCValid()
+{
+    return board.find($pc)->second->valid == 1;
+}
 
 void Scoreboard::inValidate(Register r, std::string new_tag) 
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        itr->second->updateValidity(0);
-        itr->second->updateTag(new_tag);
+        itr->second->valid = 0;
+        itr->second->tag = new_tag;
         return;
     }
     return;
@@ -89,7 +102,7 @@ std::pair<int, int> Scoreboard::isValid(Register r)
 {
     auto itr = board.find(r);
     if (itr != board.end()) {
-        return std::pair<int, int>(itr->second->isValid(), itr->second->getValue());
+        return std::pair<int, int>(itr->second->valid, itr->second->value);
     }
     return std::pair<int, int>(0,0);
 }
@@ -120,7 +133,10 @@ void Scoreboard::equaliseSavedState()
 
 ScoreboardEntry* Scoreboard::getEntry(Register r)
 {
-    return board[r];
+    auto itr = board.find(r);
+    if (itr != board.end()) {
+        return itr->second;
+    }
 }
 
 void Scoreboard::memDump()
@@ -221,44 +237,83 @@ void ResultForwarder::memDump()
     std::cout << std::endl;
 }
 
-// TODO: validate all rs entries waiting for a tag on validate.
-rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): tag(tag_name)
+ReserveEntry::ReserveEntry(std::string tag_name)
 {
+    valid_pair = std::pair<int, int>(0,0);
+    value_pair = std::pair<int, int>(0,0);
+    tag_pair = std::pair<std::string, std::string>("~", "~");
+    busy = false;
+    opcode = NOP;
+    destination = $noreg;
+    isReady = false;
+    tag = tag_name;
+    return;
+}
+
+std::pair<int, int> ReserveEntry::updateValues(std::pair<int, int> pair)
+{
+    value_pair = pair;
+    return value_pair;
+};
+
+std::pair<bool, bool> ReserveEntry::updateValids(std::pair<bool, bool> pair)
+{
+    valid_pair = pair;
+    return valid_pair;
+};
+std::pair<std::string, std::string> ReserveEntry::updateTags(std::pair<std::string, std::string> pair) 
+{
+    tag_pair = pair;
+    return tag_pair;
+};
+
+std::pair<int, int> ReserveEntry::getValues() 
+{
+    return value_pair;
+};
+std::pair<bool, bool> ReserveEntry::getValids() 
+{
+    return valid_pair;
+};
+std::pair<std::string, std::string> ReserveEntry::getTags()
+{
+    return tag_pair;
+};
+std::string ReserveEntry::getTag()
+{
+    return tag;
+};
+
+// TODO: validate all rs entries waiting for a tag on validate.
+rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): ReserveEntry(tag_name)
+{
+    address = -1;
     isReserved = false;
-
-    tag_one = "~";
-    valid_one = 0;
-    val_one = 0;
-
-    tag_two = "~";
-    valid_two = 0;
-    val_two = 0;
-
-    valid_result = false;
     return;
 }
 
 void rs::ReservationStationEntry::validateSourcesOnEvent(const EventBase& base)
 {
-    const Event<rsEventData>& event = static_cast<const Event<rsEventData>&>(base);
-    std::string tag = event.payload.tag_name;
-    int value = event.payload.value;
-    validateSources(tag, value);
-    EventWrapper::getEventWrapperInstance()->removeEventListener(tag);
-    return;
+    // const Event<rsEventData>& event = static_cast<const Event<rsEventData>&>(base);
+    // std::string tag = event.payload.tag_name;
+    // int value = event.payload.value;
+    // populateSources(tag, value);
+    // EventWrapper::getEventWrapperInstance()->removeEventListener(tag);
+    // return;
 }
 
-void rs::ReservationStationEntry::validateSources(std::string tag, int value)
+void rs::ReservationStationEntry::populateSources(std::string tag, int value)
 {
-    if (!tag_one.compare(tag))
+    if (tag_pair.first.compare(tag) == 0)
     {
-        valid_one = 1;
-        val_one = value;
+        valid_pair.first = 1;
+        value_pair.first = value;
     }
-    if (!tag_two.compare(tag))
+    if (tag_pair.second.compare(tag) == 0)
     {
-        valid_two = 1;
-        val_two = value;
+        
+        valid_pair.second = 1;
+        value_pair.second = value;
     }
     return;
 }
@@ -300,12 +355,12 @@ void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
     rs::ReservationStationEntry* entry = hasEmptyEntries();
     if (entry == NULL && !processor->getPipeline()->stalled())
     {
-        // TODO: Stall pipeline if no reservation entry is available.
         processor->getPipeline()->stallPipeline(RS);
         return;
     }
-    instrPtr->stage = EXECUTE;
-    instrPtr->tag = entry->tag;
+    entry->instrStr = instrPtr->instrString;
+    instrPtr->tag = entry->getTag();
+    entry->isReserved = true;
     switch (instrPtr->type)
     {
     case RType:
@@ -329,98 +384,67 @@ ScoreboardEntry* rs::ReservationStation::getScoreboardEntry(Register r)
 
 void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
-    entry->isReserved = true;
-    entry->instr_type = instrPtr->type;
+
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
     ScoreboardEntry* sb_entry_two = getScoreboardEntry(instrPtr->rt);
-    entry->tag_one = sb_entry_one->getTag();
-    entry->valid_one= sb_entry_one->isValid();
-    entry->val_one = sb_entry_one->getValue();
 
-    entry->tag_two = sb_entry_two->getTag();
-    entry->valid_two = sb_entry_two->isValid();
-    entry->val_two = sb_entry_two->getValue();
+    entry->value_pair = std::pair<int, int>(sb_entry_one->value, sb_entry_two->value);
+    entry->valid_pair = std::pair<int, int>(sb_entry_one->valid, sb_entry_two->valid);
+    entry->tag_pair = std::pair<std::string, std::string>(sb_entry_one->tag, sb_entry_two->tag);
+    entry->isReserved = true;
+    entry->instr_type = instrPtr->type;
+    entry->opcode = instrPtr->opcode;
+    entry->destination = instrPtr->rd;
 
-    scoreboard->inValidate(instrPtr->rd, entry->tag);
-    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
-    if (!entry->valid_one) 
-    {   
-        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
-    }
-    if (!entry->valid_two) 
-    { 
-        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_two, func);
-    }
+    scoreboard->inValidate(instrPtr->rd, entry->getTag());
     return;
 }
 void rs::ReservationStation::reserveNoDest(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
     ScoreboardEntry* sb_entry_two = getScoreboardEntry(instrPtr->rt);
-    entry->tag_one = sb_entry_one->getTag();
-    entry->valid_one= sb_entry_one->isValid();
-    entry->val_one = sb_entry_one->getValue();
 
-    entry->tag_two = sb_entry_two->getTag();
-    entry->valid_two = sb_entry_two->isValid();
-    entry->val_two = sb_entry_two->getValue();
-
-    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
-    if (!entry->valid_one) 
-    {   
-        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
-    }
-    if (!entry->valid_two) 
-    { 
-        EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_two, func);
-    }
+    entry->opcode = instrPtr->opcode;
+    entry->value_pair = std::pair<int, int>(sb_entry_one->value, sb_entry_two->value);
+    entry->valid_pair = std::pair<int, int>(sb_entry_one->valid, sb_entry_two->valid);
+    entry->tag_pair = std::pair<std::string, std::string>(sb_entry_one->tag, sb_entry_two->tag);
+    entry->address = instrPtr->immediateOrAddress;
     return;
 };
 
 void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
-    entry->isReserved = true;
-    entry->instr_type = instrPtr->type;
     Opcodes opcode = instrPtr->opcode;
-    if (opcode == SW || opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE)
+    if (opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE)
     {
         reserveNoDest(entry, instrPtr);
         return;
     }
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
 
-    entry->tag_one = sb_entry_one->getTag();
-    entry->valid_one = sb_entry_one->isValid();
-    entry->val_one = sb_entry_one->getValue();
-    entry->valid_two = 1;
+    entry->value_pair = std::pair<int, int>(sb_entry_one->value, instrPtr->immediateOrAddress);
+    entry->valid_pair = std::pair<int, int>(sb_entry_one->valid, 1);
+    entry->tag_pair = std::pair<std::string, std::string>(sb_entry_one->tag, "~");
+    entry->destination = instrPtr->rt;
+    entry->isReserved = true;
+    entry->opcode = instrPtr->opcode;
+    entry->instr_type = instrPtr->type;
 
-    scoreboard->inValidate(instrPtr->rt, entry->tag);
-    auto func = std::bind(&rs::ReservationStationEntry::validateSourcesOnEvent, entry, std::placeholders::_1);
-    if (!entry->valid_one) EventWrapper::getEventWrapperInstance()->addEventListerner(entry->tag_one, func);
+    scoreboard->inValidate(instrPtr->rt, entry->getTag());
     return;
 }
 
 void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
+
+    entry->value_pair = std::pair<int, int>(0,0);
+    entry->valid_pair = std::pair<int, int>(1,1);
+    entry->tag_pair = std::pair<std::string, std::string>("~","~");
     entry->isReserved = true;
     entry->instr_type = instrPtr->type;
+    entry->opcode = instrPtr->opcode;
+    entry->address = instrPtr->immediateOrAddress;
 
-    entry->tag_one = "~";
-    entry->valid_one = 1;
-    entry->val_one = 0;
-
-    entry->tag_two = "~";
-    entry->valid_two = 1;
-    entry->val_two = 0;
-
-    return;
-}
-
-
-void rs::ReservationStation::reserveEntryOnEvent(const EventBase& base)
-{
-    const Event<Instructions::Instruction*>& event = static_cast<const Event<Instructions::Instruction*>&>(base);
-    reserve(event.payload);
     return;
 }
 
@@ -429,49 +453,80 @@ void rs::ReservationStation::populateInstruction(Instructions::Instruction *inst
     std::string rs_tag = instrPtr->tag;
     rs::ReservationStationEntry* rs_entry = getEntry(rs_tag);
     if (!rs_entry->isReserved) return;
-    int isValid = rs_entry->valid_one && rs_entry->valid_two;
+    int isValid = rs_entry->valid_pair.first && rs_entry->valid_pair.second;
     if (!isValid) return;
     switch(instrPtr->type)
     {
         case RType:
-            instrPtr->src2 = rs_entry->val_two;
-            instrPtr->src1 = rs_entry->val_one;
+            instrPtr->src2 = rs_entry->value_pair.second;
+            instrPtr->src1 = rs_entry->value_pair.first;
             break;
         case IType:
-        // TODO: Verify ITYPE instruction source in decode and execute
-            instrPtr->src1 = rs_entry->val_one;
+            instrPtr->src1 = rs_entry->value_pair.first;
             break;
     }
     instrPtr->isReadyToExecute = true;
     return;
 }
 
+void rs::ReservationStation::populateTags(std::string tag, int value)
+{
+    for (auto const& entry : entries)
+    {
+        rs::ReservationStationEntry *rse = entry.second;
+        rse->populateSources(tag, value);
+    }
+}
+
 void rs::ReservationStation::validate(Instructions::Instruction *instrPtr)
 {
     auto itr = entries.find(instrPtr->tag);
     if (itr == entries.end()) return;
-    itr->second->result = instrPtr->temp;
-    itr->second->valid_result = true;
+    // itr->second->result = instrPtr->temp;
     return;
 }
 
-void rs::ReservationStation::remove(Instructions::Instruction* instrPtr)
+rs::ReservationStationEntry* rs::ReservationStation::getValidInstruction()
 {
-    rs::ReservationStationEntry* entry = entries[instrPtr->tag];
-    entry->isReserved = false;
-    entry->tag_one = "~";
-    entry->val_one = 0;
-    entry->valid_one = 0;
-    entry->tag_two = "~";
-    entry->valid_two = 0;
-    entry->val_two = 0;
+    std::cout << termcolor::on_bright_red << entries.size() << termcolor::reset << std::endl;
+    for (auto const& entry : entries)
+    {
+        if (!entry.second->busy && entry.second->valid_pair.first && entry.second->valid_pair.second)
+        {
+            entry.second->busy = true;
+            return entry.second;
+        }
+    }
+    return NULL;
+}
+
+void rs::ReservationStation::remove(std::string tag)
+{
+    auto entry = entries.find(tag);
+    if (entry == entries.end()) return;
+    rs::ReservationStationEntry* rsv_entry = entry->second;
+    rsv_entry->updateTags(std::pair<std::string, std::string>("~", "~"));
+    rsv_entry->updateValids(std::pair<int, int>(0, 0));
+    rsv_entry->updateValues(std::pair<int, int>(0, 0));
+    rsv_entry->busy = false;
+    rsv_entry->isReserved = false;
     return;
+}
+
+bool rs::ReservationStation::areAllEntriesFree()
+{
+    for (auto const& entry : entries)
+    {
+        if (entry.second->isReserved) return false;
+    }
+    return true;
 }
 
 void rs::ReservationStation::print()
 {
     for (auto const& entry : entries)
     {
+        if (!entry.second->isReserved) continue;
         std::cout
         << termcolor::red << termcolor:: bold
         << "Tag: "
@@ -480,25 +535,25 @@ void rs::ReservationStation::print()
         << termcolor:: green << termcolor:: bold
         << "     | "
         << "tag: "
-        << entry.second->tag_one
+        << entry.second->tag_pair.first
         << " | "
         << "valid: "
-        << entry.second->valid_one
+        << entry.second->valid_pair.first
         << " | "
         << "value: "
-        << entry.second->val_one
+        << entry.second->value_pair.first
         << " |"
         << termcolor::reset
         << termcolor::blue << termcolor:: bold
         << "     | "
         << "tag: "
-        << entry.second->tag_two
+        << entry.second->tag_pair.second
         << " | "
         << "valid: "
-        << entry.second->valid_two
+        << entry.second->valid_pair.second
         << " | "
         << "value: "
-        << entry.second->val_two
+        << entry.second->value_pair.second
         << " |"
         << termcolor::reset
         << std::endl;

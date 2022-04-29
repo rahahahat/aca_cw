@@ -2,133 +2,125 @@
 #include "memoryUnit.h"
 #include "processor.h"
 #include "pipeline.h"
+#include "cdb.h"
 
-void MemoryUnit::load(Instructions::Instruction *instrPtr)
-{
-    instrPtr->temp = processor->DataMemory[instrPtr->immediateOrAddress];
-    return;
-};
-
-void MemoryUnit::store(Instructions::Instruction *instrPtr)
-{
-    processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
-    return;
-};
-
-void MemoryUnit::writeback(Instructions::Instruction *instrPtr)
-{
-    if (isInstrBranch(instrPtr))
-    {
-        processor->PC = instrPtr->immediateOrAddress;
-        return;
-    }
-
-    switch(instrPtr->type)
-    {
-        case IType:
-            processor->registers[instrPtr->rt] = instrPtr->temp;
-            break;
-        case RType:
-            processor->registers[instrPtr->rd] = instrPtr->temp;
-            break;
-        case JType:
-            processor->PC = instrPtr->immediateOrAddress;
-            break;
-    }
-    return;
-}
-
-void OMemoryUnit::pre(Instructions::Instruction *instrPtr)
-{
-    if (instrPtr->opcode == LW || instrPtr->opcode == SW)
-    {
-        can_run = processor->getLsq()->isOpValid(instrPtr);
-        return;
-    }
-    can_run = true;
-    return;
-}
-
-void OMemoryUnit::run(Instructions::Instruction *instrPtr)
-{
-    std::string stage;
-    if (instrPtr->stage == MEMORYACCESS) stage = "Access";
-    if (instrPtr->stage == WRITEBACK) stage = "Writeback";
-
-    std::cout << termcolor::bold << termcolor::blue
-    << "Memory Accessing instructions: " 
-    << instrPtr->instrString
-    << " (" << stage << ")"
-    << termcolor::reset << std::endl;
-
-    pre(instrPtr);
-
-    if (!can_run) return;
-    if (instrPtr->opcode == SW)
-    {
-        store(instrPtr);
-    }
-    else if (instrPtr->opcode == LW && instrPtr->stage == MEMORYACCESS)
-    {
-        load(instrPtr);
-    } 
-    else {
-        writeback(instrPtr);
-    }
-
-    post(instrPtr);
-    return;
-}
-
-void OMemoryUnit::post(Instructions::Instruction *instrPtr)
-{
-    can_run = false;
-    if (instrPtr->stage == WRITEBACK)
-    {
-        if (isInstrBranch(instrPtr)) processor->getPipeline()->resumePipeline();
-        instrPtr->stage = DONE;
-    }
-    if (instrPtr->stage == MEMORYACCESS)
-    {
-        instrPtr->stage = WRITEBACK;
-        if (instrPtr->opcode == SW)
-        {
-            instrPtr->stage = DONE;
-            processor->getRS()->remove(instrPtr);
-            return;
-        }
-        return;
-    }
-    if (instrPtr->type != JType) processor->getRS()->remove(instrPtr);
-    return;
-}
-
-// void MemoryUnit::memref(Instructions::Instruction *instrPtr) 
+// void MemoryUnit::load(Instructions::Instruction *instrPtr)
 // {
-//     std::cout 
-//     << termcolor::green
-//     << termcolor::bold
-//     << "Memory Accessing Instruction: "
-//     << termcolor::reset 
-//     << instrPtr->instrString 
-//     << std::endl;
-//     switch (instrPtr->opcode)
-//     {
-//     case LW:
-//         load();
-//     case SW:
-//         store();
-//         break;
-//     case HALT:
-//         return;
-//     }
+//     instrPtr->temp = processor->DataMemory[instrPtr->immediateOrAddress];
+//     return;
 // };
 
-// void MemRefUnit::populateResultForwarder(Instructions::Instruction *instrPtr)
+// void MemoryUnit::store(Instructions::Instruction *instrPtr)
 // {
-//     Opcodes opcode = instrPtr->opcode;
-//     if (opcode == LW) {
-//         processor->resultForwarder->addValue(instrPtr->rt, instrPtr->temp);
+//     processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
+//     return;
+// };
+
+// void MemoryUnit::writeback(Instructions::Instruction *instrPtr)
+// {
+//     if (isInstrBranch(instrPtr))
+//     {
+//         processor->PC = instrPtr->immediateOrAddress;
+//         return;
+//     }
+
+//     switch(instrPtr->type)
+//     {
+//         case IType:
+//             processor->registers[instrPtr->rt] = instrPtr->temp;
+//             break;
+//         case RType:
+//             processor->registers[instrPtr->rd] = instrPtr->temp;
+//             break;
+//         case JType:
+//             processor->PC = instrPtr->immediateOrAddress;
+//             break;
 //     }
 //     return;
 // }
+
+OMemoryUnit::OMemoryUnit()
+{
+    busy = false;
+    lsq = processor->getLsq();
+    address = -1;
+    destination = $noreg;
+    store_val = 0;
+    opcode = NOP;
+    lsqTag = "~";
+}
+void OMemoryUnit::pre()
+{
+    if (busy) return;
+    busy = seekInstruction();
+    return;
+}
+
+bool OMemoryUnit::seekInstruction()
+{
+    LSQNode *node = lsq->getValidInstruction();
+    node->busy = true;
+    if (node == NULL) return false;
+    if (node->opcode == LW)
+    {
+        opcode = LW;
+        address = node->address;
+        destination = node->destination;
+        lsqTag = node->getTag();
+    }
+    if (node->opcode == SW)
+    {
+        opcode = SW;
+        address = node->address;
+        destination = $noreg;
+        // TODO: Check store format
+        store_val = node->value_pair.second;
+        lsqTag = node->getTag();
+    }
+    return true;
+}
+
+void OMemoryUnit::run()
+{
+    // std::string stage;
+
+    // std::cout << termcolor::bold << termcolor::blue
+    // << "Memory Accessing instructions: " 
+    // << instrPtr->instrString
+    // << " (" << stage << ")"
+    // << " (" << instrPtr->tag << ")" 
+    // << termcolor::reset << std::endl;
+
+    // processor->getPipeline()->stepMode();
+
+    pre();
+    if (opcode == LW) load();
+    if (opcode == SW) store();
+    post();
+    return;
+}
+
+void OMemoryUnit::load()
+{
+    result = processor->DataMemory[address];
+    return;
+};
+
+void OMemoryUnit::store()
+{
+    processor->DataMemory[address] = store_val;
+    return;
+};
+
+void OMemoryUnit::post()
+{
+    if (!busy) return;
+    if (opcode == LW)
+    {
+        processor->getCDB()->broadcast(destination, lsqTag, result);
+        return;
+    }
+    // TODO: Remove LSQNode
+    lsq->removeFromQueue(lsqTag);
+    return;
+}

@@ -12,13 +12,9 @@
 
 #include "processor.h"
 
-struct rsEventData
-{
-    std::string tag_name;
-    int value;
-};
 
-class ProcHelper: public EventDispatcher {
+class ProcHelper
+{
     public:
         ProcHelper(bool force_null);
         Processor *processor;
@@ -26,43 +22,12 @@ class ProcHelper: public EventDispatcher {
 
 
 class ScoreboardEntry {
-    private:
+    public:
+        int valid;
         std::string tag;
         Register reg;
-        int valid;
         int value;
-    public:
         ScoreboardEntry(Register r);
-        int isValid()
-        {
-            return valid;
-        };
-        int getValue()
-        {
-            return value;
-        };
-        void updateValue(int val)
-        {
-            value = val;
-            return;
-        };
-        void updateValidity(int validity)
-        {
-            if (validity != valid)
-            {
-                valid = validity;
-            }
-            return;
-        };
-        void updateTag(std::string tag_name)
-        {
-            tag = tag_name;
-            return;
-        };
-        std::string getTag()
-        {
-            return tag;
-        };
 };
 
 class Scoreboard: public ProcHelper
@@ -76,11 +41,13 @@ class Scoreboard: public ProcHelper
         void saveState();
         void restoreState();
         void equaliseSavedState();
-        void validate(Register r, int value, std::string tag);
+        bool validate(Register r, int value, std::string tag);
         void inValidate(Register r, std::string tag_name);
         std::pair<int, int> isValid(Register r);
         int getSize();
         void memDump();
+        void invalidatePC();
+        bool isPCValid();
 };
 
 class ResultForwarder: ProcHelper
@@ -100,31 +67,49 @@ class ResultForwarder: ProcHelper
         void memDump();
 };
 
+// TODO: Reserve value_two with immediate
+class ReserveEntry
+{
+    private:
+        std::string tag;
+    public:
+        ReserveEntry(std::string tag_name);
+        std::string instrStr;
+        Opcodes opcode;
+        Register destination;
+       
+        bool busy;
+        bool isReady;
+        int address;
+
+        std::pair<int, int> value_pair;
+        std::pair<bool, bool> valid_pair;
+        std::pair<std::string, std::string> tag_pair;
+
+        std::pair<int, int> updateValues(std::pair<int, int> pair); 
+        std::pair<bool, bool> updateValids(std::pair<bool, bool> pair);
+        std::pair<std::string, std::string> updateTags(std::pair<std::string, std::string> pair);
+
+        std::pair<int, int> getValues();
+        std::pair<bool, bool> getValids();
+        std::pair<std::string, std::string> getTags();
+        std::string getTag();
+};
+
+
 namespace rs
 {
    
-    class ReservationStationEntry
+    class ReservationStationEntry : public ReserveEntry
     {
         public:
             ReservationStationEntry(std::string tag_name);
 
             InstructionType instr_type;
-            const std::string tag;
-            int result;
             bool isReserved;
-            bool valid_result;
-
-            std::string tag_one;
-            int valid_one;
-            int val_one;
-
-            std::string tag_two;
-            int valid_two;
-            int val_two;
 
             void validateSourcesOnEvent(const EventBase& base);
-            void validateSources(std::string tag, int value);
-
+            void populateSources(std::string tag, int value);
     };
 
     class ReservationStation: public ProcHelper
@@ -143,13 +128,14 @@ namespace rs
             ReservationStationEntry* hasEmptyEntries();
             ScoreboardEntry* getScoreboardEntry(Register r);
             void print();
-            void reserveEntryOnEvent(const EventBase& base);
             void populateInstruction(Instructions::Instruction *instrPtr);
             void validate(Instructions::Instruction *instrPtr);
-            void remove(Instructions::Instruction* instrPtr);
+            void remove(std::string tag);
             void reserve(Instructions::Instruction *instrPtr);
+            void populateTags(std::string tag, int value);
+            bool areAllEntriesFree();
+            rs::ReservationStationEntry* getValidInstruction();
     };
-}
-
+};
 
 #endif

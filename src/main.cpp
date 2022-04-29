@@ -19,43 +19,9 @@ int main(int argc, char* argv[]) {
 
     std::ifstream i("config.json");
     i >> config;
-    Processor *processor = Processor::fabricate();
+    i.close();
+    Processor *processor = Processor::getProcessorInstance()->fabricate();
     processor->DataMemory[1] = 2;
     processor->loadProgram(config["program"].get<std::string>());
     processor->runProgram();
-    processor->regDump();
-    // backward::SignalHandling sh;
-    // Scoreboard *sb = new Scoreboard(false);
-    
-    // Processor *proc = Processor::fabricate();
-    // Scoreboard *sb = new Scoreboard();
-    // rs::ReservationStation* rs = new rs::ReservationStation(sb);
-    // Instructions::Instruction *ins1 = new Instructions::Instruction("abc");
-    // ins1->rd = $r4;
-    // ins1->rs = $r3;
-    // ins1->rt = $r2;
-    // Instructions::Instruction *ins2 = new Instructions::Instruction("abc");
-    // ins2->rd = $r4;
-    // ins2->rs = $r4;
-    // ins2->rt = $r1;
-    // Instructions::Instruction *ins3 = new Instructions::Instruction("abc");
-    // ins3->rd = $r5;
-    // ins3->rs = $r3;
-    // ins3->rt = $r4;
-    // Event<Instructions::Instruction*> event1 = Event<Instructions::Instruction*>();
-    // event1.set("ABC");
-    // event1.payload = ins1;
-    // Event<Instructions::Instruction*> event2 = Event<Instructions::Instruction*>();
-    // event2.set("ABC");
-    // event2.payload = ins2;
-    // Event<Instructions::Instruction*> event3 = Event<Instructions::Instruction*>();
-    // event3.set("ABC");
-    // event3.payload = ins3;
-    // rs->dispatch(event1);
-    // rs->dispatch(event2);
-    // rs->dispatch(event3);
-    // rs->print();
-    // const char* a = "abc";
-    // std::cout << sizeof(a) << std::endl;
-    // return 0;
 }

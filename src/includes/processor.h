@@ -5,7 +5,6 @@
 #include "instruction.h"
 #include "util.h"
 #include "json.hpp"
-#include "prochelpers.h"
 #include "config.h"
 
 #ifndef _PROCESSOR_INCLUDED_
@@ -15,18 +14,16 @@
 #include "pipeline.h"
 #include "events.h"
 #include "procUnit.h"
-#include "lsq.h"
 
-enum ProcUnitTypes
-{
-    FETCHUNIT, DECODEUNIT, EXECUTEUNIT, MEMORYUNIT
-};
 
 
 class Pipeline;
 class Parser;
 class ProcUnit;
 class Scoreboard;
+class CommonDataBus;
+class LSQueue;
+// class CDB;
 
 namespace rs 
 {
@@ -36,23 +33,15 @@ namespace rs
 class Processor: public EventDispatcher
 {
     private:
-        // TODO: reset procunit count at the end of clock cycle.
-        // {ProcUnit, std::pair<init,int>(total_units, available_units)} (Execute, MemoryAccess and WriteBack units)
-        std::map<ProcUnitTypes, std::pair<int, int>*> num_proc_units;
+        
+        
         Pipeline *pipeline;
         Parser *parser;
-        std::map<ProcUnitTypes, ProcUnit*> proc_units;
         rs::ReservationStation* reservation_station;
         LSQueue *lsq;
         Scoreboard *scoreboard;
-
-        void fetch(Instructions::Instruction *instrPtr);
-        void decode(Instructions::Instruction *instrPtr);
-        void execute(Instructions::Instruction *instrPtr);
-        void memref(Instructions::Instruction *instrPtr);
-        void writeback(Instructions::Instruction *instrPtr);
-        void resetProcResources();
-        
+        CommonDataBus *cdb;
+        bool progEnded;
         
     public:
         static Processor* getProcessorInstance()
@@ -65,7 +54,7 @@ class Processor: public EventDispatcher
             return instance;
         }
         int clock;
-        static Processor* fabricate();
+        Processor* fabricate();
         static void destroy(Processor *processor);
         // ResultForwarder *resultForwarder;
         std::map<std::string, int> labelMap;
@@ -81,26 +70,28 @@ class Processor: public EventDispatcher
         
         void runProgram();
         void loadProgram(std::string fn);
-        void runInstr(Instructions::Instruction *instr);
         void regDump();
+        void stepMode();
+        bool programEnded();
+        void setProgramEnded();
 
         void attachParser(Parser *parser);
         void attachPipeline(Pipeline *pipe);
         void attachProcHelper(Scoreboard *sb);
         void attachProcHelper(rs::ReservationStation* rs);
-        void attachLSQ(LSQueue  *lsq);
+        void attachLSQ(LSQueue  *queue);
+        void attachCDB(CommonDataBus *bus);
 
         Pipeline* getPipeline();
-        ProcUnit* getProcUnit(ProcUnitTypes unit);
         LSQueue* getLsq();
         rs::ReservationStation* getRS();
         Scoreboard* getSB();
+        CommonDataBus* getCDB();
 };
 
 
 
 void printInstructionMemory(Processor processor);
 void printInstructionMemoryAtIndex(Processor processor, int index);
-void printClock(int clock);
 
 #endif

@@ -1,11 +1,13 @@
-#include "processor.h"
-#include "termcolor.h"
 #include <functional>
 #include <iostream>
-#include "fetchUnit.h"
-#include "decodeUnit.h"
-#include "executeUnit.h"
-#include "memoryUnit.h"
+#include <chrono>
+#include <thread>
+
+#include "processor.h"
+#include "termcolor.h"
+#include "lsq.h"
+#include "config.h"
+#include "cdb.h"
 
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
@@ -27,49 +29,41 @@ void Processor::loadProgram(std::string fn) {
     return;
 }
 
-void Processor::attachLSQ(LSQueue  *queue)
+void Processor::attachLSQ(LSQueue *queue)
 {
     lsq = queue;
     return;
 }
 
-Processor* Processor::fabricate() {
+void Processor::attachCDB(CommonDataBus *bus)
+{
+    cdb = bus;
+    return;
+}
 
+Processor* Processor::fabricate() {
+    
     std::ifstream i("config.json");
     i >> config;
-    std::cout << config["program"] << std::endl;
+    i.close();
+
     
-    Processor *processor = Processor::getProcessorInstance();
-    Pipeline *pipeline = new OoOPipeline();
     Scoreboard *scoreboard = new Scoreboard(false);
     rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
+    Pipeline *pipeline = new OoOPipeline();
     LSQueue *queue = new LSQueue();
-    Parser *parser = new Parser(processor);
-    int num_fetch_units = config["proc_units"]["fetch"].get<int>();
-    int num_decode_units = config["proc_units"]["decode"].get<int>();
-    int num_exec_units = config["proc_units"]["execute"].get<int>();
-    int num_mem_units = config["proc_units"]["memory"].get<int>();
-    processor->num_proc_units = {
-        {FETCHUNIT, new std::pair<int, int>(num_fetch_units,num_fetch_units)},
-        {DECODEUNIT, new std::pair<int, int>(num_decode_units, num_decode_units)},
-        {EXECUTEUNIT, new std::pair<int, int>(num_exec_units, num_exec_units)},
-        {MEMORYUNIT, new std::pair<int, int>(num_mem_units, num_mem_units)},
-    };
+    Parser *parser = new Parser(this);
 
-    processor->proc_units = {
-        {FETCHUNIT, new FetchUnit()},
-        {DECODEUNIT, new ODecodeUnit()},
-        {EXECUTEUNIT, new OExecuteUnit()},
-        {MEMORYUNIT, new OMemoryUnit()}
-    };
+    attachProcHelper(scoreboard);
+    attachProcHelper(rs);
+    attachParser(parser);
+    attachPipeline(pipeline);
+    attachLSQ(queue);
 
-    processor->attachParser(parser);
-    processor->attachPipeline(pipeline);
-    processor->attachProcHelper(rs);
-    processor->attachProcHelper(scoreboard);
-    processor->attachLSQ(queue);
+    CommonDataBus *bus = new CommonDataBus();
+    attachCDB(bus);
 
-    return processor;
+    return this;
 }
 
 void Processor::destroy(Processor *processor) {
@@ -86,16 +80,14 @@ Pipeline* Processor::getPipeline()
     return pipeline;
 }
 
-ProcUnit* Processor::getProcUnit(ProcUnitTypes unit)
-{
-    auto itr = proc_units.find(unit);
-    if (itr == proc_units.end()) return NULL;
-    return itr->second;
-}
-
 Scoreboard* Processor::getSB()
 {
     return scoreboard;
+}
+
+CommonDataBus* Processor::getCDB()
+{
+    return cdb;
 }
 
 rs::ReservationStation* Processor::getRS()
@@ -151,148 +143,48 @@ void Processor::attachProcHelper(rs::ReservationStation* rs)
     return;
 }
 
-void Processor::fetch(Instructions::Instruction *instrPtr) {
-    std::pair<int, int> *num_units = num_proc_units[FETCHUNIT];
-    
-    if (num_units->second > 0)
-    {
-        
-        num_units->second -= 1;
-        proc_units[FETCHUNIT]->run(instrPtr);
-        return;
-    }
-    return;
-}
-
-void Processor::decode(Instructions::Instruction *instrPtr) {
-    std::pair<int, int> *num_units = num_proc_units[DECODEUNIT];
-    if (num_units->second > 0)
-    {
-        num_units->second -= 1;
-        proc_units[DECODEUNIT]->run(instrPtr);
-        return;
-    }
-}
-
-void Processor::execute(Instructions::Instruction *instrPtr) {
-
-    std::pair<int, int> *num_units = num_proc_units[EXECUTEUNIT];
-    if (num_units->second > 0)
-    {
-        num_units->second -= 1;
-        proc_units[EXECUTEUNIT]->run(instrPtr);
-        return;
-    }
-}
-
-void Processor::memref(Instructions::Instruction *instrPtr) {
-
-    std::pair<int, int> *num_units = num_proc_units[MEMORYUNIT];
-    if (num_units->second > 0)
-    {
-        num_units->second -= 1;
-        proc_units[MEMORYUNIT]->run(instrPtr);
-        return;
-    }
-}
-
-void Processor::writeback(Instructions::Instruction *instrPtr) {
-
-    std::pair<int, int> *num_units = num_proc_units[MEMORYUNIT];
-    if (num_units->second > 0)
-    {
-        num_units->second -= 1;
-        proc_units[MEMORYUNIT]->run(instrPtr);
-        return;
-    }
-}
-
-void Processor::resetProcResources()
-{
-    for (auto it = num_proc_units.begin(); it != num_proc_units.end(); it++)
-    {
-        it->second->second = it->second->first;
-    }
-    return;
-}
-
-void Processor::runInstr(Instructions::Instruction *instrPtr) {
-
-    switch (instrPtr->stage)
-    {
-    case FETCH:
-        fetch(instrPtr);
-        break;
-    case DECODE:
-        decode(instrPtr);
-        break;
-    case EXECUTE:
-        execute(instrPtr);
-        break;
-    case MEMORYACCESS:
-        memref(instrPtr);
-        break;
-    case WRITEBACK:
-        writeback(instrPtr);
-        break;
-    default:
-        return;
-    }
-}
-
 void Processor::runProgram() { 
 
-    int count = 0;
-    // Starting execution by putting instruction in pipeline
-    count += 1;
-    bool isPipelineEmpty = false;
-    while(!isPipelineEmpty)
+    int clock = 0;
+    while(!progEnded)
     {
+        stepMode();
         clock++;
-        std::cout
-        << termcolor::bold
-        << "Clock cycle: "
-        << termcolor::green
-        << clock
-        << termcolor::white
-        << " starting -----------------------------------------\n"
-        << termcolor::reset
-        << std::endl;
-        pipeline->pipeInstructionsToProcessor();
-        pipeline->removeCompletedInstructions();
-        resetProcResources();
-        // if (pipeline->flush)
-        // {
-        //     pipeline->flushPipelineOnBranchOrJump();
-        // }
-        if (PC < instrMemSize && !pipeline->stalled())
-        {   
-            fetch(pipeline->addInstructionToPipeline(count));
-            count += 1;
-        };
-        // resultForwarder->memDump();
-        // scoreboard->memDump();
-        regDump();
-        std::cout
-        << termcolor::bold
-        << "Clock cycle: "
-        << termcolor::green
-        << clock
-        << termcolor::white
-        << " has Ended -----------------------------------------"
-        << termcolor::reset
-        << std::endl;
-        std::cout << std::endl;
-        isPipelineEmpty = pipeline->isEmpty();
+        printCycleStart(clock, pipeline->getInstrSize());        
+        pipeline->nextTick(clock);
+        if (config["debug"].get<bool>()) regDump();
+        setProgramEnded();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    std::cout << "Program has ended!" << std::endl;
-    std::cout << "Clock: " << clock << std::endl;
+    regDump();
+    reservation_station->print();
+    printProgramEnd(clock);
     return;
 }
+
+void Processor::setProgramEnded()
+{
+    bool ended = true;
+    ended &= reservation_station->areAllEntriesFree();
+    // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
+    ended &= pipeline->areAllProcUnitsFree();
+    // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
+    ended &= lsq->getNumEntries() == 0;
+    // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
+    ended &= pipeline->stalledBy() == Halt;
+    // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
+    progEnded = ended;
+};
+
+bool Processor::programEnded()
+{
+    return progEnded;
+};
 
 /*---------------------------------------------------*/
 /*---------------------Extras------------------------*/
 /*---------------------------------------------------*/
+
 void printInstructionMemory(Processor processor) {
 
     int size = processor.instrMemSize;
@@ -316,11 +208,6 @@ void printInstructionMemoryAtIndex(Processor processor, int index) {
     return;
 };
 
-void printClock(int clock) {
-    std::cout << "End of cycle: " << clock << std::endl;
-    return;
-};
-
 void Processor::regDump() {
     std::cout 
     << termcolor::bold
@@ -341,4 +228,37 @@ void Processor::regDump() {
     }
     std::cout << std::endl;
 }
+void Processor::stepMode()
+{
+    auto mode = config["stepMode"];
+    if (!(mode["enabled"].get<bool>() && mode["cycle"].get<bool>())) return;
 
+	std::string ss;
+	while(1)
+	{
+        std::cout << "\nStep through cycle (Enter -h for help): ";
+        std::cin >> ss;
+        
+        if (!ss.compare("n")) break;
+        if (!ss.compare("-h"))
+        {
+            std::cout << "Execute next cycle (n)" << std::endl;
+            std::cout << "Print registers (rg)" << std::endl;
+            std::cout << "Print reservation station (rs)" << std::endl;
+            std::cout << "Print load/store queue (ls)" << std::endl;
+        }
+		if (!ss.compare("rg"))
+		{
+            regDump();
+		}
+        if (!ss.compare("rs"))
+        {
+            reservation_station->print();
+        }
+        if (!ss.compare("ls"))
+        {
+            lsq->print();
+        }
+        ss = "";
+	}
+}

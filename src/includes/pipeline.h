@@ -1,25 +1,27 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "instruction.h"
 #include <map>
+
+#include "instruction.h"
 
 #ifndef _PIPELINE_INCLUDED_
 #define _PIPELINE_INCLUDED_
 
 #include "events.h"
-#include "processor.h"
+#include "pipestage.h"
+
 
 // TODO: Add instructions to Load/Store Queue
 
-namespace PipelineEvents
-{
-    const std::string StallPipelineEvent = "StallPipeline";
-    const std::string FlushPipelineEvent = "FlushPipeline";
-};
-
 class Processor;
 class PipelineLLNode;
+class ProcUnit;
+
+enum ProcUnitTypes
+{
+    FETCHUNIT, DECODEUNIT, EXECUTEUNIT, MEMORYUNIT
+};
 
 class PipelineLL {
     public:
@@ -60,6 +62,8 @@ enum StallSource {
     NoSrc, Branch, RS, ROB, Halt
 };
 
+class Processor;
+
 class Pipeline: public EventDispatcher {
     protected:
         Processor *processor;
@@ -74,7 +78,6 @@ class Pipeline: public EventDispatcher {
         virtual Instructions::Instruction* addInstructionToPipeline(Instructions::Instruction *instr) {};
         virtual Instructions::Instruction* addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
-        virtual void attachToProcessor(Processor *proc);
         virtual void stallPipeline(StallSource by);
         virtual void flushPipelineOnBranchOrJump() {};
         virtual void resumePipeline(StallSource);
@@ -83,6 +86,10 @@ class Pipeline: public EventDispatcher {
         virtual int isEmpty();
         virtual void removeCompletedInstructions();
         virtual int getInstrSize();
+        virtual void stepMode() {};
+        virtual bool areAllProcUnitsFree() {return true;};
+        virtual void nextTick(int cycle) {};
+        StallSource stalledBy() {return stalled_by;};
 };
 
 // class ScalarPipeline: public Pipeline {
@@ -103,9 +110,19 @@ class Pipeline: public EventDispatcher {
 
 class OoOPipeline: public Pipeline
 {
-    
+    // std::pair<init,int>(total_units, available_units) (Execute, MemoryAccess and WriteBack units)
+    std::map<ProcUnitTypes, std::pair<int, int>*> num_proc_units;
+    std::map<ProcUnitTypes, std::vector<ProcUnit*>> proc_units;
+    private:
+        virtual void issueTick();
+        virtual void execTick();
+        virtual void memTick();
     public:
+        OoOPipeline();
         virtual void pipeInstructionsToProcessor();
+        virtual void nextTick(int cycle);
+        virtual bool areAllProcUnitsFree();
+        void stepMode();
 };
 
 #endif

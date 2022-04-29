@@ -3,8 +3,6 @@
 #include <stdexcept>
 
 #include "instruction.h"
-#include "pipeline.h"
-#include "pipestage.h"
 
 using namespace Instructions;
 
@@ -14,7 +12,7 @@ Instruction::Instruction()
     rs = $noreg;
     rt = $noreg;
     instrString = "";
-    stage = FETCH;
+    stage = ISSUE;
     isReadyToExecute = false;
     immediateOrAddress = -1;
     num_cycles = 2;
@@ -27,7 +25,7 @@ Instruction::Instruction(std::string instr)
     rs = $noreg;
     rt = $noreg;
     instrString = instr;
-    stage = FETCH;
+    stage = ISSUE;
     isReadyToExecute = false;
     immediateOrAddress = -1;
     num_cycles = 2;
@@ -38,26 +36,6 @@ int Instruction::getCurrCycle()
 {
     return curr_cycle;
 }
-
-void Instruction::nextPipeStage()
-{
-    switch (stage) {
-        case FETCH:
-            stage = DECODE;
-            break;
-        case DECODE:
-            stage = EXECUTE;
-            break;
-        case EXECUTE:
-            stage = MEMORYACCESS;
-            break;
-        case MEMORYACCESS:
-            stage = WRITEBACK;
-            break;
-        case WRITEBACK:
-            stage = DONE;
-    };
-};
 
 void Instruction::setNumCycle(int cycles)
 {
@@ -78,8 +56,3 @@ void Instruction::decrementCycle()
     }
     throw std::runtime_error("Instruction execution cycle cannot be below 0");
 }
-
-pipestage Instruction::getCurrentPipeStage()
-{
-    return stage;
-};

@@ -60,16 +60,13 @@ class EventWrapper
 
         void disptachEventToListerner(const EventBase& base) const
         {
-            std::cout << "comes here" << std::endl;
             eventType type = base.get();
             if (listeners.find(type) == listeners.end()) return;
             auto&& funcs = listeners.at(type);
-            std::cout << "comes here2" << std::endl;
             for (auto && func: funcs)
             {
                 func(base);
             }
-            std::cout << "comes here3" << std::endl;
         };
 
         void addEventListerner(const eventType type, function_ptr&& func_ptr)

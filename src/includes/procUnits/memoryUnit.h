@@ -8,33 +8,39 @@ class MemoryUnit: public ProcUnit
 {
     protected:
         // virtual void populateResultForwarder(Instructions::Instruction *instrPtr);
-        virtual void load(Instructions::Instruction *instrPtr);
-        virtual void store(Instructions::Instruction *instrPtr);
+        virtual void load(Instructions::Instruction *instrPtr){};
+        virtual void store(Instructions::Instruction *instrPtr){};
         virtual void pre(Instructions::Instruction *instrPtr) {};
         virtual void post(Instructions::Instruction *instrPtr) {};
-        virtual void writeback(Instructions::Instruction *instrPtr);
+        virtual void load(){};
+        virtual void store(){};
+        virtual void pre(){};
+        virtual void post(){};
     public:
         MemoryUnit() {};
-        virtual void run(Instructions::Instruction *instrPtr) {
-            std::cout << "This one executes" << std::endl;
-        };
+        virtual void run(Instructions::Instruction *instrPtr) {};
+        virtual void run() {};
 };
 
 class OMemoryUnit: public MemoryUnit
 {
     private:
         LSQueue *lsq;
-        bool can_run;
+        std::string lsqTag;
+        Opcodes opcode;
+        int store_val;
+        int address;
+        Register destination;
+        int result;
     protected:
-        virtual void pre(Instructions::Instruction *instrPtr);
-        virtual void post(Instructions::Instruction *instrPtr);
+        virtual void load();
+        virtual void store();
+        virtual void pre();
+        virtual void post();
+        bool seekInstruction();
     public:
-        OMemoryUnit() 
-        {
-            can_run = false;
-            lsq = NULL;
-        };
-        void run(Instructions::Instruction *instrPtr);
+        OMemoryUnit();
+        void run();
 };
 
 // class ScalarMemoryUnit: public MemoryUnit

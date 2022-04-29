@@ -1,10 +1,14 @@
 #include <string>
 #include <iostream>
+
 #include "isa.h"
-#include "pipestage.h"
+
 
 #ifndef _INSTRUCTION_DEFINED_
 #define _INSTRUCTION_DEFINED_
+
+#include "pipestage.h"
+
 
 namespace Instructions {
 
@@ -31,10 +35,8 @@ namespace Instructions {
             std::string instrString;
             Instruction();
             Instruction(std::string instr);
-            pipestage getCurrentPipeStage();
-            void nextPipeStage();
             int getCurrCycle();
     };
-}
+};
 
 #endif

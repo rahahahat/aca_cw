@@ -1,8 +1,11 @@
 #include "procUnit.h"
 #include "decodeUnit.h"
-#include "constants.h"
+#include "fetchUnit.h"
 #include "termcolor.h"
 #include "processor.h"
+#include "pipestage.h"
+#include "lsq.h"
+#include "config.h"
 
 DecodeUnit::DecodeUnit()
 {
@@ -11,10 +14,6 @@ DecodeUnit::DecodeUnit()
 
 void DecodeUnit::run(Instructions::Instruction *instrPtr)
 {
-    std::cout << termcolor::bold << termcolor::blue
-    << "Decoding instruction: " << instrPtr->instrString
-    << std::endl;
-
     pre(instrPtr);
     decode(instrPtr);
     post(instrPtr);
@@ -23,6 +22,7 @@ void DecodeUnit::run(Instructions::Instruction *instrPtr)
 
 void DecodeUnit::decode(Instructions::Instruction *instrPtr)
 {
+    // TODO: Add halt support to end program
     std::vector<std::string> splitInstr = splitString(instrPtr->instrString);
     std::pair<Opcodes, InstructionType> InsPair;
     if (!instrPtr->instrString.compare("")) {
@@ -32,6 +32,7 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
     }
     instrPtr->opcode = InsPair.first;
     instrPtr->type = InsPair.second;
+    instrPtr->setNumCycle(CycleMap.at(instrPtr->opcode));
     switch(InsPair.second)
     {
         case RType:
@@ -57,9 +58,6 @@ void DecodeUnit::decodeRTypeInstruction(Instructions::Instruction *instrPtr, std
     splitInstr.pop_back();
     instrPtr->rd = RegisterMap.at(splitInstr.back()); // dest
     splitInstr.pop_back();
-    if (instrPtr->opcode == MULT) instrPtr->setNumCycle(4);
-    instrPtr->setNumCycle(2);
-
 };
 
 void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair)
@@ -81,14 +79,13 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             splitInstr.pop_back();
             return;
         default:
-            // Instruction format: opcode r1 r2 immediate
+            // Instruction format: opcode rs rt immediate
             instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // immediate
             splitInstr.pop_back();
-            instrPtr->rt = RegisterMap.at(splitInstr.back()); // r2
+            instrPtr->rt = RegisterMap.at(splitInstr.back()); // rt
             splitInstr.pop_back();
-            instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
+            instrPtr->rs = RegisterMap.at(splitInstr.back()); // rs
             splitInstr.pop_back();
-            instrPtr->setNumCycle(2);
             return;
     };
 }
@@ -140,25 +137,51 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
 //     return;
 // }
 
-ODecodeUnit::ODecodeUnit() {};
+ODecodeUnit::ODecodeUnit()
+{
+    fn = new FetchUnit();
+    return;
+};
 
 void ODecodeUnit::post(Instructions::Instruction *instrPtr)
 {
     switch(instrPtr->type)
     {
         case JType:
-            instrPtr->stage = WRITEBACK;
+            // TODO: How should jumps work? 
+            instrPtr->stage = ISSUE;
             return;
         case End:
             // TODO: Think about the stall guard here!
-            instrPtr->stage = EXECUTE;
+            instrPtr->stage = DONE;
             if (!processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Halt);
+            processor->getSB()->invalidatePC();
             return;
         default:
             instrPtr->stage = ISSUE;
+            if (instrPtr->opcode == LW || instrPtr->opcode == SW) 
+            {
+                std::cout << "HAPPENS123" << std::endl;
+                processor->getLsq()->addToQueue(instrPtr); 
+                return;
+            }
+            if (isInstrBranch(instrPtr))
+            {
+                processor->getPipeline()->stallPipeline(Branch); 
+            }
             processor->getRS()->reserve(instrPtr);
-            if (isInstrBranch(instrPtr) && !processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Branch);
-            if (instrPtr->opcode == LW || instrPtr->opcode == SW) processor->getLsq()->addToQueue(instrPtr);
             return;
     }
+}
+
+void ODecodeUnit::nextTick()
+{
+    // if (
+    //     !processor->getRS()->hasEmptyEntries() ||
+    //     !processor->getPipeline()->stalled() ||
+    //     !processor->getLsq()->hasCapacity()) return;
+    std::cout << "Decode Tick" << std::endl;
+    Instructions::Instruction *instrPtr = new Instructions::Instruction();
+    fn->run(instrPtr);
+    run(instrPtr);
 }

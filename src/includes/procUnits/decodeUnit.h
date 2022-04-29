@@ -4,6 +4,7 @@
 #ifndef _DECODEUNIT_DEFINED_
 #define _DECODEUNIT_DEFINED_
 
+class FetchUnit;
 
 class DecodeUnit: public ProcUnit
 {
@@ -25,10 +26,13 @@ class DecodeUnit: public ProcUnit
 
 class ODecodeUnit: public DecodeUnit
 {
-    protected:
+    private:
+        FetchUnit *fn;
+    protected: 
         virtual void post(Instructions::Instruction *instrPtr);
     public:
         ODecodeUnit();
+        void nextTick();
 };
 
 #endif

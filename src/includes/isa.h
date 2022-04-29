@@ -3,8 +3,10 @@
 #ifndef _ISA_INCLUDED_
 #define _ISA_INCLUDED_
 
+// TODO: Add Instruction Cycle Map
+
 enum InstructionType {
-        RType, IType, JType, End
+    RType, IType, JType, End, Nop
 };
 
 enum Register: int {
@@ -18,7 +20,7 @@ enum Register: int {
 enum Opcodes {
     ADD, ADDI, ADDIU, ADDU, SUB, SUBU, MULT, MULTU, 
     DIV, DIVU, AND, ANDI, OR, ORI, NOR, XOR, LW, 
-    SW, BEQ, BL, BNE, BGTE, J, JAL, JR, HALT, LSR
+    SW, BEQ, BL, BNE, BGTE, J, JAL, JR, HALT, LSR, NOP
 };
 
 static std::map<std::string, Register> RegisterMap = 
@@ -85,7 +87,40 @@ static std::map<std::string, std::pair<Opcodes, InstructionType>> InstructionPai
     {"jal",   std::pair<Opcodes, InstructionType>(JAL, JType)},
     {"jr",    std::pair<Opcodes, InstructionType>(JR, RType)},
     {"halt",  std::pair<Opcodes, InstructionType>(HALT, End)},
-    {"lsr",  std::pair<Opcodes, InstructionType>(LSR, IType)}
+    {"lsr",   std::pair<Opcodes, InstructionType>(LSR, IType)},
+    {"nop",   std::pair<Opcodes, InstructionType>(NOP, Nop)},
+};
+
+static std::map<Opcodes, int> CycleMap =
+{
+    {ADD,   2},
+    {ADDIU, 2},
+    {ADDIU, 2},
+    {ADDU,  2},
+    {SUB,   2},
+    {SUBU,  2},
+    {MULT,  4},
+    {MULTU, 4},
+    {AND,   2},
+    {ANDI,  2},
+    {OR,    2},
+    {ORI,   2},
+    {NOR,   2},
+    {XOR,   2},
+    {LW,    1},
+    {SW,    1},
+    {BEQ,   2},
+    {BL,    2},
+    {BNE,   2},
+    {BGTE,  2},
+    {DIV,   4},
+    {DIVU,  4},
+    {J,     1},
+    {JAL,   1},
+    {JR,    1},
+    {HALT,  1},
+    {LSR,   2},
+    {NOP,   1},
 };
 
 #endif
