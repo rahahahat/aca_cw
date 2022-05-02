@@ -39,17 +39,17 @@ void printProgramEnd(int cycle)
     std::cout << termcolor::bold << termcolor::blue << "Program took: " << cycle << " cycles to finish" <<termcolor::reset << std::endl;
 }
 
-std::string randomId(const int len)
-{
-	srand((unsigned)time(NULL) * getpid());
+std::string randomId(const int len) {
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
     std::string tmp_s;
     tmp_s.reserve(len);
+
     for (int i = 0; i < len; ++i) {
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
     }
+    
     return tmp_s;
 }

@@ -6,6 +6,7 @@
 #include "events.h"
 #include <array>
 #include "instruction.h"
+#include "linkedlist.h"  
 
 #ifndef _SCOREBOARD_DEFINED_
 #define _SCOREBOARD_DEFINED_
@@ -117,7 +118,9 @@ namespace rs
         private:
             int size;
             Scoreboard* scoreboard;
-            std::map<std::string, ReservationStationEntry*> entries;
+            LinkedList<ReservationStationEntry> *entries;
+
+            // std::map<std::string, ReservationStationEntry*> entries;
             void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
@@ -134,6 +137,7 @@ namespace rs
             void reserve(Instructions::Instruction *instrPtr);
             void populateTags(std::string tag, int value);
             bool areAllEntriesFree();
+            int getSize();
             rs::ReservationStationEntry* getValidInstruction();
     };
 };

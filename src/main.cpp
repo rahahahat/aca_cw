@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     i >> config;
     i.close();
     Processor *processor = Processor::getProcessorInstance()->fabricate();
-    processor->DataMemory[1] = 2;
+    processor->DataMemory[1] = 10;
     processor->loadProgram(config["program"].get<std::string>());
     processor->runProgram();
 }

@@ -269,7 +269,7 @@ OoOPipeline::OoOPipeline()
     }
     for (int m = 0; m < num_mem_units; m++)
     {
-        ProcUnit* unit = new FetchUnit();
+        ProcUnit* unit = new OMemoryUnit();
         mv.push_back(unit);
     }
     proc_units[DECODEUNIT] = dv;
@@ -328,16 +328,16 @@ void OoOPipeline::pipeInstructionsToProcessor()
         curr = curr->next;
     }
     // TODO: logic to differentiate between pipeline stall and branch stall
-    if (stalled())
-    {
-        if (processor->getRS()->hasEmptyEntries() != NULL)
-        {
-            resumePipeline(RS);
-            return;
-        }
-        return;
-    }
-    if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline(RS);
+    // if (stalled())
+    // {
+    //     if (processor->getRS()->size() < 64)
+    //     {
+    //         resumePipeline(RS);
+    //         return;
+    //     }
+    //     return;
+    // }
+    // if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline(RS);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 };
 

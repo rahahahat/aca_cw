@@ -55,6 +55,7 @@ LSQNode* LSQueue::addToQueue(Instructions::Instruction *instrPtr)
     {
         populateLoad(node, instrPtr);
         queue->add(node);
+        std::cout << "Queue Size: " << queue->size << std::endl;
         return node;
     }
     if (instrPtr->opcode == SW) 
@@ -200,12 +201,16 @@ void LSQueue::calculateAddrs()
 
 LSQNode* LSQueue::getValidInstruction()
 {
+    std::cout << "THIS HAPPENS: " << queue->size << std::endl;
+    
     LLNode<LSQNode> *head = queue->head;
     while(head != NULL)
     {
+        std::cout << "HAYLO" << std::endl;
         LSQNode *l_node = head->payload;
         if (!l_node->busy && l_node->isReady && isOpValid(l_node))
         {
+            std::cout << "WOOOO" << std::endl;
             l_node->busy = true;
             return l_node;
         }
@@ -216,6 +221,7 @@ LSQNode* LSQueue::getValidInstruction()
 
 void LSQueue::nextTick()
 {
+    std::cout << "Calc addrs" << std::endl;
     calculateAddrs();
     return;
 }

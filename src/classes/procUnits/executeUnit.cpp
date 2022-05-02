@@ -85,9 +85,6 @@ void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
         break;
     case BNE:
         instrPtr->temp = instrPtr->src1 != instrPtr->src2;
-        std::cout << termcolor::green << termcolor::bold << instrPtr->instrString << " " << instrPtr->tag << std::endl;
-        std::cout << instrPtr->src1 << " " << instrPtr->src2 << std::endl;
-        std::cout << instrPtr->temp << termcolor::reset << std::endl;
         break;
     case BGTE:
         instrPtr->temp = instrPtr->src1 >= instrPtr->src2;
@@ -145,8 +142,6 @@ void OExecuteUnit::pre()
     if (!busy)
     {
         busy = seekInstruction();
-        std::cout << busy << std::endl;
-
     }
     return;
 }
@@ -175,6 +170,9 @@ void OExecuteUnit::post()
     {
         int addr = (result) ? immediate : processor->PC;
         processor->getCDB()->broadcast($pc, rsTag, addr);
+        processor->getRS()->remove(rsTag);
+        processor->getPipeline()->resumePipeline(Branch);
+        busy = false;
         return;
     }
     busy = false;
@@ -190,6 +188,7 @@ void OExecuteUnit::execute()
 
     std::cout << termcolor::bold << termcolor::bright_red << "Executing Instruction: "
     << instrStr << termcolor::reset << std::endl;
+    std::cout << type << std::endl;
 
     executeInstrType();
     return;
@@ -210,7 +209,8 @@ bool OExecuteUnit::seekInstruction()
 {
     rs::ReservationStationEntry* rse = processor->getRS()->getValidInstruction();
     if (rse == NULL) return false;
-
+    rse->busy = true;
+    
     rsTag = rse->getTag();
     opcode = rse->opcode;
     type = rse->instr_type;

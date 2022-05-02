@@ -26,6 +26,7 @@ void Processor::loadProgram(std::string fn) {
     for (auto it = std::begin(program); it != std::end(program); ++it) {
         loadInstructionIntoMemory(*it);
     }
+    printInstructionMemory(this);
     return;
 }
 
@@ -154,7 +155,7 @@ void Processor::runProgram() {
         pipeline->nextTick(clock);
         if (config["debug"].get<bool>()) regDump();
         setProgramEnded();
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     regDump();
     reservation_station->print();
@@ -185,11 +186,11 @@ bool Processor::programEnded()
 /*---------------------Extras------------------------*/
 /*---------------------------------------------------*/
 
-void printInstructionMemory(Processor processor) {
+void printInstructionMemory(Processor *processor) {
 
-    int size = processor.instrMemSize;
+    int size = processor->instrMemSize;
     for (int x = 0; x < size; x++) {
-        std::cout << processor.instructionMemory[x] << std::endl;
+        std::cout << processor->instructionMemory[x] << std::endl;
     }
     return;
 };

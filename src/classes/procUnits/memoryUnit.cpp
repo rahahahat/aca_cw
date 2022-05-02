@@ -42,7 +42,6 @@
 OMemoryUnit::OMemoryUnit()
 {
     busy = false;
-    lsq = processor->getLsq();
     address = -1;
     destination = $noreg;
     store_val = 0;
@@ -58,9 +57,9 @@ void OMemoryUnit::pre()
 
 bool OMemoryUnit::seekInstruction()
 {
-    LSQNode *node = lsq->getValidInstruction();
-    node->busy = true;
+    LSQNode *node = processor->getLsq()->getValidInstruction();
     if (node == NULL) return false;
+    node->busy = true;
     if (node->opcode == LW)
     {
         opcode = LW;
@@ -94,8 +93,8 @@ void OMemoryUnit::run()
     // processor->getPipeline()->stepMode();
 
     pre();
-    if (opcode == LW) load();
-    if (opcode == SW) store();
+    if (opcode == LW && busy) load();
+    if (opcode == SW && busy) store();
     post();
     return;
 }
@@ -103,6 +102,7 @@ void OMemoryUnit::run()
 void OMemoryUnit::load()
 {
     result = processor->DataMemory[address];
+    cycle--;
     return;
 };
 
@@ -118,9 +118,18 @@ void OMemoryUnit::post()
     if (opcode == LW)
     {
         processor->getCDB()->broadcast(destination, lsqTag, result);
-        return;
     }
-    // TODO: Remove LSQNode
-    lsq->removeFromQueue(lsqTag);
+    processor->getLsq()->removeFromQueue(lsqTag);
+    busy = false;
     return;
+}
+
+void OMemoryUnit::nextTick()
+{
+    run();
+}
+
+void OMemoryUnit::cycleReset()
+{
+    cycle = 2;
 }

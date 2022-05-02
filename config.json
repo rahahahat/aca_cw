@@ -1,16 +1,16 @@
 {
   "debug": true,
   "stepMode": {
-    "enabled": true,
+    "enabled": false,
     "till": 12,
     "cycle": true,
     "instruction": true
   },
-  "program": "test.txt",
+  "program": "hamming_w.txt",
   "procUnits": {
     "fetch": 1,
-    "decode": 1,
-    "execute": 1,
+    "decode": 3,
+    "execute":3,
     "memory": 1
   },
   "takeBranch": false

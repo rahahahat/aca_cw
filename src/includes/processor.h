@@ -91,7 +91,7 @@ class Processor: public EventDispatcher
 
 
 
-void printInstructionMemory(Processor processor);
+void printInstructionMemory(Processor *processor);
 void printInstructionMemoryAtIndex(Processor processor, int index);
 
 #endif

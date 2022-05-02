@@ -1,4 +1,5 @@
 #include <map>
+#include <string>
 
 #ifndef _ISA_INCLUDED_
 #define _ISA_INCLUDED_

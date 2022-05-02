@@ -33,6 +33,7 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
     instrPtr->opcode = InsPair.first;
     instrPtr->type = InsPair.second;
     instrPtr->setNumCycle(CycleMap.at(instrPtr->opcode));
+    instrPtr->type = InsPair.second;
     switch(InsPair.second)
     {
         case RType:
@@ -161,7 +162,6 @@ void ODecodeUnit::post(Instructions::Instruction *instrPtr)
             instrPtr->stage = ISSUE;
             if (instrPtr->opcode == LW || instrPtr->opcode == SW) 
             {
-                std::cout << "HAPPENS123" << std::endl;
                 processor->getLsq()->addToQueue(instrPtr); 
                 return;
             }
@@ -176,6 +176,8 @@ void ODecodeUnit::post(Instructions::Instruction *instrPtr)
 
 void ODecodeUnit::nextTick()
 {
+    if (processor->getPipeline()->stalled()) return; 
+
     // if (
     //     !processor->getRS()->hasEmptyEntries() ||
     //     !processor->getPipeline()->stalled() ||

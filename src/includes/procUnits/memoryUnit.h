@@ -31,7 +31,10 @@ class OMemoryUnit: public MemoryUnit
         int store_val;
         int address;
         Register destination;
+        int cycle;
         int result;
+
+        void cycleReset();
     protected:
         virtual void load();
         virtual void store();
@@ -40,6 +43,7 @@ class OMemoryUnit: public MemoryUnit
         bool seekInstruction();
     public:
         OMemoryUnit();
+        void nextTick();
         void run();
 };
 
