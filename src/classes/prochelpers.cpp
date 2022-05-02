@@ -357,7 +357,7 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
     return NULL;
 }
 
-void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
+std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
     rs::ReservationStationEntry* entry = hasEmptyEntries();
     if (entry == NULL && !processor->getPipeline()->stalled())
@@ -380,9 +380,8 @@ void rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
     case JType:
         reserveJType(entry, instrPtr);
         break;
-    default:
-        return;
     }
+    return entry->getTag();
 }
     
 ScoreboardEntry* rs::ReservationStation::getScoreboardEntry(Register r)

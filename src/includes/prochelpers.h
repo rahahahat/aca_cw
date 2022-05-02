@@ -134,7 +134,7 @@ namespace rs
             void populateInstruction(Instructions::Instruction *instrPtr);
             void validate(Instructions::Instruction *instrPtr);
             void remove(std::string tag);
-            void reserve(Instructions::Instruction *instrPtr);
+            std::string reserve(Instructions::Instruction *instrPtr);
             void populateTags(std::string tag, int value);
             bool areAllEntriesFree();
             int getSize();
