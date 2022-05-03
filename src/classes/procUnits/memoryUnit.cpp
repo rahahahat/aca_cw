@@ -119,7 +119,7 @@ void OMemoryUnit::post()
     {
         processor->getCDB()->broadcast(destination, lsqTag, result);
     }
-    processor->getLsq()->removeFromQueue(lsqTag);
+    // processor->getLsq()->removeFromQueue(lsqTag);
     busy = false;
     return;
 }

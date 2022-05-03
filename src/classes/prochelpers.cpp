@@ -363,7 +363,7 @@ std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
     if (entry == NULL && !processor->getPipeline()->stalled())
     {
         processor->getPipeline()->stallPipeline(RS);
-        return;
+        return "Stall";
     }
     entry->instrStr = instrPtr->instrString;
     instrPtr->tag = entry->getTag();

@@ -6,6 +6,7 @@
 #include "pipestage.h"
 #include "lsq.h"
 #include "config.h"
+#include "robuff.h"
 
 DecodeUnit::DecodeUnit()
 {
@@ -101,8 +102,6 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
     return;
 };
 
-
-
 // void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
 // {   
 //     Opcodes opcode = instrPtr->opcode;
@@ -162,17 +161,19 @@ void ODecodeUnit::post(Instructions::Instruction *instrPtr)
             instrPtr->stage = ISSUE;
             if (instrPtr->opcode == LW || instrPtr->opcode == SW) 
             {
-                processor->getLsq()->addToQueue(instrPtr); 
+                LSQNode* node = processor->getLsq()->addToQueue(instrPtr);
+                processor->getRB()->addEntry(node->getTag(), instrPtr);
                 return;
             }
             if (isInstrBranch(instrPtr))
             {
                 processor->getPipeline()->stallPipeline(Branch); 
             }
-            processor->getRS()->reserve(instrPtr);
+            std::string tag = processor->getRS()->reserve(instrPtr);
+            processor->getRB()->addEntry(tag, instrPtr);
             return;
     }
-}
+};
 
 void ODecodeUnit::nextTick()
 {
@@ -186,4 +187,4 @@ void ODecodeUnit::nextTick()
     Instructions::Instruction *instrPtr = new Instructions::Instruction();
     fn->run(instrPtr);
     run(instrPtr);
-}
+};

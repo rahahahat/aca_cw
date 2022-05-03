@@ -1,13 +1,13 @@
 #include "robuff.h"
+#include "cdb.h"
 
 // #################################################################################################
 // ROBEntry
 // #################################################################################################
 
-ROBEntry::ROBEntry(std::string tag_name, std::string instr_str)
+ROBEntry::ROBEntry(std::string tag_name)
 {
     tag = tag_name;
-    instrStr = instr_str;
     valid = false;
     return;
 };
@@ -38,6 +38,19 @@ bool ROBEntry::isValid()
 {
     return valid;
 };
+int ROBEntry::getValue()
+{
+    return value;
+};
+Register ROBEntry::getDestination()
+{
+    return destination;
+};
+void ROBEntry::setDestination(Register dest)
+{
+    destination = dest;
+    return;
+};
 
 // #################################################################################################
 // ReorderBuffer
@@ -50,21 +63,50 @@ ReorderBuffer::ReorderBuffer(int size)
     processor = Processor::getProcessorInstance();
     return;
 };
-void ReorderBuffer::addEntry(std::string tag_name, std::string instr_str)
+void ReorderBuffer::addEntry(std::string tag_name, Instructions::Instruction *instrPtr)
 {
-    ROBEntry *entry = new ROBEntry(tag_name, instr_str);
+    ROBEntry *entry = new ROBEntry(tag_name);
+    entry->setInstruction(instrPtr);
     buffer->add(entry);
     return;
 };
-void ReorderBuffer::pop()
+ROBEntry* ReorderBuffer::pop()
 {
     ROBEntry *entry = buffer->head->payload;
-    if (entry->isValid()) buffer->pop();
-    return;
+    if (entry->isValid()) return buffer->pop();
+    return NULL;
 };
-
 void ReorderBuffer::nextTick()
 {
-
+    commitHead();
 };
-
+void ReorderBuffer::commitHead()
+{
+    ROBEntry* entry = pop();
+    while(entry != NULL)
+    {
+        processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue());
+    }
+    return;
+};
+void ReorderBuffer::flush(std::string tag)
+{
+    // TODO: FLUSH entry matching with the tag and all all after it.
+    return;
+};
+void ReorderBuffer::populateEntry(std::string tag, int value)
+{
+    LLNode<ROBEntry> *node = buffer->head;
+    while(node != NULL)
+    {
+        ROBEntry *entry = node->payload;
+        if (entry->getTag().compare(tag) == 0)
+        {
+            entry->setValue(value);
+            entry->validate();
+            return;
+        }
+        node = node->next;
+    }
+    return;
+};

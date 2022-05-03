@@ -15,13 +15,17 @@ class ROBEntry
         std::string instrStr;
         bool valid;
         int value;
+        Register destination;
     public:
-        ROBEntry(std::string tag_name, std::string instr_str);
+        ROBEntry(std::string tag_name);
         void validate();
         void setInstruction(Instructions::Instruction *instrPtr);
         void setValue(int val);
+        void setDestination(Register dest);
         std::string getInstrStr();
         std::string getTag();
+        Register getDestination();
+        int getValue();
         bool isValid();
 };
 
@@ -31,13 +35,14 @@ class ReorderBuffer
         int max_size;
         LinkedList<ROBEntry> *buffer;
         Processor *processor;
-        void commit();
+        void commitHead();
     public:
         ReorderBuffer(int size);
-        void addEntry(std::string tag_name, std::string instr_str);
-        void pop();
+        void addEntry(std::string tag_name, Instructions::Instruction *instrPtr);
+        ROBEntry* pop();
         void nextTick();
         void flush(std::string tag);
+        void populateEntry(std::string tag, int value);
 };
 
 #endif

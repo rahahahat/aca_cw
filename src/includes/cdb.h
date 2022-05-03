@@ -2,7 +2,7 @@
 #define _CDB_DEFINED_
 
 #include "lsq.h"
-
+#include "robuff.h"
 
 // class Processor;
 class Scoreboard;
@@ -20,7 +20,9 @@ class CommonDataBus
         rs::ReservationStation* rsv;
         Scoreboard* sb;
         LSQueue *lsq;
+        ReorderBuffer* robuff;
         void broadcast(Register destination, std::string tag, int value);
+        void commit(Register destination, std::string tag,int value);
 };
 
 #endif

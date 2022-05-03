@@ -177,7 +177,7 @@ void OExecuteUnit::post()
     }
     busy = false;
     processor->getCDB()->broadcast(destination, rsTag, result);
-    processor->getRS()->remove(rsTag);
+    // processor->getRS()->remove(rsTag);
     return;
 }
 

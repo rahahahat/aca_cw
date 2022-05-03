@@ -23,6 +23,7 @@ class ProcUnit;
 class Scoreboard;
 class CommonDataBus;
 class LSQueue;
+class ReorderBuffer;
 // class CDB;
 
 namespace rs 
@@ -41,6 +42,7 @@ class Processor: public EventDispatcher
         LSQueue *lsq;
         Scoreboard *scoreboard;
         CommonDataBus *cdb;
+        ReorderBuffer *robuff;
         bool progEnded;
         
     public:
@@ -81,12 +83,14 @@ class Processor: public EventDispatcher
         void attachProcHelper(rs::ReservationStation* rs);
         void attachLSQ(LSQueue  *queue);
         void attachCDB(CommonDataBus *bus);
+        void attachReorderBuffer(ReorderBuffer *rb);
 
         Pipeline* getPipeline();
         LSQueue* getLsq();
         rs::ReservationStation* getRS();
         Scoreboard* getSB();
         CommonDataBus* getCDB();
+        ReorderBuffer* getRB();
 };
 
 

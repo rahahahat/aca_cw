@@ -8,6 +8,7 @@
 #include "lsq.h"
 #include "config.h"
 #include "cdb.h"
+#include "robuff.h"
 
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
@@ -42,6 +43,12 @@ void Processor::attachCDB(CommonDataBus *bus)
     return;
 }
 
+void Processor::attachReorderBuffer(ReorderBuffer *rb)
+{
+    robuff = rb;
+    return;
+}
+
 Processor* Processor::fabricate() {
     
     std::ifstream i("config.json");
@@ -54,12 +61,15 @@ Processor* Processor::fabricate() {
     Pipeline *pipeline = new OoOPipeline();
     LSQueue *queue = new LSQueue();
     Parser *parser = new Parser(this);
+    ReorderBuffer *robuff = new ReorderBuffer(64);
 
+    // TODO: Validate attach order for ROB
     attachProcHelper(scoreboard);
     attachProcHelper(rs);
     attachParser(parser);
     attachPipeline(pipeline);
     attachLSQ(queue);
+    attachReorderBuffer(robuff);
 
     CommonDataBus *bus = new CommonDataBus();
     attachCDB(bus);
@@ -99,6 +109,11 @@ rs::ReservationStation* Processor::getRS()
 LSQueue* Processor::getLsq()
 {
     return lsq;
+}
+
+ReorderBuffer* Processor::getRB()
+{
+    return robuff;
 }
 
 void Processor::attachParser(Parser *psr)
