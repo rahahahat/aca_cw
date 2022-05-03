@@ -21,7 +21,6 @@ class ROBEntry
         void validate();
         void setInstruction(Instructions::Instruction *instrPtr);
         void setValue(int val);
-        void setDestination(Register dest);
         std::string getInstrStr();
         std::string getTag();
         Register getDestination();
@@ -43,6 +42,7 @@ class ReorderBuffer
         void nextTick();
         void flush(std::string tag);
         void populateEntry(std::string tag, int value);
+        void print();
 };
 
 #endif

@@ -36,6 +36,7 @@ namespace Instructions {
             Instruction();
             Instruction(std::string instr);
             int getCurrCycle();
+            Register getDestination();
     };
 };
 

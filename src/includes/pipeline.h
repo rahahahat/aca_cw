@@ -11,7 +11,6 @@
 #include "events.h"
 #include "pipestage.h"
 
-
 // TODO: Add instructions to Load/Store Queue
 
 class Processor;

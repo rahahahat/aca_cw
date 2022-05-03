@@ -13,6 +13,7 @@
 #include "executeUnit.h"
 #include "memoryUnit.h"
 #include "procUnit.h"
+#include "robuff.h"
 
 Pipeline::Pipeline()
 {
@@ -315,6 +316,7 @@ void OoOPipeline::nextTick(int cycle)
     execTick();
     processor->getLsq()->nextTick();
     memTick();
+    processor->getRB()->nextTick();
 };
 
 
@@ -363,6 +365,7 @@ void OoOPipeline::stepMode()
             std::cout << "Execute next instruction (n)" << std::endl;
             std::cout << "Print registers (rg)" << std::endl;
             std::cout << "Print reservation station (rs)" << std::endl;
+            std::cout << "Print reorder buffer (rob)" << std::endl;
         }
 		if (!ss.compare("rg"))
 		{
@@ -371,6 +374,10 @@ void OoOPipeline::stepMode()
         if (!ss.compare("rs"))
         {
             processor->getRS()->print();
+        }
+        if (!ss.compare("rob"))
+        {
+            processor->getRB()->print();
         }
         ss = "";
 	}

@@ -9,8 +9,8 @@
   "program": "hamming_w.txt",
   "procUnits": {
     "fetch": 1,
-    "decode": 3,
-    "execute":3,
+    "decode": 2,
+    "execute":2,
     "memory": 1
   },
   "takeBranch": false

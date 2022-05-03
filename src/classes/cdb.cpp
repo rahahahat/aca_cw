@@ -16,6 +16,7 @@ CommonDataBus::CommonDataBus()
 // responsible to handling updates individually.
 void CommonDataBus::broadcast(Register destination, std::string tag, int value)
 {    
+    std::cout << termcolor::bold << termcolor::on_bright_blue << "CDB Broadcast" << termcolor::reset << std::endl;
     rsv->populateTags(tag, value);
     lsq->populateTags(tag, value);
     robuff->populateEntry(tag, value);

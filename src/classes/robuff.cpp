@@ -19,6 +19,8 @@ void ROBEntry::validate()
 void ROBEntry::setInstruction(Instructions::Instruction *instrPtr)
 {
     instr = instrPtr;
+    destination = instrPtr->getDestination();
+    instrStr = instr->instrString;
     return;
 };
 void ROBEntry::setValue(int val)
@@ -46,12 +48,6 @@ Register ROBEntry::getDestination()
 {
     return destination;
 };
-void ROBEntry::setDestination(Register dest)
-{
-    destination = dest;
-    return;
-};
-
 // #################################################################################################
 // ReorderBuffer
 // #################################################################################################
@@ -72,6 +68,7 @@ void ReorderBuffer::addEntry(std::string tag_name, Instructions::Instruction *in
 };
 ROBEntry* ReorderBuffer::pop()
 {
+    if (buffer->head == NULL) return NULL;
     ROBEntry *entry = buffer->head->payload;
     if (entry->isValid()) return buffer->pop();
     return NULL;
@@ -86,6 +83,7 @@ void ReorderBuffer::commitHead()
     while(entry != NULL)
     {
         processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue());
+        entry = pop();
     }
     return;
 };
@@ -110,3 +108,31 @@ void ReorderBuffer::populateEntry(std::string tag, int value)
     }
     return;
 };
+void ReorderBuffer::print()
+{
+    std::cout << "ROBUFF" << std::endl;
+    LLNode<ROBEntry> *curr = buffer->head;
+    while(curr != NULL)
+    {
+        ROBEntry* entry = curr->payload;
+        std::cout
+        << termcolor::red << termcolor:: bold
+        << "Tag: "
+        << entry->getTag()
+        << termcolor::reset
+        << termcolor:: green << termcolor:: bold
+        << " | "
+        << "instr: "
+        << entry->getInstrStr()
+        << " | "
+        << "valid: "
+        << entry->isValid()
+        << " | "
+        << "value: "
+        << entry->getValue()
+        << " | "
+        << termcolor::reset
+        << std::endl;
+        curr = curr->next;
+    }
+}

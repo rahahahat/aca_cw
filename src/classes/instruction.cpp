@@ -35,17 +35,14 @@ Instruction::Instruction(std::string instr)
 int Instruction::getCurrCycle()
 {
     return curr_cycle;
-}
+};
 
 void Instruction::setNumCycle(int cycles)
 {
-    // if (num_cycles == 0)
-    // {
     curr_cycle = cycles;
     num_cycles = cycles;
-    // }
     return;
-}
+};
 
 void Instruction::decrementCycle()
 {
@@ -55,4 +52,13 @@ void Instruction::decrementCycle()
         return;
     }
     throw std::runtime_error("Instruction execution cycle cannot be below 0");
-}
+};
+
+Register Instruction::getDestination()
+{
+    if (opcode == SW) return $noreg;
+    if (opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE) return $pc;
+    if (type == IType) return rt;
+    if (type == RType) return rd;
+    return $noreg;
+};

@@ -1,4 +1,4 @@
-addi r0 r1 0x7
+addi r0 r1 0xf
 addi r0 r2 0x1
 beq r0 r0 and_add
 h_w:

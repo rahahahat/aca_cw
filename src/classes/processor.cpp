@@ -174,6 +174,7 @@ void Processor::runProgram() {
     }
     regDump();
     reservation_station->print();
+    robuff->print();
     printProgramEnd(clock);
     return;
 }
@@ -262,6 +263,7 @@ void Processor::stepMode()
             std::cout << "Print registers (rg)" << std::endl;
             std::cout << "Print reservation station (rs)" << std::endl;
             std::cout << "Print load/store queue (ls)" << std::endl;
+            std::cout << "Print reorder buffer (rb)" << std::endl;
         }
 		if (!ss.compare("rg"))
 		{
@@ -274,6 +276,10 @@ void Processor::stepMode()
         if (!ss.compare("ls"))
         {
             lsq->print();
+        }
+        if (!ss.compare("rb"))
+        {
+            robuff->print();
         }
         ss = "";
 	}
