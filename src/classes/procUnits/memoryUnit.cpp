@@ -101,6 +101,7 @@ void OMemoryUnit::run()
 
 void OMemoryUnit::load()
 {
+    if (!busy) return;
     result = processor->DataMemory[address];
     cycle--;
     return;
@@ -108,6 +109,7 @@ void OMemoryUnit::load()
 
 void OMemoryUnit::store()
 {
+    if (!busy) return;
     processor->DataMemory[address] = store_val;
     return;
 };
@@ -119,7 +121,6 @@ void OMemoryUnit::post()
     {
         processor->getCDB()->broadcast(destination, lsqTag, result);
     }
-    // processor->getLsq()->removeFromQueue(lsqTag);
     busy = false;
     return;
 }

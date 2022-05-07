@@ -9,6 +9,7 @@
 #include "config.h"
 #include "cdb.h"
 #include "robuff.h"
+#include "util.h"
 
 /*---------------------------------------------------*/
 /*---------------------Processor---------------------*/
@@ -28,6 +29,7 @@ void Processor::loadProgram(std::string fn) {
         loadInstructionIntoMemory(*it);
     }
     printInstructionMemory(this);
+    printLabelMap();
     return;
 }
 
@@ -181,22 +183,22 @@ void Processor::runProgram() {
 
 void Processor::setProgramEnded()
 {
-    // bool ended = true;
-    // ended &= reservation_station->areAllEntriesFree();
-    // // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
-    // ended &= pipeline->areAllProcUnitsFree();
-    // // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
-    // ended &= lsq->getNumEntries() == 0;
-    // // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
-    // ended &= pipeline->stalledBy() == Halt;
-    // // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
-    // progEnded = ended;
-    progEnded = false;
+    bool ended = true;
+    ended &= reservation_station->areAllEntriesFree();
+    // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
+    ended &= pipeline->areAllProcUnitsFree();
+    // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
+    ended &= lsq->getNumEntries() == 0;
+    // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
+    ended &= pipeline->stalledBy() == Halt;
+    // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
+    progEnded = ended;
+    // progEnded = false;
 };
 
 bool Processor::programEnded()
 {
-    return false;
+    return progEnded;
 };
 
 /*---------------------------------------------------*/
@@ -207,7 +209,7 @@ void printInstructionMemory(Processor *processor) {
 
     int size = processor->instrMemSize;
     for (int x = 0; x < size; x++) {
-        std::cout << processor->instructionMemory[x] << std::endl;
+        std::cout << processor->instructionMemory[x] << ": " << termcolor::red << x << termcolor::reset << std::endl;
     }
     return;
 };
@@ -244,7 +246,33 @@ void Processor::regDump() {
         << termcolor::reset
         << std::endl;
     }
+    std::cout
+    << termcolor::bold
+    << termcolor::green
+    << "$pc"
+    << ":\t\t"
+    << termcolor::white
+    << PC
+    << termcolor::reset
+    << std::endl;
     std::cout << std::endl;
+}
+
+void Processor::printLabelMap()
+{
+    for (auto it = labelMap.begin(); it != labelMap.end(); ++it)
+    {
+        std::cout
+        << termcolor::bold
+        << termcolor::green
+        << "Label: "
+        << it->first
+        << " points to: "
+        << termcolor::blue
+        << it->second
+        << termcolor::reset
+        << std::endl;
+    }
 }
 void Processor::stepMode()
 {

@@ -16,12 +16,12 @@ class ProcUnit
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void pre(Instructions::Instruction *instrPtr) {};
         virtual void pre() {};
-        virtual void post(Instructions::Instruction *instrPtr) {};
-        virtual void post() {};
     public:
         bool busy;
         virtual void run(Instructions::Instruction *instr) {};
         virtual void run() {};
+        virtual void post(Instructions::Instruction *instrPtr) {};
+        virtual void post() {};
         virtual void nextTick() {};
         virtual void flush(std::string tag) {};
         bool isInstrBranch(Instructions::Instruction *instrPtr);

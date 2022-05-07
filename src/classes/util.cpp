@@ -53,3 +53,8 @@ std::string randomId(const int len) {
     
     return tmp_s;
 }
+
+bool isOpBranch(Opcodes opcode)
+{
+	return (opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE);
+}

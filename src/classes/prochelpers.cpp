@@ -251,6 +251,17 @@ ReserveEntry::ReserveEntry(std::string tag_name)
     return;
 }
 
+Instructions::Instruction* ReserveEntry::getInstruction()
+{
+     return instr;
+}
+
+void ReserveEntry::setInstruction(Instructions::Instruction *instrPtr)
+{
+    instr = instrPtr;
+    return;
+}
+
 std::pair<int, int> ReserveEntry::updateValues(std::pair<int, int> pair)
 {
     value_pair = pair;
@@ -365,6 +376,7 @@ std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
         processor->getPipeline()->stallPipeline(RS);
         return "Stall";
     }
+    entry->setInstruction(instrPtr);
     entry->instrStr = instrPtr->instrString;
     instrPtr->tag = entry->getTag();
     entry->isReserved = true;
@@ -540,6 +552,21 @@ void rs::ReservationStation::remove(std::string tag)
     // rsv_entry->busy = false;
     // rsv_entry->isReserved = false;
     return;
+}
+
+Opcodes rs::ReservationStation::getOpcode(std::string tag)
+{
+    LLNode<ReservationStationEntry> *curr = entries->head;
+    while(curr != NULL)
+    {
+        ReservationStationEntry* entry = curr->payload;
+        if (entry->getTag().compare(tag) == 0)
+        {
+            return entry->opcode;
+        }
+        curr = curr->next;
+    }
+    return NOP;
 }
 
 bool rs::ReservationStation::areAllEntriesFree()

@@ -3,7 +3,6 @@
 #include <utility>
 #include <string>
 #include "instruction.h"
-#include "util.h"
 #include "json.hpp"
 #include "config.h"
 
@@ -73,6 +72,7 @@ class Processor: public EventDispatcher
         void runProgram();
         void loadProgram(std::string fn);
         void regDump();
+        void printLabelMap();
         void stepMode();
         bool programEnded();
         void setProgramEnded();

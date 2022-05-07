@@ -1,5 +1,6 @@
 #include "robuff.h"
 #include "cdb.h"
+#include "util.h"
 
 // #################################################################################################
 // ROBEntry
@@ -9,6 +10,8 @@ ROBEntry::ROBEntry(std::string tag_name)
 {
     tag = tag_name;
     valid = false;
+    brpred = false;
+    opcode = NOP;
     return;
 };
 void ROBEntry::validate()
@@ -21,6 +24,8 @@ void ROBEntry::setInstruction(Instructions::Instruction *instrPtr)
     instr = instrPtr;
     destination = instrPtr->getDestination();
     instrStr = instr->instrString;
+    opcode = instrPtr->opcode;
+    isBranch = isOpBranch(opcode);
     return;
 };
 void ROBEntry::setValue(int val)

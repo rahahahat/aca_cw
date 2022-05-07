@@ -7,7 +7,6 @@ FetchUnit::FetchUnit() {};
 
 void FetchUnit::run(Instructions::Instruction* instrPtr)
 {
-    std::cout << "Yooooooooooo" << std::endl;
     fetch(instrPtr);
 }
 
@@ -18,7 +17,7 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
     std::cout << termcolor::bold << termcolor::green
     << "Issuing Instruction: " << instr << termcolor::reset
     << std::endl;
-    // processor->getPipeline()->stepMode();
+    processor->getPipeline()->stepMode();
     instrPtr->instrString = instr;
     processor->PC++;
     instrPtr->stage = ISSUE;

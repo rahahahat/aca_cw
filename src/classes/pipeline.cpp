@@ -20,12 +20,11 @@ Pipeline::Pipeline()
     instructions = new PipelineLL();
     processor = Processor::getProcessorInstance();
     stall = 0;
-    flush = 0;
 }
 
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
 {
-    if (instrPtr->stage == DONE) return 1;
+    // if (instrPtr->stage == DONE) return 1;
     return 0;
 }
 
@@ -75,7 +74,7 @@ Instructions::Instruction* Pipeline::addInstructionToPipeline(int id)
     << termcolor::reset
     << std::endl;
     Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    new_inst->id = id;
+    // new_inst->id = id;
     return new_inst;
 };
 
@@ -255,42 +254,55 @@ OoOPipeline::OoOPipeline()
         {EXECUTEUNIT, new std::pair<int, int>(num_exec_units, num_exec_units)},
         {MEMORYUNIT, new std::pair<int, int>(num_mem_units, num_mem_units)},
     };
-    std::vector<ProcUnit*> dv;
-    std::vector<ProcUnit*> ev;
-    std::vector<ProcUnit*> mv;
     for (int d = 0; d < num_decode_units; d++)
-    {
-        ProcUnit* unit = new ODecodeUnit();
-        dv.push_back(unit);
+    {;
+        dn.push_back(new ODecodeUnit());
     }
     for (int e = 0; e < num_exec_units; e++)
     {
-        ProcUnit* unit = new OExecuteUnit();
-        ev.push_back(unit);
+        en.push_back(new OExecuteUnit());
     }
     for (int m = 0; m < num_mem_units; m++)
     {
-        ProcUnit* unit = new OMemoryUnit();
-        mv.push_back(unit);
+        mn.push_back(new OMemoryUnit());
     }
-    proc_units[DECODEUNIT] = dv;
-    proc_units[EXECUTEUNIT] = ev;
-    proc_units[MEMORYUNIT] = mv;
 }
 
-void OoOPipeline::issueTick()
+void OoOPipeline::post()
 {
-    std::vector<ProcUnit*> iv = proc_units[DECODEUNIT];
-    for (auto &unit: iv)
+    for (auto &unit: dn)
     {
-        unit->nextTick();
+        unit->post();
+    }
+    for (auto &unit: en)
+    {
+        unit->post();
+    }
+    for (auto &unit: mn)
+    {
+        unit->post();
+    }
+}
+
+void OoOPipeline::fetchTick()
+{
+    for (auto &unit: dn)
+    {
+        unit->fetchTick();
+    }
+};
+
+void OoOPipeline::decodeTick()
+{
+    for (auto &unit: dn)
+    {
+        unit->decodeTick();
     }
 };
 
 void OoOPipeline::execTick()
 {
-    std::vector<ProcUnit*> ev = proc_units[EXECUTEUNIT];
-    for (auto &unit: ev)
+    for (auto &unit: en)
     {
         unit->nextTick();
     }
@@ -298,8 +310,7 @@ void OoOPipeline::execTick()
 
 void OoOPipeline::memTick()
 {
-    std::vector<ProcUnit*> ev = proc_units[MEMORYUNIT];
-    for (auto &unit: ev)
+    for (auto &unit: mn)
     {
         unit->nextTick();
     }
@@ -307,16 +318,22 @@ void OoOPipeline::memTick()
 
 void OoOPipeline::nextTick(int cycle)
 {
-    issueTick();
-    if (cycle == 1) 
-    {
-        std::cout << termcolor::on_bright_red << cycle << termcolor::reset << std::endl;
-        return;
-    }
+    // if (cycle == 1) 
+    // {
+    //     fetchTick();
+    //     std::cout << termcolor::on_bright_red << cycle << termcolor::reset << std::endl;
+    //     return;
+    // }
+
+    decodeTick();
     execTick();
     processor->getLsq()->nextTick();
     memTick();
     processor->getRB()->nextTick();
+
+    post();
+
+    fetchTick();
 };
 
 
@@ -326,20 +343,8 @@ void OoOPipeline::pipeInstructionsToProcessor()
     while(curr != NULL)
     {
         Instructions::Instruction *instr = curr->payload;
-        // processor->runInstr(instr);
         curr = curr->next;
     }
-    // TODO: logic to differentiate between pipeline stall and branch stall
-    // if (stalled())
-    // {
-    //     if (processor->getRS()->size() < 64)
-    //     {
-    //         resumePipeline(RS);
-    //         return;
-    //     }
-    //     return;
-    // }
-    // if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline(RS);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 };
 
@@ -386,16 +391,32 @@ void OoOPipeline::stepMode()
 bool OoOPipeline::areAllProcUnitsFree()
 {
     // std::vector<ProcUnit*> iv = proc_units[DECODEUNIT];
-    std::vector<ProcUnit*> ev = proc_units[EXECUTEUNIT];
-    std::vector<ProcUnit*> mv = proc_units[MEMORYUNIT];
     bool busy = true;
-    for (auto &unit: ev)
+    for (auto &unit: en)
     {
         busy &= unit->busy;
     }
-    for (auto &unit: mv)
+    for (auto &unit: mn)
     {
         busy &= unit->busy;
     }
     return !busy;
+}
+
+void OoOPipeline::flush(std::string tag)
+{
+    stalled_by = NoSrc;
+    stall = false;
+    for (auto &unit: dn)
+    {
+        unit->flush(tag);
+    }
+    for (auto &unit: en)
+    {
+        unit->flush(tag);
+    }
+    for (auto &unit: mn)
+    {
+        unit->flush(tag);
+    }
 }

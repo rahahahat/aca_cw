@@ -1,6 +1,7 @@
 #include "cdb.h"
 #include "processor.h"
-
+#include "util.h"
+#include "pipeline.h"
 // TODO: Add jump support here!
 
 CommonDataBus::CommonDataBus()
@@ -29,6 +30,8 @@ void CommonDataBus::commit(Register destination, std::string tag, int value)
     if (destination == $noreg) return;
     if (destination == $pc) 
     {
+        if (isOpBranch(rsv->getOpcode(tag))) processor->getPipeline()->resumePipeline(Branch);
+        rsv->remove(tag);
         processor->PC = value;
         return;
     }

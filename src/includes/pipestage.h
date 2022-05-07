@@ -3,7 +3,7 @@
 
 enum pipestage 
 {
-    ISSUE, EXECUTE, COMMIT, DONE
+    FETCH, DECODE, ISSUE, EXECUTE, DISPATCH, COMMIT
 };
 
 #endif

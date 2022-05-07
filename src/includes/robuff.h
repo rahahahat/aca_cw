@@ -15,7 +15,10 @@ class ROBEntry
         std::string instrStr;
         bool valid;
         int value;
+        bool isBranch;
         Register destination;
+        Opcodes opcode;
+        bool brpred;
     public:
         ROBEntry(std::string tag_name);
         void validate();

@@ -35,16 +35,16 @@ class OMemoryUnit: public MemoryUnit
         int result;
         void cycleReset();
     protected:
-        virtual void load();
-        virtual void store();
-        virtual void pre();
-        virtual void post();
+        void load();
+        void store();
+        void pre();
         bool seekInstruction();
     public:
         OMemoryUnit();
         void nextTick();
         void flush(std::string tag);
         void run();
+        void post();
 };
 
 // class ScalarMemoryUnit: public MemoryUnit

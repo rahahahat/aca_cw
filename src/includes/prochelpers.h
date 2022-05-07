@@ -73,12 +73,13 @@ class ReserveEntry
 {
     private:
         std::string tag;
+        Instructions::Instruction *instr;
     public:
         ReserveEntry(std::string tag_name);
         std::string instrStr;
         Opcodes opcode;
         Register destination;
-       
+
         bool busy;
         bool isReady;
         int address;
@@ -95,6 +96,8 @@ class ReserveEntry
         std::pair<bool, bool> getValids();
         std::pair<std::string, std::string> getTags();
         std::string getTag();
+        void setInstruction(Instructions::Instruction *instrPtr);
+        Instructions::Instruction* getInstruction();
 };
 
 
@@ -133,6 +136,7 @@ namespace rs
             void print();
             void populateInstruction(Instructions::Instruction *instrPtr);
             void validate(Instructions::Instruction *instrPtr);
+            Opcodes getOpcode(std::string tag);
             void remove(std::string tag);
             std::string reserve(Instructions::Instruction *instrPtr);
             void populateTags(std::string tag, int value);

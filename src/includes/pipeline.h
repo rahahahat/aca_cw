@@ -16,6 +16,9 @@
 class Processor;
 class PipelineLLNode;
 class ProcUnit;
+class ODecodeUnit;
+class OMemoryUnit;
+class OExecuteUnit;
 
 enum ProcUnitTypes
 {
@@ -70,7 +73,6 @@ class Pipeline: public EventDispatcher {
         PipelineLLNode *flushNode;
         static int completedInstr(Instructions::Instruction *instPtr);
         bool stall;
-        bool flush;
         StallSource stalled_by;
     public:
         Pipeline();
@@ -88,6 +90,7 @@ class Pipeline: public EventDispatcher {
         virtual void stepMode() {};
         virtual bool areAllProcUnitsFree() {return true;};
         virtual void nextTick(int cycle) {};
+        virtual void flush(std::string tag) {};
         StallSource stalledBy() {return stalled_by;};
 };
 
@@ -110,17 +113,22 @@ class Pipeline: public EventDispatcher {
 class OoOPipeline: public Pipeline
 {
     // std::pair<init,int>(total_units, available_units) (Execute, MemoryAccess and WriteBack units)
+    std::vector<ODecodeUnit*> dn;
+    std::vector<OExecuteUnit*> en;
+    std::vector<OMemoryUnit*> mn;
     std::map<ProcUnitTypes, std::pair<int, int>*> num_proc_units;
-    std::map<ProcUnitTypes, std::vector<ProcUnit*>> proc_units;
     private:
-        virtual void issueTick();
-        virtual void execTick();
-        virtual void memTick();
+        void fetchTick();
+        void decodeTick();
+        void execTick();
+        void memTick();
+        void post();
     public:
         OoOPipeline();
         virtual void pipeInstructionsToProcessor();
         virtual void nextTick(int cycle);
         virtual bool areAllProcUnitsFree();
+        void flush(std::string tag);
         void stepMode();
 };
 

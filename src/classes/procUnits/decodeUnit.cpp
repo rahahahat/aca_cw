@@ -7,6 +7,7 @@
 #include "lsq.h"
 #include "config.h"
 #include "robuff.h"
+#include "util.h"
 
 DecodeUnit::DecodeUnit()
 {
@@ -33,7 +34,6 @@ void DecodeUnit::decode(Instructions::Instruction *instrPtr)
     }
     instrPtr->opcode = InsPair.first;
     instrPtr->type = InsPair.second;
-    instrPtr->setNumCycle(CycleMap.at(instrPtr->opcode));
     instrPtr->type = InsPair.second;
     switch(InsPair.second)
     {
@@ -143,53 +143,67 @@ ODecodeUnit::ODecodeUnit()
     return;
 };
 
-void ODecodeUnit::post(Instructions::Instruction *instrPtr)
+void ODecodeUnit::post()
 {
-    switch(instrPtr->type)
+    if (!busy) return;
+    busy = false;
+    instr = NULL;
+    switch(instr->type)
     {
         case JType:
             // TODO: How should jumps work? 
-            instrPtr->stage = ISSUE;
-            return;
+            // instrP
         case End:
             // TODO: Think about the stall guard here!
-            instrPtr->stage = DONE;
+            // instrPtr->stage = DONE;
             if (!processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Halt);
             processor->getSB()->invalidatePC();
             return;
         default:
-            instrPtr->stage = ISSUE;
-            if (instrPtr->opcode == LW || instrPtr->opcode == SW) 
+            instr->stage = ISSUE;
+            if (instr->opcode == LW || instr->opcode == SW) 
             {
-                LSQNode* node = processor->getLsq()->addToQueue(instrPtr);
-                processor->getRB()->addEntry(node->getTag(), instrPtr);
+                LSQNode* node = processor->getLsq()->addToQueue(instr);
+                processor->getRB()->addEntry(node->getTag(), instr);
                 return;
             }
-            if (isInstrBranch(instrPtr))
+            if (isInstrBranch(instr))
             {
                 processor->getPipeline()->stallPipeline(Branch); 
             }
-            std::string tag = processor->getRS()->reserve(instrPtr);
-            processor->getRB()->addEntry(tag, instrPtr);
+            std::string tag = processor->getRS()->reserve(instr);
+            processor->getRB()->addEntry(tag, instr);
             return;
     }
 };
 
-void ODecodeUnit::nextTick()
+void ODecodeUnit::fetchTick()
 {
+    if (busy) return;
     if (processor->getPipeline()->stalled()) return; 
-
-    // if (
-    //     !processor->getRS()->hasEmptyEntries() ||
-    //     !processor->getPipeline()->stalled() ||
-    //     !processor->getLsq()->hasCapacity()) return;
-    std::cout << "Decode Tick" << std::endl;
+    
     Instructions::Instruction *instrPtr = new Instructions::Instruction();
     fn->run(instrPtr);
-    run(instrPtr);
+    instr = instrPtr;
+    busy = true;
+    instr->stage = DECODE;
+    return;
+}
+
+void ODecodeUnit::decodeTick()
+{
+    if (!busy) return;
+    if (processor->getPipeline()->stalled()) return;
+    run();
 };
 
 void ODecodeUnit::flush(std::string tag)
 {
     
+}
+
+void ODecodeUnit::run()
+{
+    pre();
+    decode();
 }

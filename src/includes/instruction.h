@@ -13,19 +13,12 @@
 namespace Instructions {
 
     class Instruction {
-        private:
-            int num_cycles;
-            int curr_cycle;
         public:
-            void setNumCycle(int cycle);
-            void decrementCycle();
             Register rs;
             pipestage stage;
             Register rt;
             Register rd;
-            int id;
             int immediateOrAddress;
-            int temp;
             int src1;
             int src2;
             std::string tag;
@@ -35,7 +28,6 @@ namespace Instructions {
             std::string instrString;
             Instruction();
             Instruction(std::string instr);
-            int getCurrCycle();
             Register getDestination();
     };
 };

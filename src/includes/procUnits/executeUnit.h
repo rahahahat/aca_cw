@@ -8,6 +8,7 @@ class ExecuteUnit: public ProcUnit
 {
     protected:
         rs::ReservationStation* rs;
+        Instructions::Instruction* instr;
         Opcodes opcode;
         InstructionType type;
         std::string rsTag;
@@ -18,7 +19,6 @@ class ExecuteUnit: public ProcUnit
         int immediate;
         int result;
         int num_cycles;
-
         virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
@@ -45,10 +45,10 @@ class OExecuteUnit: public ExecuteUnit
         void executeRTypeInstruction();
         void execute();
         void pre();
-        void post();
         void populateRSTags(Instructions::Instruction *instrPtr);
         bool seekInstruction();
     public:
+        void post();
         void run();
         void flush(std::string tag);
         OExecuteUnit(): ExecuteUnit() {};

@@ -3,6 +3,7 @@
 #include "termcolor.h"
 #include "processor.h"
 #include "pipeline.h"
+#include "util.h"
 
 ProcUnit::ProcUnit()
 {

@@ -9,8 +9,8 @@
   "program": "factorial.txt",
   "procUnits": {
     "fetch": 1,
-    "decode": 4,
-    "execute":4,
+    "decode": 3,
+    "execute":3,
     "memory": 1
   },
   "takeBranch": false
