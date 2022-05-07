@@ -92,6 +92,7 @@ void ReorderBuffer::flush(std::string tag)
     // TODO: FLUSH entry matching with the tag and all all after it.
     return;
 };
+
 void ReorderBuffer::populateEntry(std::string tag, int value)
 {
     LLNode<ROBEntry> *node = buffer->head;
@@ -108,6 +109,7 @@ void ReorderBuffer::populateEntry(std::string tag, int value)
     }
     return;
 };
+
 void ReorderBuffer::print()
 {
     std::cout << "ROBUFF" << std::endl;

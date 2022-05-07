@@ -181,21 +181,22 @@ void Processor::runProgram() {
 
 void Processor::setProgramEnded()
 {
-    bool ended = true;
-    ended &= reservation_station->areAllEntriesFree();
-    // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
-    ended &= pipeline->areAllProcUnitsFree();
-    // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
-    ended &= lsq->getNumEntries() == 0;
-    // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
-    ended &= pipeline->stalledBy() == Halt;
-    // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
-    progEnded = ended;
+    // bool ended = true;
+    // ended &= reservation_station->areAllEntriesFree();
+    // // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
+    // ended &= pipeline->areAllProcUnitsFree();
+    // // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
+    // ended &= lsq->getNumEntries() == 0;
+    // // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
+    // ended &= pipeline->stalledBy() == Halt;
+    // // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
+    // progEnded = ended;
+    progEnded = false;
 };
 
 bool Processor::programEnded()
 {
-    return progEnded;
+    return false;
 };
 
 /*---------------------------------------------------*/

@@ -32,6 +32,7 @@ class ODecodeUnit: public DecodeUnit
         virtual void post(Instructions::Instruction *instrPtr);
     public:
         ODecodeUnit();
+        void flush(std::string);
         void nextTick();
 };
 

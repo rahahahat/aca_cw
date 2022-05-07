@@ -39,17 +39,18 @@ class OExecuteUnit: public ExecuteUnit
 
     protected:
         bool isInstrBranch();
-        virtual void executeInstrType();
-        virtual void executeITypeInstruction();
-        virtual void executeJTypeInstruction();
-        virtual void executeRTypeInstruction();
-        virtual void execute();
-        virtual void pre();
-        virtual void post();
-        virtual void populateRSTags(Instructions::Instruction *instrPtr);
-        virtual bool seekInstruction();
+        void executeInstrType();
+        void executeITypeInstruction();
+        void executeJTypeInstruction();
+        void executeRTypeInstruction();
+        void execute();
+        void pre();
+        void post();
+        void populateRSTags(Instructions::Instruction *instrPtr);
+        bool seekInstruction();
     public:
-        virtual void run();
+        void run();
+        void flush(std::string tag);
         OExecuteUnit(): ExecuteUnit() {};
         void nextTick();
 };

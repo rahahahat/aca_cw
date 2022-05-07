@@ -33,7 +33,6 @@ class OMemoryUnit: public MemoryUnit
         Register destination;
         int cycle;
         int result;
-
         void cycleReset();
     protected:
         virtual void load();
@@ -44,6 +43,7 @@ class OMemoryUnit: public MemoryUnit
     public:
         OMemoryUnit();
         void nextTick();
+        void flush(std::string tag);
         void run();
 };
 

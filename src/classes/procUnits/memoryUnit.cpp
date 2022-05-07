@@ -133,3 +133,15 @@ void OMemoryUnit::cycleReset()
 {
     cycle = 2;
 }
+
+void OMemoryUnit::flush(std::string tag)
+{
+    if (lsqTag.compare(tag) != 0) return;
+    lsqTag = "";
+    opcode = NOP;
+    store_val = 0;
+    address = 0;
+    destination = $noreg;
+    cycle = 0;
+    result = 0;
+}

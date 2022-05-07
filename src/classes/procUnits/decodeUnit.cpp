@@ -188,3 +188,8 @@ void ODecodeUnit::nextTick()
     fn->run(instrPtr);
     run(instrPtr);
 };
+
+void ODecodeUnit::flush(std::string tag)
+{
+    
+}

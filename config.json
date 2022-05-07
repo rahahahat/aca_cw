@@ -6,11 +6,11 @@
     "cycle": true,
     "instruction": true
   },
-  "program": "hamming_w.txt",
+  "program": "factorial.txt",
   "procUnits": {
     "fetch": 1,
-    "decode": 2,
-    "execute":2,
+    "decode": 4,
+    "execute":4,
     "memory": 1
   },
   "takeBranch": false

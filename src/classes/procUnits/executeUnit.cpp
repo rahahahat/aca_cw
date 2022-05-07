@@ -359,6 +359,22 @@ void OExecuteUnit::nextTick()
     run();
 }
 
+void OExecuteUnit::flush(std::string tag)
+{
+    if (rsTag.compare(tag) != 0) return;
+    opcode = NOP;
+    busy = false;
+    std::string rsTag = "";
+    destination = $noreg;
+    src1 = 0;
+    src2 = 0;
+    immediate = 0;
+    result = 0;
+    num_cycles = 0;
+    instrStr = "";
+    type = Nop;
+}
+
 
 
 /* ---------------------------------------------------------------------------------------- */
