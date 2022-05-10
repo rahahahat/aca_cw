@@ -61,7 +61,7 @@ enum pipelineType {
 };
 
 enum StallSource {
-    NoSrc, Branch, RS, ROB, Halt
+    NoSrc, Branch, RS, ROB, Halt, Flush
 };
 
 class Processor;
@@ -82,15 +82,15 @@ class Pipeline: public EventDispatcher {
         virtual void stallPipeline(StallSource by);
         virtual void flushPipelineOnBranchOrJump() {};
         virtual void resumePipeline(StallSource);
+        virtual void resumePipelineByForce();
         virtual int stalled();
         virtual pipelineType getType();
         virtual int isEmpty();
         virtual void removeCompletedInstructions();
         virtual int getInstrSize();
-        virtual void stepMode() {};
         virtual bool areAllProcUnitsFree() {return true;};
         virtual void nextTick(int cycle) {};
-        virtual void flush(std::string tag) {};
+        virtual void flush() {};
         StallSource stalledBy() {return stalled_by;};
 };
 
@@ -118,18 +118,19 @@ class OoOPipeline: public Pipeline
     std::vector<OMemoryUnit*> mn;
     std::map<ProcUnitTypes, std::pair<int, int>*> num_proc_units;
     private:
-        void fetchTick();
-        void decodeTick();
+        void issueTick();
         void execTick();
         void memTick();
+        void lsqTick();
+        void robuffTick();
+        void printSB();
         void post();
     public:
         OoOPipeline();
         virtual void pipeInstructionsToProcessor();
         virtual void nextTick(int cycle);
         virtual bool areAllProcUnitsFree();
-        void flush(std::string tag);
-        void stepMode();
+        void flush();
 };
 
 #endif

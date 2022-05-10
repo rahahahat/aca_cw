@@ -62,6 +62,7 @@ Scoreboard::Scoreboard(bool force_null): ProcHelper(force_null)
         {$r31, new ScoreboardEntry($r31)},
         {$pc, new ScoreboardEntry($pc)}
     };
+    processor = Processor::getProcessorInstance();
 };
 
 bool Scoreboard::validate(Register r, int value, std::string tag)
@@ -71,9 +72,51 @@ bool Scoreboard::validate(Register r, int value, std::string tag)
         if (tag.compare(itr->second->tag) != 0) return false;
         itr->second->valid = 1;
         itr->second->value = value;
+        itr->second->tag = "~";
         return true;
     }
     return false;
+};
+
+
+void Scoreboard::validateAll()
+{
+    Register regs[] = {$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7, 
+    $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
+    $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
+    $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31};
+    for (int i = 0; i < 32; i++)
+    {
+        Register reg = regs[i];
+        ScoreboardEntry *entry = board.at(reg);
+        entry->valid = 1;
+        entry->tag = "~";
+        entry->value = processor->registers[reg];
+    }
+    ScoreboardEntry *entry = board.at($pc);
+    entry->valid = 1;
+    entry->tag = "~";
+    entry->value = processor->PC;
+}
+
+void Scoreboard::flush()
+{
+    validateAll();
+};
+
+void Scoreboard::writeToARF()
+{
+    // Register regs[] = {$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7, 
+    // $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
+    // $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
+    // $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31};
+    // for (int i = 0; i < 32; i++)
+    // {
+       
+    //     Register reg = regs[i];
+    //     ScoreboardEntry *entry = board.at(reg);
+    //     entry->value = processor->registers[reg];
+    // }
 };
 
 void Scoreboard::invalidatePC()
@@ -142,99 +185,53 @@ ScoreboardEntry* Scoreboard::getEntry(Register r)
 
 void Scoreboard::memDump()
 {
-    std::cout 
-    << termcolor::bold
-    << "---------SB-MemDump---------" 
+    std::cout
+    << "\n"
+    << termcolor::bright_green
+    << "|Register"
+    << "\t|"
+    << "Tag"
+    << "\t|"
+    << "Valid"
+    << "\t|"
+    << "Value"
+    << "\t\t|"
     << std::endl;
-    for (auto it = board.begin(); it != board.end(); ++it)
+
+    Register regs[] = {$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7, 
+    $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
+    $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
+    $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31, $pc};
+    for (int i = 0; i < 32; i++)
     {
+        Register reg = regs[i];
+        ScoreboardEntry *entry = board.at(reg);
         std::cout
-        << termcolor::bold
-        << termcolor::green
-        << "$r"
-        << it->first
-        << ":\t\t"
-        << termcolor::white
-        << it->second
-        << termcolor::reset
+        << termcolor::bright_blue
+        << "|$r"
+        << reg
+        << "\t\t|"
+        << entry->tag
+        << "\t|"
+        << entry->valid
+        << "\t|"
+        << entry->value
+        << "\t\t|"
         << std::endl;
     }
-    std::cout << std::endl;
-}
+    ScoreboardEntry *entry = board.at($pc);
 
-void ResultForwarder::addValue(Register r, int value) 
-{
-    auto itr = valueMap.find(r);
-    if (itr != valueMap.end()) {
-        itr->second = value;
-        return;
-    }
-    valueMap.insert(std::pair<Register, int>(r, value));
-    return;
-}
-
-void ResultForwarder::removeValue(Register r) 
-{
-    auto itr = valueMap.find(r);
-    if (itr != valueMap.end()) {
-        valueMap.erase(itr);
-        return;
-    }
-    return;
-}
-
-std::pair<int, int> ResultForwarder::getValue(Register r)
-{
-    auto itr = valueMap.find(r);
-    if (itr != valueMap.end()) {
-        return std::pair<int, int>(1, itr->second);
-    }
-    return std::pair<int, int>(0, 0);
-}
-
-int ResultForwarder::getSize()
-{
-    return valueMap.size();
-}
-
-void ResultForwarder::saveState()
-{
-    savedState = std::map<Register, int>(valueMap);
-    return;
-}
-
-void ResultForwarder::restoreState()
-{
-    valueMap = std::map<Register, int>(savedState);
-    savedState = std::map<Register, int>();
-    return;
-}
-
-void ResultForwarder::equaliseSavedState()
-{
-    saveState();
-    return;
-}
-
-void ResultForwarder::memDump()
-{
     std::cout 
-    << termcolor::bold
-    << "---------RF-MemDump---------" 
+    << "|$pc\t\t|"
+    << entry->tag
+    << "\t|"
+    << entry->valid
+    << "\t|"
+    << entry->value
+    << "\t\t|"
+    << termcolor::reset
     << std::endl;
-    for (auto it = valueMap.begin(); it != valueMap.end(); ++it)
-    {
-        std::cout
-        << termcolor::bold
-        << termcolor::green
-        << "$r"
-        << it->first
-        << ":\t\t"
-        << termcolor::white
-        << it->second
-        << termcolor::reset
-        << std::endl;
-    }
+
     std::cout << std::endl;
 }
 
@@ -248,6 +245,9 @@ ReserveEntry::ReserveEntry(std::string tag_name)
     destination = $noreg;
     isReady = false;
     tag = tag_name;
+    instr = NULL;
+    instrStr = "";
+    address = -1;
     return;
 }
 
@@ -296,7 +296,6 @@ std::string ReserveEntry::getTag()
     return tag;
 };
 
-// TODO: validate all rs entries waiting for a tag on validate.
 rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): ReserveEntry(tag_name)
 {
     address = -1;
@@ -304,15 +303,7 @@ rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): Rese
     return;
 }
 
-void rs::ReservationStationEntry::validateSourcesOnEvent(const EventBase& base)
-{
-    // const Event<rsEventData>& event = static_cast<const Event<rsEventData>&>(base);
-    // std::string tag = event.payload.tag_name;
-    // int value = event.payload.value;
-    // populateSources(tag, value);
-    // EventWrapper::getEventWrapperInstance()->removeEventListener(tag);
-    // return;
-}
+void rs::ReservationStationEntry::validateSourcesOnEvent(const EventBase& base) {}
 
 void rs::ReservationStationEntry::populateSources(std::string tag, int value)
 {
@@ -335,14 +326,6 @@ rs::ReservationStation::ReservationStation(Scoreboard* sb, bool force_null): Pro
     scoreboard = sb;
     size = 64;
     entries = new LinkedList<ReservationStationEntry>();
-    // for (int x = 0; x < size; x++)
-    // {
-    //     int tagIndex = x+1;
-    //     std::stringstream ss;
-    //     tagIndex < 10 ? ss << "tag0"<< tagIndex : ss << "tag"<< tagIndex;
-    //     std::string tag = ss.str();
-    //     entries.insert(std::pair<std::string, ReservationStationEntry*>(tag, new ReservationStationEntry(tag)));
-    // }
 };
 
 rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_name)
@@ -433,7 +416,7 @@ void rs::ReservationStation::reserveNoDest(ReservationStationEntry *entry, Instr
 void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
     Opcodes opcode = instrPtr->opcode;
-    if (opcode == BEQ || opcode == BGTE || opcode == BL || opcode == BNE)
+    if (isOpBranch(opcode))
     {
         reserveNoDest(entry, instrPtr);
         return;
@@ -464,26 +447,7 @@ void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instru
     return;
 }
 
-void rs::ReservationStation::populateInstruction(Instructions::Instruction *instrPtr)
-{
-    std::string rs_tag = instrPtr->tag;
-    rs::ReservationStationEntry* rs_entry = getEntry(rs_tag);
-    if (!rs_entry->isReserved) return;
-    int isValid = rs_entry->valid_pair.first && rs_entry->valid_pair.second;
-    if (!isValid) return;
-    switch(instrPtr->type)
-    {
-        case RType:
-            instrPtr->src2 = rs_entry->value_pair.second;
-            instrPtr->src1 = rs_entry->value_pair.first;
-            break;
-        case IType:
-            instrPtr->src1 = rs_entry->value_pair.first;
-            break;
-    }
-    instrPtr->isReadyToExecute = true;
-    return;
-}
+void rs::ReservationStation::populateInstruction(Instructions::Instruction *instrPtr) {}
 
 void rs::ReservationStation::populateTags(std::string tag, int value)
 {
@@ -494,24 +458,24 @@ void rs::ReservationStation::populateTags(std::string tag, int value)
         curr = curr->next;
     }
     return;
-    // for (auto const& entry : entries)
-    // {
-    //     rs::ReservationStationEntry *rse = entry.second;
-    //     rse->populateSources(tag, value);
-    // }
 }
 
-void rs::ReservationStation::validate(Instructions::Instruction *instrPtr)
+void rs::ReservationStation::validate(Instructions::Instruction *instrPtr) {}
+
+void rs::ReservationStation::flush()
 {
-    // auto itr = entries.find(instrPtr->tag);
-    // if (itr == entries.end()) return;
-    // itr->second->result = instrPtr->temp;
-    // return;
+    LLNode<ReservationStationEntry> *curr = entries->head;
+    while(curr != NULL)
+    {
+        ReservationStationEntry* node = curr->payload;
+        LLNode<ReservationStationEntry>* next = curr->next;
+        entries->removeAndDestroy(curr);
+        curr = next;
+    }
 }
 
 rs::ReservationStationEntry* rs::ReservationStation::getValidInstruction()
 {
-    std::cout << termcolor::on_bright_red << entries->size << termcolor::reset << std::endl;
     LLNode<ReservationStationEntry> *curr = entries->head;
     while(curr != NULL)
     {
@@ -519,14 +483,6 @@ rs::ReservationStationEntry* rs::ReservationStation::getValidInstruction()
         if (!entry->busy && entry->valid_pair.first && entry->valid_pair.second) return entry;
         curr = curr->next;
     }
-    // for (auto const& entry : entries)
-    // {
-    //     if (!entry.second->busy && entry.second->valid_pair.first && entry.second->valid_pair.second)
-    //     {
-    //         entry.second->busy = true;
-    //         return entry.second;
-    //     }
-    // }
     return NULL;
 }
 
@@ -543,14 +499,6 @@ void rs::ReservationStation::remove(std::string tag)
         }
         curr = curr->next;
     }
-    // auto entry = entries.find(tag);
-    // if (entry == entries.end()) return;
-    // rs::ReservationStationEntry* rsv_entry = entry->second;
-    // rsv_entry->updateTags(std::pair<std::string, std::string>("~", "~"));
-    // rsv_entry->updateValids(std::pair<int, int>(0, 0));
-    // rsv_entry->updateValues(std::pair<int, int>(0, 0));
-    // rsv_entry->busy = false;
-    // rsv_entry->isReserved = false;
     return;
 }
 
@@ -578,10 +526,6 @@ bool rs::ReservationStation::areAllEntriesFree()
         if (entry->isReserved) return false;
         curr = curr->next;
     }
-    // for (auto const& entry : entries)
-    // {
-    //     if (entry.second->isReserved) return false;
-    // }
     return true;
 }
 
@@ -592,6 +536,17 @@ int rs::ReservationStation::getSize()
 
 void rs::ReservationStation::print()
 {
+    std::cout
+    << "\n"
+    << termcolor::bright_green
+    << "|Tag \t|"
+    << "Src One\tValid\tValue\t|"
+    << "Src Two\tValid\tValue\t|"
+    << "Busy\t|"
+    << "Instr\t\t\t|"
+    << termcolor::reset
+    << std::endl;
+
     LLNode<ReservationStationEntry> *curr = entries->head;
     while(curr != NULL)
     {
@@ -602,40 +557,31 @@ void rs::ReservationStation::print()
             continue;
         }
         std::cout
-        << termcolor::red << termcolor:: bold
-        << "Tag: "
+        << termcolor::bright_blue
+        << "|"
+        << termcolor::bold << termcolor::bright_cyan
         << entry->getTag()
-        << termcolor::reset
-        << termcolor:: green << termcolor:: bold
-        << "     | "
-        << "tag: "
+        << termcolor::reset << termcolor::bright_blue
+        << "\t|"
         << entry->tag_pair.first
-        << " | "
-        << "valid: "
+        << "\t\t"
         << entry->valid_pair.first
-        << " | "
-        << "value: "
+        << "\t"
         << entry->value_pair.first
-        << " |"
-        << termcolor::reset
-        << termcolor::blue << termcolor:: bold
-        << "     | "
-        << "tag: "
+        << "\t|"
         << entry->tag_pair.second
-        << " | "
-        << "valid: "
+        << "\t\t"
         << entry->valid_pair.second
-        << " | "
-        << "value: "
+        << "\t"
         << entry->value_pair.second
-        << " | busy: " << entry->busy
-        << " | instr: " << entry->instrStr 
+        << "\t|"
+        << entry->busy
+        << "\t|"
+        << entry->instrStr 
+        << "\t\t|"
         << termcolor::reset
         << std::endl;
         curr = curr->next;
     }
-    // for (auto const& entry : entries)
-    // {
-
-    // }
+    std::cout << std::endl;
 }

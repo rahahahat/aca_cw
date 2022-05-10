@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <fstream>
 
 #include "processor.h"
 #include "termcolor.h"
@@ -19,7 +20,6 @@ Processor::Processor() {
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
-
 };
 
 void Processor::loadProgram(std::string fn) {
@@ -52,11 +52,6 @@ void Processor::attachReorderBuffer(ReorderBuffer *rb)
 }
 
 Processor* Processor::fabricate() {
-    
-    std::ifstream i("config.json");
-    i >> config;
-    i.close();
-
     
     Scoreboard *scoreboard = new Scoreboard(false);
     rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
@@ -116,14 +111,39 @@ LSQueue* Processor::getLsq()
 ReorderBuffer* Processor::getRB()
 {
     return robuff;
-}
-
+};
 void Processor::attachParser(Parser *psr)
 {
     parser = psr;
     return;
 }
-
+void Processor::loadDataMemory()
+{
+    nlohmann::json jdata;
+    std::ifstream i("data.json");
+    i >> jdata;
+    i.close();
+    std::vector<int> data = jdata.get<std::vector<int>>();
+    for (int i = 0; i < data.size(); i++)
+    {
+        DataMemory[i] = data.at(i);
+    }
+}
+void Processor::dumpDataMemory()
+{
+    conf* config = getConfig();
+    int max_iter = config->print->all ? 1024 : config->print->num_bytes;
+    std::ofstream output;
+    output.open("sim.out");
+    for (int i = 0; i < max_iter; i++)
+    {
+        output << i << ": " << DataMemory[i] << "\t\t\t\t";
+        if ((i+1) % 5 == 0 && i != 0)
+        {
+            output << std::endl;
+        }
+    }
+}
 void Processor::loadInstructionIntoMemory(std::string instruction) {
 
     const char ch = instruction.back();
@@ -143,12 +163,6 @@ void Processor::attachPipeline(Pipeline *pipe) {
     return;
 };
 
-// void Processor::attachProcHelper(ResultForwarder *rf) {
-
-//     resultForwarder = rf;
-//     return;
-// }
-
 void Processor::attachProcHelper(Scoreboard *sb)
 {
     scoreboard = sb;
@@ -163,20 +177,22 @@ void Processor::attachProcHelper(rs::ReservationStation* rs)
 
 void Processor::runProgram() { 
 
+    conf* config = getConfig();
     int clock = 0;
+    int stopTime = config->stop_time;
     while(!progEnded)
     {
         stepMode();
         clock++;
-        printCycleStart(clock, pipeline->getInstrSize());        
+        printCycleStart(clock, pipeline->getInstrSize());
+        if (pipeline->stalledBy() == Flush) pipeline->resumePipeline(Flush);        
         pipeline->nextTick(clock);
-        if (config["debug"].get<bool>()) regDump();
+        // if (config["debug"].get<bool>()) regDump();
         setProgramEnded();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
     }
+    scoreboard->writeToARF();
     regDump();
-    reservation_station->print();
-    robuff->print();
     printProgramEnd(clock);
     return;
 }
@@ -184,16 +200,12 @@ void Processor::runProgram() {
 void Processor::setProgramEnded()
 {
     bool ended = true;
+    ended &= robuff->getSize() == 0;
     ended &= reservation_station->areAllEntriesFree();
-    // std::cout << termcolor::bold << termcolor::red << "Ended RS: " << ended << std::endl;
     ended &= pipeline->areAllProcUnitsFree();
-    // std::cout << termcolor::bold << termcolor::red << "Ended PU: " << ended << std::endl;
     ended &= lsq->getNumEntries() == 0;
-    // std::cout << termcolor::bold << termcolor::red << "Ended LS: " << ended << std::endl;
     ended &= pipeline->stalledBy() == Halt;
-    // std::cout << termcolor::bold << termcolor::red << "Ended HALT: " << ended << std::endl;
     progEnded = ended;
-    // progEnded = false;
 };
 
 bool Processor::programEnded()
@@ -229,32 +241,34 @@ void printInstructionMemoryAtIndex(Processor processor, int index) {
 };
 
 void Processor::regDump() {
+    std::cout << std::endl;
+
     std::cout 
-    << termcolor::bold
-    << "-----------RegDump-----------" 
+    << "\n"
+    << termcolor::bright_green
+    << "|Register\t|"
+    << "Value\t\t\t|"
     << std::endl;
     for (int i = 0; i < 32; i++)
     {
         std::cout
-        << termcolor::bold
-        << termcolor::green
-        << "$r"
+        << termcolor::bright_blue
+        << "|$r"
         << i
-        << ":\t\t"
-        << termcolor::white
+        << "\t\t|"
         << registers[i]
-        << termcolor::reset
+        << "\t\t\t|"
         << std::endl;
     }
     std::cout
-    << termcolor::bold
-    << termcolor::green
-    << "$pc"
-    << ":\t\t"
-    << termcolor::white
+    << "|$pc"
+    << "\t\t|"
     << PC
+    << "\t\t\t|"
+    << "\n"
     << termcolor::reset
     << std::endl;
+
     std::cout << std::endl;
 }
 
@@ -276,8 +290,7 @@ void Processor::printLabelMap()
 }
 void Processor::stepMode()
 {
-    auto mode = config["stepMode"];
-    if (!(mode["enabled"].get<bool>() && mode["cycle"].get<bool>())) return;
+    if (!getConfig()->debug->enabled) return;
 
 	std::string ss;
 	while(1)
@@ -293,6 +306,7 @@ void Processor::stepMode()
             std::cout << "Print reservation station (rs)" << std::endl;
             std::cout << "Print load/store queue (ls)" << std::endl;
             std::cout << "Print reorder buffer (rb)" << std::endl;
+            std::cout << "Print scoreboard (sb)" << std::endl;
         }
 		if (!ss.compare("rg"))
 		{
@@ -305,6 +319,10 @@ void Processor::stepMode()
         if (!ss.compare("ls"))
         {
             lsq->print();
+        }
+        if (!ss.compare("sb"))
+        {
+            scoreboard->memDump();
         }
         if (!ss.compare("rb"))
         {

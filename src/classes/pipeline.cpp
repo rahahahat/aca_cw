@@ -20,6 +20,7 @@ Pipeline::Pipeline()
     instructions = new PipelineLL();
     processor = Processor::getProcessorInstance();
     stall = 0;
+    stalled_by = NoSrc;
 }
 
 int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
@@ -60,6 +61,12 @@ void Pipeline::resumePipeline(StallSource from)
     return;
 }
 
+void Pipeline::resumePipelineByForce()
+{
+    stall = false;
+    stalled_by = NoSrc;
+    return;
+}
 int Pipeline::stalled()
 {
     return (stall == 1 && stalled_by != NoSrc);
@@ -67,12 +74,6 @@ int Pipeline::stalled()
 
 Instructions::Instruction* Pipeline::addInstructionToPipeline(int id)
 {
-    std::cout
-    << termcolor::bold
-    << termcolor::yellow
-    << "Placing new instruction in pipeline"
-    << termcolor::reset
-    << std::endl;
     Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
     // new_inst->id = id;
     return new_inst;
@@ -241,14 +242,11 @@ void ScalarPipeline::flushPipelineOnBranchOrJump()
 */
 OoOPipeline::OoOPipeline()
 {
-    std::ifstream i("config.json");
-    i >> config;
-    i.close();
-    auto procUnits = config["procUnits"];
-    std::cout << procUnits << std::endl;
-    int num_decode_units = procUnits["decode"].get<int>();
-    int num_exec_units = procUnits["execute"].get<int>();
-    int num_mem_units = procUnits["memory"].get<int>();
+    conf* config = getConfig();
+
+    int num_decode_units = config->units->decode;
+    int num_exec_units = config->units->execute;
+    int num_mem_units = config->units->memory;
     num_proc_units = {
         {DECODEUNIT, new std::pair<int, int>(num_decode_units, num_decode_units)},
         {EXECUTEUNIT, new std::pair<int, int>(num_exec_units, num_exec_units)},
@@ -266,6 +264,8 @@ OoOPipeline::OoOPipeline()
     {
         mn.push_back(new OMemoryUnit());
     }
+    stalled_by = NoSrc;
+    stall = false;
 }
 
 void OoOPipeline::post()
@@ -282,23 +282,16 @@ void OoOPipeline::post()
     {
         unit->post();
     }
-}
+};
 
-void OoOPipeline::fetchTick()
+void OoOPipeline::issueTick()
 {
     for (auto &unit: dn)
     {
-        unit->fetchTick();
+        unit->nextTick();
     }
 };
 
-void OoOPipeline::decodeTick()
-{
-    for (auto &unit: dn)
-    {
-        unit->decodeTick();
-    }
-};
 
 void OoOPipeline::execTick()
 {
@@ -314,26 +307,33 @@ void OoOPipeline::memTick()
     {
         unit->nextTick();
     }
+};
+
+void OoOPipeline::lsqTick()
+{
+    processor->getLsq()->nextTick();
+}
+
+void OoOPipeline::robuffTick()
+{
+    processor->getRB()->nextTick();
 }
 
 void OoOPipeline::nextTick(int cycle)
 {
-    // if (cycle == 1) 
-    // {
-    //     fetchTick();
-    //     std::cout << termcolor::on_bright_red << cycle << termcolor::reset << std::endl;
-    //     return;
-    // }
+    // getConf();
+    lsqTick();
+    robuffTick();
+    printSB();
+    if (stalled_by == Flush) return;
 
-    decodeTick();
+
     execTick();
-    processor->getLsq()->nextTick();
     memTick();
-    processor->getRB()->nextTick();
-
+    issueTick();
+    
     post();
 
-    fetchTick();
 };
 
 
@@ -348,45 +348,16 @@ void OoOPipeline::pipeInstructionsToProcessor()
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 };
 
-void OoOPipeline::stepMode()
+void OoOPipeline::printSB()
 {
-    nlohmann::json conf;
-    std::ifstream i("config.json");
-    i >> conf;
-    i.close();
-    auto mode = conf["stepMode"];
-    // int till = mode["till"].get<int>();
-    // if (clock < )
-    if (!(mode["enabled"].get<bool>() && mode["instruction"].get<bool>())) return;
+    conf* config = getConfig();
+    if (!config->debug->printSb) return;
     std::string ss;
-	while(1)
-	{
-        std::cout << "\nStep through instruction (Enter -h for help): ";
-        std::cin >> ss;
-        
-        if (!ss.compare("n")) break;
-        if (!ss.compare("-h"))
-        {
-            std::cout << "Execute next instruction (n)" << std::endl;
-            std::cout << "Print registers (rg)" << std::endl;
-            std::cout << "Print reservation station (rs)" << std::endl;
-            std::cout << "Print reorder buffer (rob)" << std::endl;
-        }
-		if (!ss.compare("rg"))
-		{
-            processor->regDump();
-		}
-        if (!ss.compare("rs"))
-        {
-            processor->getRS()->print();
-        }
-        if (!ss.compare("rob"))
-        {
-            processor->getRB()->print();
-        }
-        ss = "";
-	}
-}
+    std::cout << "Print SB (y/n): ";
+    std::cin >> ss;
+    if (!ss.compare("y")) processor->getSB()->memDump();
+    return;
+};
 
 bool OoOPipeline::areAllProcUnitsFree()
 {
@@ -403,20 +374,20 @@ bool OoOPipeline::areAllProcUnitsFree()
     return !busy;
 }
 
-void OoOPipeline::flush(std::string tag)
+void OoOPipeline::flush()
 {
-    stalled_by = NoSrc;
-    stall = false;
+    resumePipelineByForce();
+    stallPipeline(Flush);
     for (auto &unit: dn)
     {
-        unit->flush(tag);
+        unit->flush();
     }
     for (auto &unit: en)
     {
-        unit->flush(tag);
+        unit->flush();
     }
     for (auto &unit: mn)
     {
-        unit->flush(tag);
+        unit->flush();
     }
 }

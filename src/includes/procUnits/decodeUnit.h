@@ -15,16 +15,16 @@ class DecodeUnit: public ProcUnit
         void decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair);
         void decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair);
         virtual void pre(Instructions::Instruction *instrPtr) {};
-        virtual void pre();
+        virtual void pre() {};
+        virtual void post() {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void decode(Instructions::Instruction *instrPtr);
-        virtual void decode();
         virtual void post(Instructions::Instruction *instrPtr) {};
     public:
         DecodeUnit();
-        void attachToProcessor(Processor *proc);
         virtual void run(Instructions::Instruction *instr);
         virtual void run() {};
+        virtual void nextTick() {};
 };
 
 class ODecodeUnit: public DecodeUnit
@@ -32,14 +32,12 @@ class ODecodeUnit: public DecodeUnit
     private:
         FetchUnit *fn;
         Instructions::Instruction *instr;
-        void decode();
-        void pre() {};
     public:
         ODecodeUnit();
-        void flush(std::string);
-        void nextTick();
+        void flush();
         void fetchTick();
         void decodeTick();
+        void nextTick();
         void run();
         void post();
 };

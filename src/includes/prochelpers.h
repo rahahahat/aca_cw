@@ -36,6 +36,7 @@ class Scoreboard: public ProcHelper
     private:
         std::map<Register, ScoreboardEntry*> board;
         std::map<Register, ScoreboardEntry*> savedState;
+        Processor *processor;
     public:
         Scoreboard(bool force_null);
         ScoreboardEntry* getEntry(Register r);
@@ -49,23 +50,9 @@ class Scoreboard: public ProcHelper
         void memDump();
         void invalidatePC();
         bool isPCValid();
-};
-
-class ResultForwarder: ProcHelper
-{
-    private:
-        std::map<Register, int> valueMap;
-        std::map<Register, int> savedState;
-    public:
-        ResultForwarder(): ProcHelper(true) {};
-        void saveState();
-        void restoreState();
-        void equaliseSavedState();
-        void addValue(Register r, int value);
-        void removeValue(Register r);
-        std::pair<int, int> getValue(Register r);
-        int getSize();
-        void memDump();
+        void flush();
+        void validateAll();
+        void writeToARF();
 };
 
 // TODO: Reserve value_two with immediate
@@ -141,6 +128,7 @@ namespace rs
             std::string reserve(Instructions::Instruction *instrPtr);
             void populateTags(std::string tag, int value);
             bool areAllEntriesFree();
+            void flush();
             int getSize();
             rs::ReservationStationEntry* getValidInstruction();
     };

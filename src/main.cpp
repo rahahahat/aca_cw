@@ -17,11 +17,18 @@
 
 int main(int argc, char* argv[]) {
 
-    std::ifstream i("config.json");
-    i >> config;
-    i.close();
+    
     Processor *processor = Processor::getProcessorInstance()->fabricate();
-    processor->DataMemory[1] = 10;
-    processor->loadProgram(config["program"].get<std::string>());
+    processor->loadDataMemory();
+    // processor->DataMemory[0] = 3;
+    // processor->DataMemory[1] = 1;
+    // processor->DataMemory[2] = 1;
+    // processor->DataMemory[3] = 1;
+    // processor->DataMemory[4] = 4;
+    // processor->DataMemory[5] = 4;
+    // processor->DataMemory[6] = 4;
+    std::string program = getConfig()->program;
+    processor->loadProgram(program);
     processor->runProgram();
+    processor->dumpDataMemory();
 }

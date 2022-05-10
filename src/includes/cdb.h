@@ -22,7 +22,10 @@ class CommonDataBus
         LSQueue *lsq;
         ReorderBuffer* robuff;
         void broadcast(Register destination, std::string tag, int value);
+        void broadcast(int mem_addr, std::string tag, int value);
         void commit(Register destination, std::string tag,int value);
+        void commitToMemory(int mem_address, std::string tag, int value);
+        void flushAll(int pc_val);
 };
 
 #endif

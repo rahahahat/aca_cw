@@ -80,8 +80,6 @@ class LinkedList {
         void add(T* value)
         {
             LLNode<T> *node = new LLNode<T>(value);
-            std::cout << size << std::endl;
-            std::cout << head << std::endl;
 
             if (head == NULL && size == 0)
             {

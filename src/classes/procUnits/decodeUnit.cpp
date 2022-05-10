@@ -79,6 +79,7 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             splitInstr.pop_back();
             instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
             splitInstr.pop_back();
+            instrPtr->pc_no_pred = processor->PC;
             return;
         default:
             // Instruction format: opcode rs rt immediate
@@ -145,19 +146,19 @@ ODecodeUnit::ODecodeUnit()
 
 void ODecodeUnit::post()
 {
+
     if (!busy) return;
     busy = false;
-    instr = NULL;
     switch(instr->type)
     {
         case JType:
             // TODO: How should jumps work? 
             // instrP
         case End:
-            // TODO: Think about the stall guard here!
             // instrPtr->stage = DONE;
             if (!processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Halt);
             processor->getSB()->invalidatePC();
+            instr = NULL;
             return;
         default:
             instr->stage = ISSUE;
@@ -165,14 +166,12 @@ void ODecodeUnit::post()
             {
                 LSQNode* node = processor->getLsq()->addToQueue(instr);
                 processor->getRB()->addEntry(node->getTag(), instr);
+                instr = NULL;
                 return;
-            }
-            if (isInstrBranch(instr))
-            {
-                processor->getPipeline()->stallPipeline(Branch); 
             }
             std::string tag = processor->getRS()->reserve(instr);
             processor->getRB()->addEntry(tag, instr);
+            instr = NULL;
             return;
     }
 };
@@ -192,18 +191,57 @@ void ODecodeUnit::fetchTick()
 
 void ODecodeUnit::decodeTick()
 {
+
     if (!busy) return;
-    if (processor->getPipeline()->stalled()) return;
-    run();
+    if (processor->getPipeline()->stalled())
+    {
+        busy = false;
+        return;
+    }
+    if (instr->stage != DECODE) return;
+    std::cout << "Decoding instruction: " << instr->instrString << std::endl;
+    decode(instr);
+    if (instr->opcode == HALT)
+    {
+        processor->getPipeline()->stallPipeline(Halt);
+        return;
+    }
+    if (isOpBranch(instr->opcode))
+    {
+        processor->getSB()->saveState();
+        // Speculation
+        conf* config = getConfig();
+        bool takeBranch = config->speculate->take_branch;
+        if (takeBranch) 
+        {
+            processor->PC = instr->immediateOrAddress;
+            instr->pred = instr->immediateOrAddress;
+        } else {
+            instr->pred = processor->PC;
+        }
+        std::cout << termcolor::bold << termcolor::red 
+        << "Speculative Execution - Take Branch: " 
+        << takeBranch <<" (Goto: "<< instr->pred << ")" 
+        << termcolor::reset << std::endl;
+        // PREDICT HERE
+        // processor->getPipeline()->stallPipeline(Branch);
+    }
 };
 
-void ODecodeUnit::flush(std::string tag)
+void ODecodeUnit::flush()
 {
+    instr = NULL;
+    busy = false;
     
+}
+
+void ODecodeUnit::nextTick()
+{
+    run();
 }
 
 void ODecodeUnit::run()
 {
-    pre();
-    decode();
+    fetchTick();
+    decodeTick();
 }

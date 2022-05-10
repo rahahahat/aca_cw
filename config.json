@@ -1,17 +1,25 @@
 {
-  "debug": true,
-  "stepMode": {
+  "debug": {
     "enabled": false,
     "till": 12,
     "cycle": true,
-    "instruction": true
+    "instruction": true,
+    "printSb": false
   },
-  "program": "factorial.txt",
-  "procUnits": {
+  "program": "vecadd.txt",
+  "units": {
     "fetch": 1,
-    "decode": 3,
-    "execute":3,
-    "memory": 1
+    "decode": 4,
+    "execute":4,
+    "memory": 4
   },
-  "takeBranch": false
+  "speculate":
+  {
+    "take_branch": true
+  },
+  "print": {
+    "all" : false,
+    "num_bytes": 400
+  },
+  "stop_time": 50
 }

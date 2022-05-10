@@ -23,8 +23,7 @@ class ProcUnit
         virtual void post(Instructions::Instruction *instrPtr) {};
         virtual void post() {};
         virtual void nextTick() {};
-        virtual void flush(std::string tag) {};
-        bool isInstrBranch(Instructions::Instruction *instrPtr);
+        virtual void flush() {};
         ProcUnit();
 };
 

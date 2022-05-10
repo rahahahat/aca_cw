@@ -14,18 +14,20 @@ namespace Instructions {
 
     class Instruction {
         public:
-            Register rs;
+            int immediateOrAddress;
+            int pc_no_pred;
+            int pred;
+
             pipestage stage;
+            Register rs;
             Register rt;
             Register rd;
-            int immediateOrAddress;
-            int src1;
-            int src2;
-            std::string tag;
-            bool isReadyToExecute;
-            InstructionType type;
             Opcodes opcode;
+            InstructionType type;
+
+            std::string tag;
             std::string instrString;
+
             Instruction();
             Instruction(std::string instr);
             Register getDestination();

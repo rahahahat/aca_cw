@@ -11,9 +11,3 @@ ProcUnit::ProcUnit()
     busy = false;
     return;
 }
-
-bool ProcUnit::isInstrBranch(Instructions::Instruction *instrPtr)
-{
-    Opcodes opcode = instrPtr->opcode;
-    return (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL); 
-}

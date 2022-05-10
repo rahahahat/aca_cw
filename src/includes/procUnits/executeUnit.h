@@ -7,7 +7,6 @@
 class ExecuteUnit: public ProcUnit
 {
     protected:
-        rs::ReservationStation* rs;
         Instructions::Instruction* instr;
         Opcodes opcode;
         InstructionType type;
@@ -19,6 +18,7 @@ class ExecuteUnit: public ProcUnit
         int immediate;
         int result;
         int num_cycles;
+
         virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
         virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
@@ -38,7 +38,6 @@ class OExecuteUnit: public ExecuteUnit
 {
 
     protected:
-        bool isInstrBranch();
         void executeInstrType();
         void executeITypeInstruction();
         void executeJTypeInstruction();
@@ -50,7 +49,7 @@ class OExecuteUnit: public ExecuteUnit
     public:
         void post();
         void run();
-        void flush(std::string tag);
+        void flush();
         OExecuteUnit(): ExecuteUnit() {};
         void nextTick();
 };

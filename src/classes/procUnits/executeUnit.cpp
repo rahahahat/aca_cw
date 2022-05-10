@@ -5,6 +5,7 @@
 #include "processor.h"
 #include "pipeline.h"
 #include "cdb.h"
+#include "util.h"
 
 // TODO: Make Execute unit unbusy
 // Incorporate branch resume logic
@@ -15,123 +16,23 @@ ExecuteUnit::ExecuteUnit()
     src1 = 0;
     src2 = 0;
     immediate = 0;
+    result = 0;
+    num_cycles = 0;
+    instrStr = "";
+    destination = $noreg;
+    rsTag = "~";
+    type = Nop;
+    instr = NULL;
+
 };
 
-void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr)
-{
-    // Register src1_rs = instrPtr->rs;
-    // Register src2_rt = instrPtr->rt; 
-    // switch (instrPtr->opcode)
-    // {
-    // case ADD:
-    // case ADDU:
-    //     instrPtr->temp = instrPtr->src1 + instrPtr->src2;
-    //     break;
-    // case SUB: 
-    // case SUBU:
-    //     instrPtr->temp = instrPtr->src1 - instrPtr->src2;
-    //     break;
-    // case MULT:
-    // case MULTU:
-    //     instrPtr->temp = instrPtr->src1 * instrPtr->src2;
-    //     break;
-    // case DIV:
-    // case DIVU:
-    //     instrPtr->temp = instrPtr->src1 / instrPtr->src2;
-    //     break;
-    // case AND:
-    //     instrPtr->temp = instrPtr->src1 & instrPtr->src2;
-    //     break;
-    // case OR:
-    //     instrPtr->temp = instrPtr->src1 | instrPtr->src2;
-    //     break;
-    // case NOR:
-    //     instrPtr->temp = ~(instrPtr->src1 | instrPtr->src2); 
-    //     break;
-    // case XOR:
-    //     instrPtr->temp = instrPtr->src1 ^ instrPtr->src2;
-    //     break;
-    // default:
-    //     break;
-    // }
-}
+void ExecuteUnit::executeRTypeInstruction(Instructions::Instruction *instrPtr) {}
 
-void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr)
-{
-    // Opcodes opcode = instrPtr->opcode;
-    // int immediate = instrPtr->immediateOrAddress;
-    // switch (instrPtr->opcode)
-    // {
-    // case ADDI:
-    // case ADDIU:
-    //     instrPtr->temp = instrPtr->src1 + immediate;
-    //     break;
-    // case LW:
-    //     instrPtr->immediateOrAddress = instrPtr->src1 + immediate;
-    //     break;
-    // case SW:
-    //     instrPtr->immediateOrAddress = instrPtr->src1 + immediate;
-    //     break;
-    // case ANDI:
-    //     instrPtr->temp = instrPtr->src1 & immediate;
-    //     break;
-    // case ORI:
-    //     instrPtr->temp = instrPtr->src1 | immediate;
-    //     break;
-    // case LSR:
-    //     instrPtr->temp = instrPtr->src1 >> immediate;
-    //     break;
-    // case BEQ:
-    //     instrPtr->temp = instrPtr->src1 == instrPtr->src2;
-    //     break;
-    // case BNE:
-    //     instrPtr->temp = instrPtr->src1 != instrPtr->src2;
-    //     break;
-    // case BGTE:
-    //     instrPtr->temp = instrPtr->src1 >= instrPtr->src2;
-    //     break;
-    // case BL:
-    //     instrPtr->temp = instrPtr->src1 < instrPtr->src2;
-    //     break;
-    // }
-    // return;
-}
+void ExecuteUnit::executeITypeInstruction(Instructions::Instruction *instrPtr) {}
 
-void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr)
-{
-    // Register src = instrPtr->rs;
-    // int immediate = instrPtr->immediateOrAddress;
-    // switch (instrPtr->opcode)
-    // {
-    // case J:
-    //     instrPtr->temp = immediate;
-    //     break;
-    // case JR:
-    //     instrPtr->temp = processor->PC - 1;
-    //     break;
-    // default:
-    //     break;
-    // }
-};
+void ExecuteUnit::executeJTypeInstruction(Instructions::Instruction *instrPtr) {};
 
-void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr)
-{   
-    switch(instrPtr->type)
-    {
-        case RType:
-            executeRTypeInstruction(instrPtr);
-            break;
-        case IType:
-            executeITypeInstruction(instrPtr);
-            break;
-        case JType:
-            executeJTypeInstruction(instrPtr);
-            break;
-        default: // Halt
-            return;
-    };
-    return;
-};
+void ExecuteUnit::executeInstrType(Instructions::Instruction *instrPtr) {};
 
 /* ---------------------------------------------------------------------------------------- */
 /* ----------------------------------    0ExecuteUnit   ----------------------------------- */
@@ -152,23 +53,23 @@ void OExecuteUnit::run()
 {
     pre();
     execute();
-    // post();
 }
 
 void OExecuteUnit::post()
 {
     // TODO: Add Jump support
     if (!busy) return;
-    instr->stage = DISPATCH;
+    instr->stage = COMMIT;
+    Register broadcast_destination = destination; 
+    int broadcast_val = result;
+    if (isOpBranch(opcode))
+    {
+        broadcast_val = (result) ? immediate : instr->pc_no_pred;
+        broadcast_destination = $pc;
+    }
+    processor->getCDB()->broadcast(broadcast_destination, rsTag, broadcast_val);
     busy = false;
     instr = NULL;
-    if (isInstrBranch())
-    {
-        int addr = (result) ? immediate : processor->PC;
-        processor->getCDB()->broadcast($pc, rsTag, addr);
-        return;
-    }
-    processor->getCDB()->broadcast(destination, rsTag, result);
     return;
 }
 
@@ -178,22 +79,12 @@ void OExecuteUnit::execute()
     if (instr->stage != EXECUTE) return;
     std::cout << termcolor::bold << termcolor::bright_red << "Executing Instruction: "
     << instrStr << termcolor::reset << std::endl;
-    std::cout << type << std::endl;
 
     executeInstrType();
     return;
 }
 
-bool OExecuteUnit::isInstrBranch()
-{
-    return (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL);
-}
-
-void OExecuteUnit::populateRSTags(Instructions::Instruction *instrPtr)
-{ 
-    // processor->getRS()->validate(instrPtr);
-    // return;
-}
+void OExecuteUnit::populateRSTags(Instructions::Instruction *instrPtr) {}
 
 bool OExecuteUnit::seekInstruction()
 {
@@ -350,12 +241,11 @@ void OExecuteUnit::nextTick()
     run();
 }
 
-void OExecuteUnit::flush(std::string tag)
+void OExecuteUnit::flush()
 {
-    if (rsTag.compare(tag) != 0) return;
     opcode = NOP;
     busy = false;
-    std::string rsTag = "";
+    rsTag = "";
     destination = $noreg;
     src1 = 0;
     src2 = 0;

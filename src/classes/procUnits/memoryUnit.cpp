@@ -47,6 +47,8 @@ OMemoryUnit::OMemoryUnit()
     store_val = 0;
     opcode = NOP;
     lsqTag = "~";
+    cycle = 0;
+    result = 0;
 }
 void OMemoryUnit::pre()
 {
@@ -109,19 +111,27 @@ void OMemoryUnit::load()
 
 void OMemoryUnit::store()
 {
+    // std::cout << "STORE HAPPENS" << std::endl;
     if (!busy) return;
-    processor->DataMemory[address] = store_val;
+    // processor->DataMemory[address] = store_val;
     return;
 };
 
 void OMemoryUnit::post()
 {
     if (!busy) return;
+    busy = false;
     if (opcode == LW)
     {
+        std::cout << "DOING THIS HERE" << std::endl;
         processor->getCDB()->broadcast(destination, lsqTag, result);
+        return;
     }
-    busy = false;
+    if (opcode == SW)
+    {
+        processor->getCDB()->broadcast(address, lsqTag, store_val);
+        return;
+    }
     return;
 }
 
@@ -135,9 +145,8 @@ void OMemoryUnit::cycleReset()
     cycle = 2;
 }
 
-void OMemoryUnit::flush(std::string tag)
+void OMemoryUnit::flush()
 {
-    if (lsqTag.compare(tag) != 0) return;
     lsqTag = "";
     opcode = NOP;
     store_val = 0;

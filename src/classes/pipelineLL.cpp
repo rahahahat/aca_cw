@@ -17,7 +17,7 @@ PipelineLLNode::PipelineLLNode(Instructions::Instruction *instrPtr)
 PipelineLLNode::PipelineLLNode(int id)
 {
     payload = new Instructions::Instruction();
-    payload->id = id;
+    // payload->id = id;
     next = NULL;
     prev = NULL;
 }
@@ -128,7 +128,6 @@ Instructions::Instruction* PipelineLL::remove(PipelineLLNode* pl_node)
 {
     if (pl_node == NULL)
     {
-        std::cout << "PipelineLLNode is NULL" << std::endl;
         return NULL;
     }
     PipelineLLNode* prev = pl_node->prev;

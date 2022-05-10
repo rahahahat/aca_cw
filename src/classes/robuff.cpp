@@ -12,6 +12,12 @@ ROBEntry::ROBEntry(std::string tag_name)
     valid = false;
     brpred = false;
     opcode = NOP;
+    instr = NULL;
+    instrStr = "";
+    value =0;
+    sw_addr = -1;
+    isBranch = false;
+    destination = $noreg;
     return;
 };
 void ROBEntry::validate()
@@ -26,6 +32,7 @@ void ROBEntry::setInstruction(Instructions::Instruction *instrPtr)
     instrStr = instr->instrString;
     opcode = instrPtr->opcode;
     isBranch = isOpBranch(opcode);
+    brpred = instrPtr->pred;
     return;
 };
 void ROBEntry::setValue(int val)
@@ -75,7 +82,17 @@ ROBEntry* ReorderBuffer::pop()
 {
     if (buffer->head == NULL) return NULL;
     ROBEntry *entry = buffer->head->payload;
-    if (entry->isValid()) return buffer->pop();
+
+    if (entry->isValid()) 
+    {
+        if (entry->isBranch && entry->brpred != entry->getValue())
+        {
+            std::cout << "FLUSHING" << std::endl;
+            flush(buffer->head);
+            return NULL;
+        }
+        return buffer->pop();
+    }
     return NULL;
 };
 void ReorderBuffer::nextTick()
@@ -84,17 +101,44 @@ void ReorderBuffer::nextTick()
 };
 void ReorderBuffer::commitHead()
 {
-    ROBEntry* entry = pop();
-    while(entry != NULL)
+    
+    for (int x = 0; x < 4; x++)
     {
-        processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue());
-        entry = pop();
+        ROBEntry* entry = pop();
+        if (entry == NULL) return;
+        if (isOpBranch(entry->opcode))
+        {
+            processor->getCDB()->commit($noreg, entry->getTag(), entry->getValue());
+        }
+        else if (entry->opcode == SW)
+        {
+            processor->getCDB()->commitToMemory(entry->sw_addr, entry->getTag(), entry->getValue());
+        }
+        else
+        {
+            processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue());
+        }
     }
-    return;
 };
-void ReorderBuffer::flush(std::string tag)
+
+int ReorderBuffer::getSize()
 {
+    return buffer->size;
+}
+
+void ReorderBuffer::flush(LLNode<ROBEntry> *flush_from)
+{
+
     // TODO: FLUSH entry matching with the tag and all all after it.
+    LLNode<ROBEntry>* curr = flush_from;
+    int pc_value = flush_from->payload->getValue();
+    while(curr != NULL)
+    {
+        LLNode<ROBEntry>* next = curr->next;
+        buffer->removeAndDestroy(curr);
+        curr = next;
+    }
+    processor->getCDB()->flushAll(pc_value);
     return;
 };
 
@@ -115,31 +159,56 @@ void ReorderBuffer::populateEntry(std::string tag, int value)
     return;
 };
 
+void ReorderBuffer::populateEntry(std::string tag, int value, int mem_addr)
+{
+    LLNode<ROBEntry> *node = buffer->head;
+    while(node != NULL)
+    {
+        ROBEntry *entry = node->payload;
+        if (entry->getTag().compare(tag) == 0)
+        {
+            entry->setValue(value);
+            entry->sw_addr = mem_addr;
+            entry->validate();
+            return;
+        }
+        node = node->next;
+    }
+    return;
+};
+
 void ReorderBuffer::print()
 {
-    std::cout << "ROBUFF" << std::endl;
     LLNode<ROBEntry> *curr = buffer->head;
+    
+    std::cout
+    << "\n"
+    << termcolor::bright_green
+    << "|"
+    << "Tag\t\t|"
+    << "Instr\t\t|"
+    << "Valid\t|"
+    << "Value\t\t|"
+    << termcolor::reset
+    << std::endl;
+
     while(curr != NULL)
     {
         ROBEntry* entry = curr->payload;
         std::cout
-        << termcolor::red << termcolor:: bold
-        << "Tag: "
+        << termcolor::bright_blue
+        << "|"
         << entry->getTag()
-        << termcolor::reset
-        << termcolor:: green << termcolor:: bold
-        << " | "
-        << "instr: "
+        << "\t\t|"
         << entry->getInstrStr()
-        << " | "
-        << "valid: "
+        << "\t| "
         << entry->isValid()
-        << " | "
-        << "value: "
+        << "\t|"
         << entry->getValue()
-        << " | "
+        << "\t\t| "
         << termcolor::reset
         << std::endl;
         curr = curr->next;
     }
+    std::cout << std::endl;
 }

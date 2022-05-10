@@ -15,11 +15,13 @@ class ROBEntry
         std::string instrStr;
         bool valid;
         int value;
-        bool isBranch;
         Register destination;
-        Opcodes opcode;
-        bool brpred;
+
     public:
+        Opcodes opcode;
+        bool isBranch;
+        int brpred;
+        int sw_addr;
         ROBEntry(std::string tag_name);
         void validate();
         void setInstruction(Instructions::Instruction *instrPtr);
@@ -43,9 +45,11 @@ class ReorderBuffer
         void addEntry(std::string tag_name, Instructions::Instruction *instrPtr);
         ROBEntry* pop();
         void nextTick();
-        void flush(std::string tag);
+        void flush(LLNode<ROBEntry> *entry);
         void populateEntry(std::string tag, int value);
+        void populateEntry(std::string tag, int value, int mem_addr);
         void print();
+        int getSize();
 };
 
 #endif

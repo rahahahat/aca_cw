@@ -8,8 +8,6 @@
 LSQNode::LSQNode(std::string str): ReserveEntry(str)
 {
     addr = -1;
-    address = -1;
-    busy = false;
     return;
 }
 
@@ -29,12 +27,14 @@ void LSQNode::populateSources(std::string tag, int value)
     {
         valid_pair.first = 1;
         value_pair.first = value;
+        // tag_pair.first = "~";
     }
     if (tag_pair.second.compare(tag) == 0)
     {
         
         valid_pair.second = 1;
         value_pair.second = value;
+        // tag_pair.second = "~";
     }
     return;
 }
@@ -49,13 +49,11 @@ LSQueue::LSQueue()
 
 LSQNode* LSQueue::addToQueue(Instructions::Instruction *instrPtr)
 {
-    std::cout << "ADD_TO_QUEUE" << std::endl;
     LSQNode *node = new LSQNode(randomId(5));
     if (instrPtr->opcode == LW) 
     {
         populateLoad(node, instrPtr);
         queue->add(node);
-        std::cout << "Queue Size: " << queue->size << std::endl;
         return node;
     }
     if (instrPtr->opcode == SW) 
@@ -106,6 +104,7 @@ void LSQueue::populateLoad(LSQNode* node, Instructions::Instruction *instrPtr)
     node->addr = instrPtr->immediateOrAddress;
     node->destination = instrPtr->rt;
     node->opcode = LW;
+    node->instrStr = instrPtr->instrString;
 
     processor->getSB()->inValidate(instrPtr->rt, node->getTag());
 }
@@ -120,6 +119,7 @@ void LSQueue::populateStore(LSQNode* node, Instructions::Instruction *instrPtr)
     node->updateValues(std::pair<int, int>(sb_entry_one->value, sb_entry_two->value));
     node->addr = instrPtr->immediateOrAddress;
     node->opcode = SW;
+    node->instrStr = instrPtr->instrString;
 
     return;
 }
@@ -181,6 +181,7 @@ LSQNode* LSQueue::getHead()
 
 void LSQueue::calculateAddrs()
 {
+
     LLNode<LSQNode> *head = queue->head;
     // TODO: Verify Load/Store format
     while(head != NULL)
@@ -191,6 +192,7 @@ void LSQueue::calculateAddrs()
             l_node->address = l_node->value_pair.first + l_node->addr;
             if (l_node->valid_pair.second)
             {
+                std::cout << "Calculating Addrs: " << l_node->instrStr << std::endl;
                 l_node->isReady = true;
             }
         }
@@ -201,16 +203,14 @@ void LSQueue::calculateAddrs()
 
 LSQNode* LSQueue::getValidInstruction()
 {
-    std::cout << "THIS HAPPENS: " << queue->size << std::endl;
     
     LLNode<LSQNode> *head = queue->head;
     while(head != NULL)
     {
-        std::cout << "HAYLO" << std::endl;
         LSQNode *l_node = head->payload;
         if (!l_node->busy && l_node->isReady && isOpValid(l_node))
         {
-            std::cout << "WOOOO" << std::endl;
+            std::cout << termcolor::bold << termcolor::blue << "Valid Instruction: " << l_node->instrStr << termcolor::reset << std::endl;
             l_node->busy = true;
             return l_node;
         }
@@ -221,45 +221,84 @@ LSQNode* LSQueue::getValidInstruction()
 
 void LSQueue::nextTick()
 {
-    std::cout << "Calc addrs" << std::endl;
     calculateAddrs();
     return;
 }
 
-void LSQueue::print()
+void LSQueue::flush()
+{
+    LLNode<LSQNode> *curr = queue->head;
+    while(curr != NULL)
+    {
+        LSQNode* node = curr->payload;
+        LLNode<LSQNode>* next = curr->next;
+        queue->removeAndDestroy(curr);
+        curr = next;
+    }
+};
+
+Opcodes LSQueue::getOpcode(std::string tag)
 {
     LLNode<LSQNode> *head = queue->head;
     while(head != NULL)
     {
-        LSQNode* node = head->payload;
-        std::string tag = node->getTag();
-        if (node->opcode == LW)
+        LSQNode *l_node = head->payload;
+        if (l_node->getTag().compare(tag) == 0) 
         {
-            std::cout << termcolor::bold << termcolor::red
-            <<  "| opcode: LW" 
-            << " | tag: " << tag 
-            << " | src-tag: " << node->tag_pair.first
-            << " | src-valid: " << node->valid_pair.first
-            << " | src-value: " << node->value_pair.first
-            << " | address: " << node->addr
-            << " | dest: $r" << node->destination
-            << " | " << termcolor::reset << std::endl;
-        }
-        if (node->opcode == SW)
-        {
-            std::cout << termcolor::bold << termcolor::blue
-            <<  "| opcode: SW" 
-            << " | tag: " << tag 
-            << " | src-tag: " << node->tag_pair.first
-            << " | src-valid: " << node->valid_pair.first
-            << " | src-value: " << node->value_pair.first
-            << " | src-tag: " << node->tag_pair.second
-            << " | src-valid: " << node->valid_pair.second
-            << " | src-value: " << node->value_pair.second
-            << " | address: " << node->addr
-            << " | " << termcolor::reset << std::endl;
+            return l_node->opcode;
         }
         head = head->next;
     }
+    return NOP;
+}
+void LSQueue::print()
+{
+    LLNode<LSQNode> *head = queue->head;
+    std::cout 
+    << "\n"
+    << termcolor::bright_green 
+    << "|Tag \t|"
+    << "Src One\tValid\tValue\t|"
+    << "Src Two\tValid\tValue\t|"
+    << "Busy\t|"
+    << "Address\t|"
+    << "Instr\t\t\t|"
+    << termcolor::reset
+    << std::endl;
+
+    while(head != NULL)
+    {
+        LSQNode* node = head->payload;
+        std::string tag = node->getTag();
+        std::cout
+        << termcolor::bright_blue
+        << "|"
+        << termcolor::bold << termcolor::bright_cyan
+        << tag
+        << termcolor::reset << termcolor::bright_blue
+        << "\t|"
+        << node->tag_pair.first
+        << "\t\t"
+        << node->valid_pair.first
+        << "\t"
+        << node->value_pair.first
+        << "\t|"
+        << node->tag_pair.second
+        << "\t\t"
+        << node->valid_pair.second
+        << "\t"
+        << node->value_pair.second
+        << "\t|"
+        << node->busy
+        << "\t|"
+        << node->addr
+        << "\t\t|"
+        << node->instrStr 
+        << "\t\t|"
+        << termcolor::reset
+        << std::endl;
+        head = head->next;
+    }
+    std::cout << std::endl;
     return;
 }

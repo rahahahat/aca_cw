@@ -13,7 +13,7 @@
 #include "pipeline.h"
 #include "events.h"
 #include "procUnit.h"
-
+#include <set>
 
 
 class Pipeline;
@@ -23,7 +23,6 @@ class Scoreboard;
 class CommonDataBus;
 class LSQueue;
 class ReorderBuffer;
-// class CDB;
 
 namespace rs 
 {
@@ -71,6 +70,8 @@ class Processor: public EventDispatcher
         
         void runProgram();
         void loadProgram(std::string fn);
+        void loadDataMemory();
+        void dumpDataMemory();
         void regDump();
         void printLabelMap();
         void stepMode();

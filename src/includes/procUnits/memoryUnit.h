@@ -25,7 +25,6 @@ class MemoryUnit: public ProcUnit
 class OMemoryUnit: public MemoryUnit
 {
     private:
-        LSQueue *lsq;
         std::string lsqTag;
         Opcodes opcode;
         int store_val;
@@ -42,7 +41,7 @@ class OMemoryUnit: public MemoryUnit
     public:
         OMemoryUnit();
         void nextTick();
-        void flush(std::string tag);
+        void flush();
         void run();
         void post();
 };

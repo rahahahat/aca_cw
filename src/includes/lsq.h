@@ -41,6 +41,8 @@ class LSQueue
         LSQNode* getValidInstruction();
         void nextTick();
         void print();
+        void flush();
+        Opcodes getOpcode(std::string tag);
 };
 
 #endif
