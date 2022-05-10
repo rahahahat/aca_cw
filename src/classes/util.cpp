@@ -9,16 +9,13 @@ std::vector<std::string> splitString(const std::string& str) {
 	return result;
 }
 
-void printCycleStart(int cycle, int num_instr)
+void printCycleStart(int cycle)
 {
 	std::cout << termcolor::bold
 	<< "\n\nClock cycle: "
 	<< termcolor::green
 	<< cycle
-	<< termcolor::white << " (Number of Instructions in Pipeline: " 
-	<< termcolor::blue 
-	<< num_instr << termcolor::white << ") "
-	<< " ----------------------------------"
+	<< "  ----------------------------------"
 	<< termcolor::reset << std::endl << std::endl;
 }
 

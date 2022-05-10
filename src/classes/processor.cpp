@@ -11,15 +11,18 @@
 #include "cdb.h"
 #include "robuff.h"
 #include "util.h"
+#include "branch.h"
 
-/*---------------------------------------------------*/
-/*---------------------Processor---------------------*/
-/*---------------------------------------------------*/
+// #################################################################################################
+// Processor
+// #################################################################################################
+
 Processor::Processor() {
 
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
+    this->btb = new BranchTargetBuffer();
 };
 
 void Processor::loadProgram(std::string fn) {
@@ -31,25 +34,25 @@ void Processor::loadProgram(std::string fn) {
     printInstructionMemory(this);
     printLabelMap();
     return;
-}
+};
 
 void Processor::attachLSQ(LSQueue *queue)
 {
     lsq = queue;
     return;
-}
+};
 
 void Processor::attachCDB(CommonDataBus *bus)
 {
     cdb = bus;
     return;
-}
+};
 
 void Processor::attachReorderBuffer(ReorderBuffer *rb)
 {
     robuff = rb;
     return;
-}
+};
 
 Processor* Processor::fabricate() {
     
@@ -59,6 +62,8 @@ Processor* Processor::fabricate() {
     LSQueue *queue = new LSQueue();
     Parser *parser = new Parser(this);
     ReorderBuffer *robuff = new ReorderBuffer(64);
+    BranchTargetBuffer* btb = new BranchTargetBuffer();
+    BranchPredictor* brp = new BranchPredictor(btb);
 
     // TODO: Validate attach order for ROB
     attachProcHelper(scoreboard);
@@ -67,12 +72,14 @@ Processor* Processor::fabricate() {
     attachPipeline(pipeline);
     attachLSQ(queue);
     attachReorderBuffer(robuff);
+    attachBTB(btb);
+    attachBranchPredictor(brp);
 
     CommonDataBus *bus = new CommonDataBus();
     attachCDB(bus);
 
     return this;
-}
+};
 
 void Processor::destroy(Processor *processor) {
 
@@ -81,42 +88,48 @@ void Processor::destroy(Processor *processor) {
     delete processor->pipeline;
     delete processor;
     return;
-}
+};
 
 Pipeline* Processor::getPipeline()
 {
     return pipeline;
-}
+};
 
 Scoreboard* Processor::getSB()
 {
     return scoreboard;
-}
+};
 
 CommonDataBus* Processor::getCDB()
 {
     return cdb;
-}
+};
 
 rs::ReservationStation* Processor::getRS()
 {
     return reservation_station;
-}
+};
 
 LSQueue* Processor::getLsq()
 {
     return lsq;
-}
+};
 
 ReorderBuffer* Processor::getRB()
 {
     return robuff;
 };
-void Processor::attachParser(Parser *psr)
+
+BranchTargetBuffer* Processor::getBTB()
 {
-    parser = psr;
-    return;
-}
+    return btb;
+};
+
+BranchPredictor* Processor::getPredictor()
+{
+    return predictor;
+};
+
 void Processor::loadDataMemory()
 {
     nlohmann::json jdata;
@@ -128,7 +141,8 @@ void Processor::loadDataMemory()
     {
         DataMemory[i] = data.at(i);
     }
-}
+};
+
 void Processor::dumpDataMemory()
 {
     conf* config = getConfig();
@@ -137,13 +151,14 @@ void Processor::dumpDataMemory()
     output.open("sim.out");
     for (int i = 0; i < max_iter; i++)
     {
-        output << i << ": " << DataMemory[i] << "\t\t\t\t";
+        output << i << ": " << DataMemory[i] << "\t\t\t\t\t\t\t";
         if ((i+1) % 5 == 0 && i != 0)
         {
             output << std::endl;
         }
     }
-}
+};
+
 void Processor::loadInstructionIntoMemory(std::string instruction) {
 
     const char ch = instruction.back();
@@ -157,6 +172,13 @@ void Processor::loadInstructionIntoMemory(std::string instruction) {
     return;
 };
 
+void Processor::attachParser(Parser *psr)
+{
+    parser = psr;
+    return;
+};
+
+
 void Processor::attachPipeline(Pipeline *pipe) {
 
     pipeline = pipe;
@@ -167,35 +189,48 @@ void Processor::attachProcHelper(Scoreboard *sb)
 {
     scoreboard = sb;
     return;
-}
+};
 
 void Processor::attachProcHelper(rs::ReservationStation* rs)
 {
     reservation_station = rs;
+    return;
+};
+
+void Processor::attachBranchPredictor(BranchPredictor* bpr)
+{
+    predictor = bpr;
+    return;
+}
+
+void Processor::attachBTB(BranchTargetBuffer* bt)
+{
+    btb = bt;
     return;
 }
 
 void Processor::runProgram() { 
 
     conf* config = getConfig();
-    int clock = 0;
+    this->clock = 0;
     int stopTime = config->stop_time;
     while(!progEnded)
     {
+        this->clock++;
+        printCycleStart(this->clock);
+
         stepMode();
-        clock++;
-        printCycleStart(clock, pipeline->getInstrSize());
+        
         if (pipeline->stalledBy() == Flush) pipeline->resumePipeline(Flush);        
-        pipeline->nextTick(clock);
-        // if (config["debug"].get<bool>()) regDump();
+        pipeline->nextTick(this->clock);
+        
         setProgramEnded();
         std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
     }
-    scoreboard->writeToARF();
     regDump();
-    printProgramEnd(clock);
+    printProgramEnd(this->clock);
     return;
-}
+};
 
 void Processor::setProgramEnded()
 {
@@ -213,32 +248,7 @@ bool Processor::programEnded()
     return progEnded;
 };
 
-/*---------------------------------------------------*/
-/*---------------------Extras------------------------*/
-/*---------------------------------------------------*/
 
-void printInstructionMemory(Processor *processor) {
-
-    int size = processor->instrMemSize;
-    for (int x = 0; x < size; x++) {
-        std::cout << processor->instructionMemory[x] << ": " << termcolor::red << x << termcolor::reset << std::endl;
-    }
-    return;
-};
-
-void printInstructionMemoryAtIndex(Processor processor, int index) {
-
-    if (index > 512) {
-        std::cerr << "Error in printInstructionMemoryAtIndex: index " << index << " is greater than 512" << std::endl;
-        return;
-    }
-    if (index > processor.instrMemSize - 1) {
-        std::cerr << "Error in printInstructionMemoryAtIndex: index " << index << " is greater than number of instructions currently in memory." << std::endl;
-        return;
-    }
-    std::cout << processor.instructionMemory[index] << std::endl;
-    return;
-};
 
 void Processor::regDump() {
     std::cout << std::endl;
@@ -270,7 +280,7 @@ void Processor::regDump() {
     << std::endl;
 
     std::cout << std::endl;
-}
+};
 
 void Processor::printLabelMap()
 {
@@ -287,7 +297,8 @@ void Processor::printLabelMap()
         << termcolor::reset
         << std::endl;
     }
-}
+};
+
 void Processor::stepMode()
 {
     if (!getConfig()->debug->enabled) return;
@@ -330,4 +341,31 @@ void Processor::stepMode()
         }
         ss = "";
 	}
-}
+};
+
+// #################################################################################################
+// Extras
+// #################################################################################################
+
+void printInstructionMemory(Processor *processor) {
+
+    int size = processor->instrMemSize;
+    for (int x = 0; x < size; x++) {
+        std::cout << processor->instructionMemory[x] << ": " << termcolor::red << x << termcolor::reset << std::endl;
+    }
+    return;
+};
+
+void printInstructionMemoryAtIndex(Processor processor, int index) {
+
+    if (index > 512) {
+        std::cerr << "Error in printInstructionMemoryAtIndex: index " << index << " is greater than 512" << std::endl;
+        return;
+    }
+    if (index > processor.instrMemSize - 1) {
+        std::cerr << "Error in printInstructionMemoryAtIndex: index " << index << " is greater than number of instructions currently in memory." << std::endl;
+        return;
+    }
+    std::cout << processor.instructionMemory[index] << std::endl;
+    return;
+};

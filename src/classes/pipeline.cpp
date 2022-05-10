@@ -15,38 +15,20 @@
 #include "procUnit.h"
 #include "robuff.h"
 
+// #################################################################################################
+// Pipeline
+// #################################################################################################
+
 Pipeline::Pipeline()
 {
-    instructions = new PipelineLL();
     processor = Processor::getProcessorInstance();
     stall = 0;
     stalled_by = NoSrc;
 }
 
-int Pipeline::completedInstr(Instructions::Instruction *instrPtr)
-{
-    // if (instrPtr->stage == DONE) return 1;
-    return 0;
-}
-
 pipelineType Pipeline::getType()
 {
     return None; 
-}
-
-int Pipeline::isEmpty()
-{
-    return instructions->size == 0;
-}
-
-void Pipeline::removeCompletedInstructions()
-{
-    instructions->flushCompletedInstructions();
-}
-
-int Pipeline::getInstrSize()
-{
-    return instructions->size;
 }
 
 void Pipeline::resumePipeline(StallSource from)
@@ -71,13 +53,6 @@ int Pipeline::stalled()
 {
     return (stall == 1 && stalled_by != NoSrc);
 }
-
-Instructions::Instruction* Pipeline::addInstructionToPipeline(int id)
-{
-    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    // new_inst->id = id;
-    return new_inst;
-};
 
 void Pipeline::stallPipeline(StallSource by)
 {
@@ -106,140 +81,12 @@ void Pipeline::stallPipeline(StallSource by)
     throw std::runtime_error(ss.str());
 }
 
-void Pipeline::pipeInstructionsToProcessor()
-{
-    // std::cout << termcolor::on_blue << termcolor::bold
-    // << "Number of Instructions in Pipeline: " << instructions->size 
-    // << termcolor::reset << std::endl << std::endl;
+void Pipeline::pipeInstructionsToProcessor() {};
 
-    // PipelineLLNode *curr = instructions->head;
+// #################################################################################################
+// OoOPipeline
+// #################################################################################################
 
-    // while(curr != NULL)
-    // {
-    //     Instructions::Instruction *instr = curr->payload;
-    //     processor->runInstr(instr);
-    //     curr = curr->next;
-    // }
-    // 
-    // if (stalled())
-    // {
-    //     if (processor->getRS()->hasEmptyEntries() != NULL)
-    //     {
-    //         resumePipeline();
-    //         return;
-    //     }
-    // }
-    // if (processor->getRS()->hasEmptyEntries() == NULL) stallPipeline();
-    // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-}
-
-/* ---------------------------------------------------------------------------------------- */
-/* ------------------------------------- OoOPipeline -------------------------------------- */
-/* ---------------------------------------------------------------------------------------- */
-
-// void OoOPipeline::stallPipelineOnEvent(const EventBase& base)
-// {
-//     stall = true;
-//     static_cast<const Event<int>&>(base);
-//     return;
-// }
-
-// void OoOPipeline::flushPipelineOnEvent(const EventBase& base)
-// {
-//     flush = true;
-//     const Event<PipelineLLNode*>& new_event = static_cast<const Event<PipelineLLNode*>&>(base);
-//     this->instructions->flushAfterNode(new_event.payload);
-//     return;
-// }
-
-
-
-/* ---------------------------------------------------------------------------------------- */
-/* ----------------------------------- ScalarPipeline ------------------------------------- */
-/* ---------------------------------------------------------------------------------------- */
-
-/*
-ScalarPipeline::ScalarPipeline() {
-    instructions = new PipelineLL();
-    processor = NULL;
-    stall = 0;
-};
-
-pipelineType ScalarPipeline::getType() {
-    return Scalar;
-}
-
-
-void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) {
-    instructions->add(instrPtr);
-    return;
-};
-
-void ScalarPipeline::pipeInstructionsToProcessor() {
-    std::cout 
-    << termcolor::on_blue
-    << termcolor::bold
-    << "Number of Instructions in Pipeline: "
-    << instructions->size 
-    << termcolor::reset
-    << "\n"
-    << std::endl;
-    resume();
-    PipelineLLNode *curr = instructions->head;
-    while(curr != NULL)
-    {
-        Instructions::Instruction *instr = curr->payload;
-        processor->runInstr(instr);
-        if (flush) flushNode = curr;
-        if (stalled()) break;
-        curr = curr->next;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
-
-void ScalarPipeline::stallPipeline() {
-    this->stall = 1;
-    return;
-}
-
-void ScalarPipeline::flushPipeline() {
-    this->flush = 1;
-    return;
-}
-
-void ScalarPipeline::stallPipelineOnEvent(const EventBase &base) {
-    this->flushPipelineOnEvent(base);
-    return;
-}
-
-void ScalarPipeline::flushPipelineOnEvent(const EventBase &base) {
-    const Event<int>& new_event = static_cast<const Event<int>&>(base);
-}
-
-void ScalarPipeline::resume() {
-    if (stall == 1)
-    {
-        stall = 0;
-        return;
-    }
-    return;
-}
-
-int ScalarPipeline::stalled() {
-    return (stall == 1);
-}
-
-void ScalarPipeline::flushPipelineOnBranchOrJump()
-{
-    if (flushNode != NULL || flush != 1)
-    {
-        instructions->flushAfterNode(flushNode);
-        flush = 0;
-        return;
-    }
-    return;
-}
-*/
 OoOPipeline::OoOPipeline()
 {
     conf* config = getConfig();
@@ -337,16 +184,7 @@ void OoOPipeline::nextTick(int cycle)
 };
 
 
-void OoOPipeline::pipeInstructionsToProcessor()
-{
-    PipelineLLNode *curr = instructions->head;
-    while(curr != NULL)
-    {
-        Instructions::Instruction *instr = curr->payload;
-        curr = curr->next;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-};
+void OoOPipeline::pipeInstructionsToProcessor() {};
 
 void OoOPipeline::printSB()
 {
@@ -361,7 +199,6 @@ void OoOPipeline::printSB()
 
 bool OoOPipeline::areAllProcUnitsFree()
 {
-    // std::vector<ProcUnit*> iv = proc_units[DECODEUNIT];
     bool busy = true;
     for (auto &unit: en)
     {

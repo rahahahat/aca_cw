@@ -1,9 +1,13 @@
+#include <set>
+
 #include "lsq.h"
 #include "util.h"
 #include "prochelpers.h"
-#include <set>
+#include "termcolor.h"
 
-// TODO: Add Capacity logic
+// #################################################################################################
+// LSQNode
+// #################################################################################################
 
 LSQNode::LSQNode(std::string str): ReserveEntry(str)
 {
@@ -38,6 +42,10 @@ void LSQNode::populateSources(std::string tag, int value)
     }
     return;
 }
+
+// #################################################################################################
+// LSQueue
+// #################################################################################################
 
 LSQueue::LSQueue()
 {

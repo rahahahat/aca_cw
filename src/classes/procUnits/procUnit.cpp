@@ -1,5 +1,4 @@
 #include "procUnit.h"
-#include "constants.h"
 #include "termcolor.h"
 #include "processor.h"
 #include "pipeline.h"

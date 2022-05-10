@@ -1,6 +1,5 @@
 #include "procUnit.h"
 #include "executeUnit.h"
-#include "constants.h"
 #include "termcolor.h"
 #include "processor.h"
 #include "pipeline.h"

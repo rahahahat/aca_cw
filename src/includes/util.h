@@ -11,7 +11,7 @@
 #define _UTILS_INCLUDED_
 
 std::vector<std::string> splitString(const std::string& str);
-void printCycleStart(int cycle, int num_instr);
+void printCycleStart(int cycle);
 void printCycleEnd(int cycle);
 void printProgramEnd(int cycle);
 void stepMode();

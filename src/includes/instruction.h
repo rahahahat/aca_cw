@@ -17,6 +17,7 @@ namespace Instructions {
             int immediateOrAddress;
             int pc_no_pred;
             int pred;
+            int fetched_at_pc;
 
             pipestage stage;
             Register rs;

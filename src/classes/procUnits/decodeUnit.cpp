@@ -208,11 +208,10 @@ void ODecodeUnit::decodeTick()
     }
     if (isOpBranch(instr->opcode))
     {
-        processor->getSB()->saveState();
         // Speculation
         conf* config = getConfig();
         bool takeBranch = config->speculate->take_branch;
-        if (takeBranch) 
+        if (takeBranch)
         {
             processor->PC = instr->immediateOrAddress;
             instr->pred = instr->immediateOrAddress;

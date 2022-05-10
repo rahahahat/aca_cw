@@ -5,11 +5,11 @@
 #include <tuple>
 
 #include "parser.h"
-#include "constants.h"
-#include "pipeline.h"
-#include "instruction.h"
+#include "processor.h"
 
-using namespace Instructions;
+// #################################################################################################
+// Parser
+// #################################################################################################
 
 Parser::Parser(Processor *proc)
 {
@@ -29,17 +29,4 @@ std::vector<std::string> Parser::parseProgram(std::string filename) {
         program.push_back(programLine);
     }
     return program;
-};
-
-void Parser::readProgramsFromCL(int num, char* filenames[]) {
-    int start = 0;
-    for (int x = 0; x < num; x++) {
-        if (start == 1) {
-            programList.push_back(std::string(filenames[x]));
-            totalPrograms++;
-        }
-        if (start == 0 && !PROGRAM_LIST.compare(std::string(filenames[x]))) {
-            start = 1;
-        }
-    };
 };

@@ -11,7 +11,6 @@
 #include "events.h"
 #include "pipestage.h"
 
-// TODO: Add instructions to Load/Store Queue
 
 class Processor;
 class PipelineLLNode;
@@ -25,37 +24,6 @@ enum ProcUnitTypes
     FETCHUNIT, DECODEUNIT, EXECUTEUNIT, MEMORYUNIT
 };
 
-class PipelineLL {
-    public:
-        PipelineLL();
-        PipelineLLNode* head;
-        PipelineLLNode* tail;
-        int size;
-        Instructions::Instruction* pop();
-        void add(Instructions::Instruction *instrPtr);
-        Instructions::Instruction* remove(int i);
-        Instructions::Instruction* remove(PipelineLLNode* pl_node);
-        void removeAndDestroy(int i);
-        void removeAndDestroy(PipelineLLNode* pl_node);
-        Instructions::Instruction* addInstructionForFetch();
-        Instructions::Instruction* addInstructionForFetch(int id);
-        void flushCompletedInstructions();
-        void flushAfterNode(PipelineLLNode *node);
-};
-
-class PipelineLLNode {
-    public:
-        PipelineLLNode();
-        PipelineLLNode(int id);
-        PipelineLLNode(Instructions::Instruction *instrPtr);
-        Instructions::Instruction* payload;
-        PipelineLLNode* next;
-        PipelineLLNode* prev;
-        int isTail();
-        int isHead();
-        Instructions::Instruction* get();
-};
-
 enum pipelineType {
     None, Scalar
 };
@@ -64,55 +32,28 @@ enum StallSource {
     NoSrc, Branch, RS, ROB, Halt, Flush
 };
 
-class Processor;
-
-class Pipeline: public EventDispatcher {
+class Pipeline 
+{
     protected:
         Processor *processor;
-        PipelineLL* instructions;
-        PipelineLLNode *flushNode;
-        static int completedInstr(Instructions::Instruction *instPtr);
-        bool stall;
         StallSource stalled_by;
+        bool stall;
     public:
         Pipeline();
-        virtual Instructions::Instruction* addInstructionToPipeline(Instructions::Instruction *instr) {};
-        virtual Instructions::Instruction* addInstructionToPipeline(int id);
         virtual void pipeInstructionsToProcessor();
         virtual void stallPipeline(StallSource by);
-        virtual void flushPipelineOnBranchOrJump() {};
         virtual void resumePipeline(StallSource);
         virtual void resumePipelineByForce();
         virtual int stalled();
         virtual pipelineType getType();
-        virtual int isEmpty();
-        virtual void removeCompletedInstructions();
-        virtual int getInstrSize();
         virtual bool areAllProcUnitsFree() {return true;};
-        virtual void nextTick(int cycle) {};
-        virtual void flush() {};
-        StallSource stalledBy() {return stalled_by;};
+        virtual void nextTick(int cycle) { return; };
+        virtual void flush() { return; };
+        StallSource stalledBy() { return stalled_by; };
 };
-
-// class ScalarPipeline: public Pipeline {
-//     public:
-//         ScalarPipeline();
-//         virtual void addInstructionToPipeline(Instructions::Instruction *instr);
-//         virtual void addInstructionToPipeline(int id);
-//         virtual void pipeInstructionsToProcessor();
-//         virtual void stallPipeline();
-//         virtual void stallPipelineOnEvent(const EventBase& base);
-//         virtual void flushPipeline();
-//         virtual void flushPipelineOnEvent(const EventBase& base);
-//         virtual void flushPipelineOnBranchOrJump();
-//         virtual void resume();
-//         virtual int stalled();
-//         virtual pipelineType getType();
-// };
 
 class OoOPipeline: public Pipeline
 {
-    // std::pair<init,int>(total_units, available_units) (Execute, MemoryAccess and WriteBack units)
     std::vector<ODecodeUnit*> dn;
     std::vector<OExecuteUnit*> en;
     std::vector<OMemoryUnit*> mn;

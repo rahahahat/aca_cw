@@ -35,14 +35,10 @@ class Scoreboard: public ProcHelper
 {
     private:
         std::map<Register, ScoreboardEntry*> board;
-        std::map<Register, ScoreboardEntry*> savedState;
         Processor *processor;
     public:
         Scoreboard(bool force_null);
         ScoreboardEntry* getEntry(Register r);
-        void saveState();
-        void restoreState();
-        void equaliseSavedState();
         bool validate(Register r, int value, std::string tag);
         void inValidate(Register r, std::string tag_name);
         std::pair<int, int> isValid(Register r);
@@ -95,11 +91,8 @@ namespace rs
     {
         public:
             ReservationStationEntry(std::string tag_name);
-
             InstructionType instr_type;
             bool isReserved;
-
-            void validateSourcesOnEvent(const EventBase& base);
             void populateSources(std::string tag, int value);
     };
 
@@ -110,7 +103,6 @@ namespace rs
             Scoreboard* scoreboard;
             LinkedList<ReservationStationEntry> *entries;
 
-            // std::map<std::string, ReservationStationEntry*> entries;
             void reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveIType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);
             void reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr);

@@ -1,10 +1,13 @@
 #include "prochelpers.h"
-#include "constants.h"
 #include "termcolor.h"
 #include "processor.h"
 #include "termcolor.h"
 #include <sstream>
 #include "util.h"
+
+// #################################################################################################
+// ProcHelper
+// #################################################################################################
 
 ProcHelper::ProcHelper(bool force_null)
 {
@@ -15,7 +18,11 @@ ProcHelper::ProcHelper(bool force_null)
     }
     processor = Processor::getProcessorInstance();
     return;
-}
+};
+
+// #################################################################################################
+// Scoreboard
+// #################################################################################################
 
 ScoreboardEntry::ScoreboardEntry(Register r)
 {
@@ -97,39 +104,26 @@ void Scoreboard::validateAll()
     entry->valid = 1;
     entry->tag = "~";
     entry->value = processor->PC;
-}
+};
 
 void Scoreboard::flush()
 {
     validateAll();
 };
 
-void Scoreboard::writeToARF()
-{
-    // Register regs[] = {$r0, $r1, $r2, $r3, $r4, $r5, $r6, $r7, 
-    // $r8, $r9, $r10, $r11, $r12, $r13, $r14, $r15, 
-    // $r16, $r17, $r18, $r19, $r20, $r21, $r22, $r23, 
-    // $r24, $r25, $r26, $r27, $r28, $r29, $r30, $r31};
-    // for (int i = 0; i < 32; i++)
-    // {
-       
-    //     Register reg = regs[i];
-    //     ScoreboardEntry *entry = board.at(reg);
-    //     entry->value = processor->registers[reg];
-    // }
-};
+void Scoreboard::writeToARF() {};
 
 void Scoreboard::invalidatePC()
 {
     auto itr = board.find($pc);
     if (itr != board.end()) itr->second->valid = 0;
     return;
-}
+};
 
 bool Scoreboard::isPCValid()
 {
     return board.find($pc)->second->valid == 1;
-}
+};
 
 void Scoreboard::inValidate(Register r, std::string new_tag) 
 {
@@ -140,7 +134,7 @@ void Scoreboard::inValidate(Register r, std::string new_tag)
         return;
     }
     return;
-}
+};
 
 std::pair<int, int> Scoreboard::isValid(Register r) 
 {
@@ -149,31 +143,12 @@ std::pair<int, int> Scoreboard::isValid(Register r)
         return std::pair<int, int>(itr->second->valid, itr->second->value);
     }
     return std::pair<int, int>(0,0);
-}
+};
 
 int Scoreboard::getSize()
 {
     return board.size();
-}
-
-void Scoreboard::saveState()
-{
-    savedState = std::map<Register, ScoreboardEntry*>(board);
-    return;
-}
-
-void Scoreboard::restoreState()
-{
-    board = std::map<Register, ScoreboardEntry*>(savedState);
-    savedState = std::map<Register, ScoreboardEntry*>();
-    return;
-}
-
-void Scoreboard::equaliseSavedState()
-{
-    saveState();
-    return;
-}
+};
 
 ScoreboardEntry* Scoreboard::getEntry(Register r)
 {
@@ -181,7 +156,7 @@ ScoreboardEntry* Scoreboard::getEntry(Register r)
     if (itr != board.end()) {
         return itr->second;
     }
-}
+};
 
 void Scoreboard::memDump()
 {
@@ -233,7 +208,11 @@ void Scoreboard::memDump()
     << std::endl;
 
     std::cout << std::endl;
-}
+};
+
+// #################################################################################################
+// ReserveEntry
+// #################################################################################################
 
 ReserveEntry::ReserveEntry(std::string tag_name)
 {
@@ -249,18 +228,18 @@ ReserveEntry::ReserveEntry(std::string tag_name)
     instrStr = "";
     address = -1;
     return;
-}
+};
 
 Instructions::Instruction* ReserveEntry::getInstruction()
 {
      return instr;
-}
+};
 
 void ReserveEntry::setInstruction(Instructions::Instruction *instrPtr)
 {
     instr = instrPtr;
     return;
-}
+};
 
 std::pair<int, int> ReserveEntry::updateValues(std::pair<int, int> pair)
 {
@@ -296,14 +275,16 @@ std::string ReserveEntry::getTag()
     return tag;
 };
 
+// #################################################################################################
+// ReservationStationEntry
+// #################################################################################################
+
 rs::ReservationStationEntry::ReservationStationEntry(std::string tag_name): ReserveEntry(tag_name)
 {
     address = -1;
     isReserved = false;
     return;
-}
-
-void rs::ReservationStationEntry::validateSourcesOnEvent(const EventBase& base) {}
+};
 
 void rs::ReservationStationEntry::populateSources(std::string tag, int value)
 {
@@ -319,7 +300,11 @@ void rs::ReservationStationEntry::populateSources(std::string tag, int value)
         value_pair.second = value;
     }
     return;
-}
+};
+
+// #################################################################################################
+// ReservationStation
+// #################################################################################################
 
 rs::ReservationStation::ReservationStation(Scoreboard* sb, bool force_null): ProcHelper(force_null)
 {
@@ -336,9 +321,9 @@ rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_na
     {
         if (curr->payload->getTag().compare(tag_name) == 0) return curr->payload;
         curr = curr->next;
-    }
+    };
     return NULL;
-}
+};
 
 rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 {
@@ -347,9 +332,9 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
         ReservationStationEntry *entry = new ReservationStationEntry(randomId(5));
         entries->add(entry);
         return entry;
-    }
+    };;
     return NULL;
-}
+};
 
 std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
@@ -377,12 +362,12 @@ std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
         break;
     }
     return entry->getTag();
-}
+};
     
 ScoreboardEntry* rs::ReservationStation::getScoreboardEntry(Register r)
 {
     return scoreboard->getEntry(r);
-}
+};
 
 void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
@@ -399,7 +384,8 @@ void rs::ReservationStation::reserveRType(ReservationStationEntry *entry, Instru
 
     scoreboard->inValidate(instrPtr->rd, entry->getTag());
     return;
-}
+};
+
 void rs::ReservationStation::reserveNoDest(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
     ScoreboardEntry* sb_entry_one = getScoreboardEntry(instrPtr->rs);
@@ -432,7 +418,7 @@ void rs::ReservationStation::reserveIType(ReservationStationEntry *entry, Instru
 
     scoreboard->inValidate(instrPtr->rt, entry->getTag());
     return;
-}
+};
 
 void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instructions::Instruction *instrPtr)
 {
@@ -445,9 +431,9 @@ void rs::ReservationStation::reserveJType(ReservationStationEntry *entry, Instru
     entry->address = instrPtr->immediateOrAddress;
 
     return;
-}
+};
 
-void rs::ReservationStation::populateInstruction(Instructions::Instruction *instrPtr) {}
+void rs::ReservationStation::populateInstruction(Instructions::Instruction *instrPtr) {};
 
 void rs::ReservationStation::populateTags(std::string tag, int value)
 {
@@ -458,9 +444,9 @@ void rs::ReservationStation::populateTags(std::string tag, int value)
         curr = curr->next;
     }
     return;
-}
+};
 
-void rs::ReservationStation::validate(Instructions::Instruction *instrPtr) {}
+void rs::ReservationStation::validate(Instructions::Instruction *instrPtr) {};
 
 void rs::ReservationStation::flush()
 {
@@ -472,7 +458,7 @@ void rs::ReservationStation::flush()
         entries->removeAndDestroy(curr);
         curr = next;
     }
-}
+};
 
 rs::ReservationStationEntry* rs::ReservationStation::getValidInstruction()
 {
@@ -484,7 +470,7 @@ rs::ReservationStationEntry* rs::ReservationStation::getValidInstruction()
         curr = curr->next;
     }
     return NULL;
-}
+};
 
 void rs::ReservationStation::remove(std::string tag)
 {
@@ -500,7 +486,7 @@ void rs::ReservationStation::remove(std::string tag)
         curr = curr->next;
     }
     return;
-}
+};
 
 Opcodes rs::ReservationStation::getOpcode(std::string tag)
 {
@@ -515,7 +501,7 @@ Opcodes rs::ReservationStation::getOpcode(std::string tag)
         curr = curr->next;
     }
     return NOP;
-}
+};
 
 bool rs::ReservationStation::areAllEntriesFree()
 {
@@ -527,12 +513,12 @@ bool rs::ReservationStation::areAllEntriesFree()
         curr = curr->next;
     }
     return true;
-}
+};
 
 int rs::ReservationStation::getSize()
 {
     return entries->size;
-}
+};
 
 void rs::ReservationStation::print()
 {
@@ -584,4 +570,4 @@ void rs::ReservationStation::print()
         curr = curr->next;
     }
     std::cout << std::endl;
-}
+};

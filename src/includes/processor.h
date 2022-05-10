@@ -23,16 +23,19 @@ class Scoreboard;
 class CommonDataBus;
 class LSQueue;
 class ReorderBuffer;
+class BranchTargetBuffer;
+class BranchPredictor;
 
 namespace rs 
 {
     class ReservationStation;
 };
 
-class Processor: public EventDispatcher
+class Processor
 {
     private:
         
+        Processor();
         
         Pipeline *pipeline;
         Parser *parser;
@@ -41,8 +44,10 @@ class Processor: public EventDispatcher
         Scoreboard *scoreboard;
         CommonDataBus *cdb;
         ReorderBuffer *robuff;
+        BranchTargetBuffer* btb;
+        BranchPredictor* predictor;
+
         bool progEnded;
-        
     public:
         static Processor* getProcessorInstance()
         {
@@ -53,21 +58,18 @@ class Processor: public EventDispatcher
             }
             return instance;
         }
-        int clock;
         Processor* fabricate();
         static void destroy(Processor *processor);
-        // ResultForwarder *resultForwarder;
+        
+        int clock;
         std::map<std::string, int> labelMap;
         int32_t registers[32];
         int32_t PC = 0;
         int32_t DataMemory[1024];
         std::string instructionMemory[512];
         int32_t instrMemSize = 0;
-        Processor();
-        void loadInstructionIntoMemory(std::string instruction);
 
-        // void attachProcHelper(ResultForwarder *rf);
-        
+        void loadInstructionIntoMemory(std::string instruction);
         void runProgram();
         void loadProgram(std::string fn);
         void loadDataMemory();
@@ -85,6 +87,8 @@ class Processor: public EventDispatcher
         void attachLSQ(LSQueue  *queue);
         void attachCDB(CommonDataBus *bus);
         void attachReorderBuffer(ReorderBuffer *rb);
+        void attachBranchPredictor(BranchPredictor* bpr);
+        void attachBTB(BranchTargetBuffer* bt);
 
         Pipeline* getPipeline();
         LSQueue* getLsq();
@@ -92,10 +96,12 @@ class Processor: public EventDispatcher
         Scoreboard* getSB();
         CommonDataBus* getCDB();
         ReorderBuffer* getRB();
+        BranchTargetBuffer* getBTB();
+        BranchPredictor* getPredictor();
 };
 
 
-
+// Extras
 void printInstructionMemory(Processor *processor);
 void printInstructionMemoryAtIndex(Processor processor, int index);
 
