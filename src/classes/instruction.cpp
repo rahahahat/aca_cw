@@ -13,7 +13,6 @@ using namespace Instructions;
 Instruction::Instruction()
 {
     immediateOrAddress = -1;
-    pc_no_pred = -1;
     pred = -1;
     fetched_at_pc = -1;
 
@@ -31,8 +30,8 @@ Instruction::Instruction()
 Instruction::Instruction(std::string instr)
 {
     immediateOrAddress = -1;
-    pc_no_pred = -1;
     pred = -1;
+    fetched_at_pc = -1;
 
     stage = FETCH;
     rs = $noreg;

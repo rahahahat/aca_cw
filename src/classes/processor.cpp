@@ -28,9 +28,55 @@ Processor::Processor() {
 void Processor::loadProgram(std::string fn) {
 
     std::vector<std::string> program = parser->parseProgram(fn);
+    bool data = false;
     for (auto it = std::begin(program); it != std::end(program); ++it) {
-        loadInstructionIntoMemory(*it);
-    }
+        if ((*it).empty() || (*it).front() == '#') continue;
+
+        if (data) 
+        {
+            std::vector<std::string> splitInstr = splitString((*it));
+            for (auto dtr = std::begin(splitInstr); dtr != std::end(splitInstr); ++dtr)
+            {
+                if ((*dtr).front() == '.')
+                {
+                    (*dtr).erase(0,1);
+                    var_map.insert(std::pair<std::string, int>((*dtr), dataMemoryIndex));
+                    std::cout << "DataVar: " << (*dtr) << " MemoryIndex: " << dataMemoryIndex << std::endl;
+                }
+                else 
+                {
+                    DataMemory[dataMemoryIndex] = std::stoi((*dtr));
+                    dataMemoryIndex++;
+                }
+            }
+        }
+        else if ((*it).compare(".data") == 0) 
+        {
+            data = true;
+        }
+        else if ((*it).front() == '.' && (*it).compare(".data") != 0)
+        {
+            (*it).erase(0,1);
+            std::vector<std::string> splitInstr = splitString((*it));
+            std::pair<std::string, int> p = std::pair<std::string, int>();
+
+            DataMemory[dataMemoryIndex] = std::stoi(splitInstr.back(), 0, 16);
+            p.second = dataMemoryIndex;
+            splitInstr.pop_back();
+            p.first = splitInstr.back();
+
+            std::cout << "Variable: " << p.first << " Data: " << DataMemory[dataMemoryIndex] << " MemoryIndex: " << dataMemoryIndex << std::endl;
+            var_map.insert(p);
+            
+            dataMemoryIndex++;
+        } 
+        else 
+        {
+            loadInstructionIntoMemory(*it);
+        }
+
+    };
+    dumpDataMemory();
     printInstructionMemory(this);
     printLabelMap();
     return;
@@ -63,7 +109,7 @@ Processor* Processor::fabricate() {
     Parser *parser = new Parser(this);
     ReorderBuffer *robuff = new ReorderBuffer(64);
     BranchTargetBuffer* btb = new BranchTargetBuffer();
-    BranchPredictor* brp = new BranchPredictor(btb);
+    BranchPredictor* brp = new Speculate(btb);
 
     // TODO: Validate attach order for ROB
     attachProcHelper(scoreboard);
@@ -257,7 +303,7 @@ void Processor::regDump() {
     << "\n"
     << termcolor::bright_green
     << "|Register\t|"
-    << "Value\t\t\t|"
+    << "Value\t\t\t\t\t|"
     << std::endl;
     for (int i = 0; i < 32; i++)
     {
@@ -267,14 +313,14 @@ void Processor::regDump() {
         << i
         << "\t\t|"
         << registers[i]
-        << "\t\t\t|"
+        << "\t\t\t\t\t|"
         << std::endl;
     }
     std::cout
     << "|$pc"
     << "\t\t|"
     << PC
-    << "\t\t\t|"
+    << "\t\t\t\t\t|"
     << "\n"
     << termcolor::reset
     << std::endl;

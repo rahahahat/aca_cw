@@ -159,27 +159,45 @@ void OoOPipeline::memTick()
 void OoOPipeline::lsqTick()
 {
     processor->getLsq()->nextTick();
-}
+};
 
 void OoOPipeline::robuffTick()
 {
     processor->getRB()->nextTick();
-}
+};
+
+void OoOPipeline::fetchTick()
+{
+    for (auto &unit: dn)
+    {
+        unit->fetchTick();
+    }
+};
+
+void OoOPipeline::decodeTick()
+{
+    for (auto &unit: dn)
+    {
+        unit->decodeTick();
+    }
+};
 
 void OoOPipeline::nextTick(int cycle)
 {
-    // getConf();
     lsqTick();
     robuffTick();
-    printSB();
-    if (stalled_by == Flush) return;
+    // printSB();
+    // if (stalled_by == Flush) return;
 
-
+    decodeTick();
     execTick();
     memTick();
-    issueTick();
+
+    // issueTick();
     
     post();
+    
+    fetchTick();
 
 };
 

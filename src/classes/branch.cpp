@@ -11,6 +11,7 @@ int BranchTargetBuffer::hit(std::string instr)
 {
     if (buffer.find(instr) != buffer.end())
     {
+        std::cout << "BTB Hit: " << instr << std::endl;
         return buffer.at(instr);
     }
     return -1;
@@ -19,8 +20,10 @@ int BranchTargetBuffer::hit(std::string instr)
 void BranchTargetBuffer::insert(std::string instr, int pc, int target)
 {
     std::string insert_str = instr + "-" + std::to_string(pc);
+    std::cout << "BTB insert: " << insert_str << std::endl;
+    std::cout << "Target: " << target << std::endl;
     if (hit(insert_str) == -1)
-    {
+    { 
         buffer.insert(std::pair<std::string, int>(insert_str, target));
     }
     return;
@@ -44,3 +47,4 @@ int Speculate::predict(std::string instr)
     if (!take_branch) return -1;
     return btb->hit(instr);
 };
+

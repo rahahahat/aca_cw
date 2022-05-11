@@ -8,6 +8,7 @@
 #include "config.h"
 #include "robuff.h"
 #include "util.h"
+#include "branch.h"
 
 DecodeUnit::DecodeUnit()
 {
@@ -79,11 +80,18 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             splitInstr.pop_back();
             instrPtr->rs = RegisterMap.at(splitInstr.back()); // r1
             splitInstr.pop_back();
-            instrPtr->pc_no_pred = processor->PC;
             return;
         default:
             // Instruction format: opcode rs rt immediate
-            instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // immediate
+            if (splitInstr.back().substr(0,2).compare("0x") != 0)
+            {
+                std::cout << "VAR OR DATA_VAR: " << splitInstr.back() << std::endl;
+                instrPtr->immediateOrAddress = processor->var_map.at(splitInstr.back());
+            }
+            else 
+            {
+                instrPtr->immediateOrAddress = std::stoi(splitInstr.back(), 0, 16); // immediate
+            }
             splitInstr.pop_back();
             instrPtr->rt = RegisterMap.at(splitInstr.back()); // rt
             splitInstr.pop_back();
@@ -147,7 +155,8 @@ ODecodeUnit::ODecodeUnit()
 void ODecodeUnit::post()
 {
 
-    if (!busy) return;
+    if (!busy || instr->stage != ISSUE) return;
+    std::cout << (instr->opcode == LW) << std::endl;
     busy = false;
     switch(instr->type)
     {
@@ -161,7 +170,7 @@ void ODecodeUnit::post()
             instr = NULL;
             return;
         default:
-            instr->stage = ISSUE;
+            instr->stage = EXECUTE;
             if (instr->opcode == LW || instr->opcode == SW) 
             {
                 LSQNode* node = processor->getLsq()->addToQueue(instr);
@@ -180,7 +189,7 @@ void ODecodeUnit::fetchTick()
 {
     if (busy) return;
     if (processor->getPipeline()->stalled()) return; 
-    
+    if (processor->PC >= processor->instrMemSize) return;
     Instructions::Instruction *instrPtr = new Instructions::Instruction();
     fn->run(instrPtr);
     instr = instrPtr;
@@ -200,7 +209,11 @@ void ODecodeUnit::decodeTick()
     }
     if (instr->stage != DECODE) return;
     std::cout << "Decoding instruction: " << instr->instrString << std::endl;
+    
     decode(instr);
+    busy = true;
+    instr->stage = ISSUE;
+
     if (instr->opcode == HALT)
     {
         processor->getPipeline()->stallPipeline(Halt);
@@ -208,22 +221,8 @@ void ODecodeUnit::decodeTick()
     }
     if (isOpBranch(instr->opcode))
     {
-        // Speculation
-        conf* config = getConfig();
-        bool takeBranch = config->speculate->take_branch;
-        if (takeBranch)
-        {
-            processor->PC = instr->immediateOrAddress;
-            instr->pred = instr->immediateOrAddress;
-        } else {
-            instr->pred = processor->PC;
-        }
-        std::cout << termcolor::bold << termcolor::red 
-        << "Speculative Execution - Take Branch: " 
-        << takeBranch <<" (Goto: "<< instr->pred << ")" 
-        << termcolor::reset << std::endl;
-        // PREDICT HERE
-        // processor->getPipeline()->stallPipeline(Branch);
+        processor->getBTB()->insert(instr->instrString, instr->fetched_at_pc, instr->immediateOrAddress);
+        return;
     }
 };
 

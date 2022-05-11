@@ -21,10 +21,10 @@ class BranchPredictor
         BranchTargetBuffer* btb;
     public:
         BranchPredictor(BranchTargetBuffer* bt);
-        virtual int predict(std::string instr) {};
+        virtual int predict(std::string instr) { return -1; };
 };
 
-class Speculate: BranchPredictor
+class Speculate: public BranchPredictor
 {
     private:
         bool take_branch;
@@ -32,5 +32,4 @@ class Speculate: BranchPredictor
         Speculate(BranchTargetBuffer* bt);
         int predict(std::string instr);
 };
-
 #endif

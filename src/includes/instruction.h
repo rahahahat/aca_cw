@@ -15,7 +15,6 @@ namespace Instructions {
     class Instruction {
         public:
             int immediateOrAddress;
-            int pc_no_pred;
             int pred;
             int fetched_at_pc;
 

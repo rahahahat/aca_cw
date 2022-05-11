@@ -63,6 +63,8 @@ class OoOPipeline: public Pipeline
         void execTick();
         void memTick();
         void lsqTick();
+        void fetchTick();
+        void decodeTick();
         void robuffTick();
         void printSB();
         void post();

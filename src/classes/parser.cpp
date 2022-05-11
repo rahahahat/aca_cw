@@ -26,6 +26,7 @@ std::vector<std::string> Parser::parseProgram(std::string filename) {
     }
     while (!programFile.eof()) {
         std::getline(programFile, programLine);
+
         program.push_back(programLine);
     }
     return program;

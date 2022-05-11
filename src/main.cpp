@@ -18,7 +18,6 @@ int main(int argc, char* argv[]) {
 
     
     Processor *processor = Processor::getProcessorInstance()->fabricate();
-    processor->loadDataMemory();
     // processor->DataMemory[0] = 3;
     // processor->DataMemory[1] = 1;
     // processor->DataMemory[2] = 1;

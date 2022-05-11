@@ -63,7 +63,7 @@ void OExecuteUnit::post()
     int broadcast_val = result;
     if (isOpBranch(opcode))
     {
-        broadcast_val = (result) ? immediate : instr->pc_no_pred;
+        broadcast_val = (result) ? immediate : instr->fetched_at_pc + 1;
         broadcast_destination = $pc;
     }
     processor->getCDB()->broadcast(broadcast_destination, rsTag, broadcast_val);

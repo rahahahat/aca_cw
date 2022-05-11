@@ -6,12 +6,12 @@
     "instruction": true,
     "printSb": false
   },
-  "program": "vecadd.txt",
+  "program": "test.txt",
   "units": {
     "fetch": 1,
-    "decode": 4,
-    "execute":4,
-    "memory": 4
+    "decode": 1,
+    "execute":1,
+    "memory": 1
   },
   "speculate":
   {
@@ -19,7 +19,7 @@
   },
   "print": {
     "all" : false,
-    "num_bytes": 400
+    "num_bytes": 1000
   },
-  "stop_time": 50
+  "stop_time": 100
 }

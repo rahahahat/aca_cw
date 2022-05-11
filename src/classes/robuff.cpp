@@ -69,7 +69,7 @@ Register ROBEntry::getDestination()
 
 ReorderBuffer::ReorderBuffer(int size)
 {
-    max_size = size;
+    max_size = 128;
     buffer = new LinkedList<ROBEntry>();
     processor = Processor::getProcessorInstance();
     return;

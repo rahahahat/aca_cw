@@ -309,7 +309,7 @@ void rs::ReservationStationEntry::populateSources(std::string tag, int value)
 rs::ReservationStation::ReservationStation(Scoreboard* sb, bool force_null): ProcHelper(force_null)
 {
     scoreboard = sb;
-    size = 64;
+    size = 128;
     entries = new LinkedList<ReservationStationEntry>();
 };
 
