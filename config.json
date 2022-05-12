@@ -1,5 +1,5 @@
 {
-  "mode": "Scalar",
+  "mode": "SS",
   "debug": {
     "enabled": false,
     "till": 12,
@@ -9,10 +9,10 @@
   },
   "program": "matmul.asm",
   "units": {
-    "commit": 1,
-    "decode": 1,
-    "execute":1,
-    "memory": 1
+    "commit": 2,
+    "decode": 2,
+    "execute":2,
+    "memory": 2
   },
   "speculate":
   {
@@ -26,7 +26,7 @@
     "rsv": 64,
     "rob" : 64,
     "lsq": 64,
-    "instrQ": 4
+    "instrQ": 2
   },
   "stop_time": 0
 }

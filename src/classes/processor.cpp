@@ -300,7 +300,6 @@ void Processor::runScalar()
         printCycleStart(this->clock);
         stepMode();
         pipeline->nextTick(this->clock);
-        pipeline->removeCompletedInstructions();
         loop = pipeline->pipelineSize() > 0;
         std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
 

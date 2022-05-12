@@ -134,10 +134,11 @@ void ScalarPipeline::nextTick(int cycle) {
         }
         curr = curr->next;
     };
+    removeCompletedInstructions();
     Instructions::Instruction* instr = new Instructions::Instruction();
-    if (fn->scalarFetch(instr))
+    if (instructions->size < 5)
     {
-        addInstructionToPipeline(instr);
+        if (fn->scalarFetch(instr) != NULL) addInstructionToPipeline(instr);
     }
     std::cout << termcolor::red  << "Instructions in pipeline: " << instructions->size << std::endl;
 };
