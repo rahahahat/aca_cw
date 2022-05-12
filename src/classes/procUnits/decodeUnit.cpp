@@ -10,6 +10,10 @@
 #include "util.h"
 #include "branch.h"
 
+// #################################################################################################
+// DecodeUnit
+// #################################################################################################
+
 DecodeUnit::DecodeUnit()
 {
     return;
@@ -111,40 +115,48 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
     return;
 };
 
-// void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
-// {   
-//     Opcodes opcode = instrPtr->opcode;
-//     if (opcode == BEQ || opcode == BGTE || opcode == BNE || opcode == BL) return;
-//     if (instrPtr->type == RType) {
-//         processor->resultForwarder->removeValue(instrPtr->rd);
-//         processor->scoreboard->inValidate(instrPtr->rd);
-//         return;
-//     }
-//     if (instrPtr->type == IType) {
-//         processor->resultForwarder->removeValue(instrPtr->rt);
-//         processor->scoreboard->inValidate(instrPtr->rt);
-//         return;
-//     }
-//     return;
-// }
+// #################################################################################################
+// ScalarDecodeUnit
+// #################################################################################################
 
-// void ScalarDecodeUnit::pre(Instructions::Instruction *instrPtr)
-// {
-//     std::cout 
-//     << termcolor::green
-//     << termcolor::bold
-//     << "Decoding Instruction: "
-//     << termcolor::reset 
-//     << instrPtr->instrString 
-//     << std::endl;
-//     return;
-// };
+void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
+{   
+    Opcodes opcode = instrPtr->opcode;
+    if (instrPtr->type == RType) {
+        processor->getSB()->inValidate(instrPtr->rd, "~");
+        return;
+    }
+    if (instrPtr->type == IType) {
+        processor->getSB()->inValidate(instrPtr->rt, "~");
+        return;
+    }
+    return;
+}
 
-// void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
-// {
-//     invalidateDestReg(instrPtr);
-//     return;
-// }
+void ScalarDecodeUnit::nextTick(Instructions::Instruction* instrPtr)
+{
+    if (busy) return;
+    busy = true;
+    std::cout << termcolor::bold << termcolor::green << "Decoding Instruction: " << instrPtr->instrString << termcolor::reset << std::endl;
+    decode(instrPtr);
+    post(instrPtr);
+};
+
+void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
+{
+    instrPtr->stage = EXECUTE;
+    if (isOpBranch(instrPtr->opcode))
+    {
+        processor->getPipeline()->stallPipeline(Branch);
+        return;
+    }
+    invalidateDestReg(instrPtr);
+    return;
+}
+
+// #################################################################################################
+// ODecodeUnit
+// #################################################################################################
 
 ODecodeUnit::ODecodeUnit()
 {
@@ -154,17 +166,12 @@ ODecodeUnit::ODecodeUnit()
 
 void ODecodeUnit::post()
 {
-
-    if (!busy || instr->stage != ISSUE) return;
-    std::cout << (instr->opcode == LW) << std::endl;
-    busy = false;
+    if (instr->stage != ISSUE) return;
     switch(instr->type)
     {
         case JType:
             // TODO: How should jumps work? 
-            // instrP
         case End:
-            // instrPtr->stage = DONE;
             if (!processor->getPipeline()->stalled()) processor->getPipeline()->stallPipeline(Halt);
             processor->getSB()->invalidatePC();
             instr = NULL;
@@ -187,43 +194,41 @@ void ODecodeUnit::post()
 
 void ODecodeUnit::fetchTick()
 {
-    if (busy) return;
+
     if (processor->getPipeline()->stalled()) return; 
     if (processor->PC >= processor->instrMemSize) return;
+
     Instructions::Instruction *instrPtr = new Instructions::Instruction();
     fn->run(instrPtr);
-    instr = instrPtr;
-    busy = true;
-    instr->stage = DECODE;
+
     return;
 }
 
 void ODecodeUnit::decodeTick()
 {
-
-    if (!busy) return;
     if (processor->getPipeline()->stalled())
     {
         busy = false;
         return;
     }
-    if (instr->stage != DECODE) return;
-    std::cout << "Decoding instruction: " << instr->instrString << std::endl;
-    
-    decode(instr);
-    busy = true;
-    instr->stage = ISSUE;
-
-    if (instr->opcode == HALT)
+    if (!processor->canIssue())
     {
-        processor->getPipeline()->stallPipeline(Halt);
+        processor->getPipeline()->stallPipeline(Capacity);
+        busy = false;
         return;
     }
+    instr = processor->getPipeline()->getInstrQ()->pop();
+    if (instr == NULL || instr->stage != DECODE) return;
+
+    std::cout << "Decoding instruction: " << instr->instrString << std::endl;
+    decode(instr);
+
+    instr->stage = ISSUE;
     if (isOpBranch(instr->opcode))
     {
         processor->getBTB()->insert(instr->instrString, instr->fetched_at_pc, instr->immediateOrAddress);
-        return;
     }
+    post();
 };
 
 void ODecodeUnit::flush()

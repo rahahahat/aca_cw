@@ -20,6 +20,20 @@ class MemoryUnit: public ProcUnit
         MemoryUnit() {};
         virtual void run(Instructions::Instruction *instrPtr) {};
         virtual void run() {};
+        virtual void nextTick(Instructions::Instruction *instrPtr) {};
+};
+
+class ScalarMemoryUnit: public MemoryUnit
+{
+    private:
+        bool busy;
+        void load(Instructions::Instruction *instrPtr);
+        void store(Instructions::Instruction *instrPtr);
+        void post(Instructions::Instruction *instrPtr);
+        void writeback(Instructions::Instruction* instrPtr);
+    public:
+        void nextTick(Instructions::Instruction* instrPtr);
+        void reset() { busy = false; };
 };
 
 class OMemoryUnit: public MemoryUnit

@@ -16,6 +16,7 @@
 #include <set>
 
 
+
 class Pipeline;
 class Parser;
 class ProcUnit;
@@ -66,13 +67,24 @@ class Processor
         std::map<std::string, int> var_map;
         int32_t registers[32];
         int32_t PC = 0;
-        int32_t DataMemory[1024];
+        
+        #ifndef DMSIZE
+        int32_t DataMemory[4000];
+        int dataMemSize = 4000;
+        #endif
+        #ifdef DMSIZE
+        int32_t DataMemory[DMSIZE];
+        int dataMemSize = DMSIZE;
+        #endif
+
         std::string instructionMemory[512];
         int32_t instrMemSize = 0;
         int32_t dataMemoryIndex = 0;
 
         void loadInstructionIntoMemory(std::string instruction);
         void runProgram();
+        void runSScalar();
+        void runScalar();
         void loadProgram(std::string fn);
         void loadDataMemory();
         void dumpDataMemory();
@@ -81,6 +93,7 @@ class Processor
         void stepMode();
         bool programEnded();
         void setProgramEnded();
+        bool canIssue();
 
         void attachParser(Parser *parser);
         void attachPipeline(Pipeline *pipe);

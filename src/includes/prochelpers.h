@@ -42,6 +42,7 @@ class Scoreboard: public ProcHelper
         bool validate(Register r, int value, std::string tag);
         void inValidate(Register r, std::string tag_name);
         std::pair<int, int> isValid(Register r);
+        std::pair<int, int> getValue(Register r);
         int getSize();
         void memDump();
         void invalidatePC();
@@ -99,7 +100,7 @@ namespace rs
     class ReservationStation: public ProcHelper
     { 
         private:
-            int size;
+            int max_size;
             Scoreboard* scoreboard;
             LinkedList<ReservationStationEntry> *entries;
 

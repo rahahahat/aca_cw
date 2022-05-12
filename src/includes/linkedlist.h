@@ -184,6 +184,7 @@ class LinkedList {
         };
         void flushAfterNode(LLNode<T> *node)
         {
+            if (node == NULL) return;
             LLNode<T> *start_node = node->next;
             LLNode<T> *next = NULL;
             while(start_node != NULL)

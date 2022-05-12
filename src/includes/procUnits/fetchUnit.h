@@ -8,6 +8,7 @@ class FetchUnit: public ProcUnit
     public:
         FetchUnit();
         Instructions::Instruction* fetch(Instructions::Instruction *instrPtr);
+        Instructions::Instruction* scalarFetch(Instructions::Instruction *instrPtr);
         void run(Instructions::Instruction* instrPtr);
 };
 

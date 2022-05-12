@@ -37,6 +37,7 @@ class ReorderBuffer
 {
     private:
         int max_size;
+        int cpc;
         LinkedList<ROBEntry> *buffer;
         Processor *processor;
         void commitHead();

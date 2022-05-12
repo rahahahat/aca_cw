@@ -31,6 +31,11 @@ namespace Instructions {
             Instruction();
             Instruction(std::string instr);
             Register getDestination();
+            
+            // Scalar
+            int src1;
+            int src2;
+            int temp;
     };
 };
 

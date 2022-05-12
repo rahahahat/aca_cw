@@ -69,6 +69,7 @@ Register ROBEntry::getDestination()
 
 ReorderBuffer::ReorderBuffer(int size)
 {
+    cpc = getConfig()->units->commit;
     max_size = 128;
     buffer = new LinkedList<ROBEntry>();
     processor = Processor::getProcessorInstance();
@@ -105,7 +106,7 @@ void ReorderBuffer::nextTick()
 void ReorderBuffer::commitHead()
 {
     
-    for (int x = 0; x < 4; x++)
+    for (int x = 0; x < cpc; x++)
     {
         ROBEntry* entry = pop();
         if (entry == NULL) return;

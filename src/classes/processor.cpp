@@ -18,7 +18,6 @@
 // #################################################################################################
 
 Processor::Processor() {
-
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
@@ -27,12 +26,13 @@ Processor::Processor() {
 
 void Processor::loadProgram(std::string fn) {
 
+    // std::cout << "TESTING CONFIG: " << configs->debug->enabled << std::endl;
     std::vector<std::string> program = parser->parseProgram(fn);
     bool data = false;
     for (auto it = std::begin(program); it != std::end(program); ++it) {
         if ((*it).empty() || (*it).front() == '#') continue;
 
-        if (data) 
+        if (data)
         {
             std::vector<std::string> splitInstr = splitString((*it));
             for (auto dtr = std::begin(splitInstr); dtr != std::end(splitInstr); ++dtr)
@@ -74,7 +74,6 @@ void Processor::loadProgram(std::string fn) {
         {
             loadInstructionIntoMemory(*it);
         }
-
     };
     dumpDataMemory();
     printInstructionMemory(this);
@@ -100,30 +99,53 @@ void Processor::attachReorderBuffer(ReorderBuffer *rb)
     return;
 };
 
+bool Processor::canIssue()
+{
+    conf* config = getConfig();
+    bool canIssue = true;
+    canIssue &= reservation_station->getSize() < config->capacity->rsv;
+    canIssue &= robuff->getSize() < config->capacity->rob;
+    canIssue &= lsq->hasCapacity();
+    return canIssue;
+}
+
 Processor* Processor::fabricate() {
     
-    Scoreboard *scoreboard = new Scoreboard(false);
-    rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
-    Pipeline *pipeline = new OoOPipeline();
-    LSQueue *queue = new LSQueue();
-    Parser *parser = new Parser(this);
-    ReorderBuffer *robuff = new ReorderBuffer(64);
-    BranchTargetBuffer* btb = new BranchTargetBuffer();
-    BranchPredictor* brp = new Speculate(btb);
+    conf* config = getConfig();
+    if (config->mode.compare("SS") == 0)
+    {
+        Scoreboard *scoreboard = new Scoreboard(false);
+        rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
+        Pipeline *pipeline = new OoOPipeline();
+        LSQueue *queue = new LSQueue();
+        Parser *parser = new Parser(this);
+        ReorderBuffer *robuff = new ReorderBuffer(64);
+        BranchTargetBuffer* btb = new BranchTargetBuffer();
+        BranchPredictor* brp = new Speculate(btb);
 
-    // TODO: Validate attach order for ROB
-    attachProcHelper(scoreboard);
-    attachProcHelper(rs);
-    attachParser(parser);
-    attachPipeline(pipeline);
-    attachLSQ(queue);
-    attachReorderBuffer(robuff);
-    attachBTB(btb);
-    attachBranchPredictor(brp);
+        // TODO: Validate attach order for ROB
+        attachProcHelper(scoreboard);
+        attachProcHelper(rs);
+        attachParser(parser);
+        attachPipeline(pipeline);
+        attachLSQ(queue);
+        attachReorderBuffer(robuff);
+        attachBTB(btb);
+        attachBranchPredictor(brp);
 
-    CommonDataBus *bus = new CommonDataBus();
-    attachCDB(bus);
+        CommonDataBus *bus = new CommonDataBus();
+        attachCDB(bus);
+    }
+    else
+    {
+        Scoreboard *scoreboard = new Scoreboard(false);
+        Pipeline *pipeline = new ScalarPipeline();
+        Parser *parser = new Parser(this);
 
+        attachProcHelper(scoreboard);
+        attachParser(parser);
+        attachPipeline(pipeline);
+    }
     return this;
 };
 
@@ -255,8 +277,41 @@ void Processor::attachBTB(BranchTargetBuffer* bt)
     return;
 }
 
-void Processor::runProgram() { 
+void Processor::runProgram() {
+    conf* config = getConfig();
+    if (config->mode.compare("SS") == 0)
+    {
+        runSScalar();
+        return;
+    }
+    runScalar();
+    return;
+};
 
+void Processor::runScalar()
+{
+    conf* config = getConfig();
+    this->clock = 0;
+    int stopTime = config->stop_time;
+    bool loop = true;
+    while(loop)
+    {
+        this->clock++;
+        printCycleStart(this->clock);
+        stepMode();
+        pipeline->nextTick(this->clock);
+        pipeline->removeCompletedInstructions();
+        loop = pipeline->pipelineSize() > 0;
+        std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
+
+    }
+    regDump();
+    printProgramEnd(this->clock);
+    return;
+}
+
+void Processor::runSScalar()
+{
     conf* config = getConfig();
     this->clock = 0;
     int stopTime = config->stop_time;
@@ -276,7 +331,7 @@ void Processor::runProgram() {
     regDump();
     printProgramEnd(this->clock);
     return;
-};
+}
 
 void Processor::setProgramEnded()
 {

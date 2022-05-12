@@ -14,17 +14,28 @@ class DecodeUnit: public ProcUnit
         void decodeRTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair);
         void decodeITypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair);
         void decodeJTypeInstruction(Instructions::Instruction *instrPtr, std::vector<std::string> splitInstr, std::pair<Opcodes, InstructionType> insPair);
-        virtual void pre(Instructions::Instruction *instrPtr) {};
-        virtual void pre() {};
+        void decode(Instructions::Instruction *instrPtr);
+
         virtual void post() {};
-        virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
-        virtual void decode(Instructions::Instruction *instrPtr);
         virtual void post(Instructions::Instruction *instrPtr) {};
     public:
         DecodeUnit();
         virtual void run(Instructions::Instruction *instr);
         virtual void run() {};
         virtual void nextTick() {};
+        virtual void nextTick(Instructions::Instruction* instrPtr) {};
+};
+
+class ScalarDecodeUnit: public DecodeUnit
+{
+    private:
+        bool busy;
+    protected:
+        void invalidateDestReg(Instructions::Instruction *instrPtr);
+        void post(Instructions::Instruction *instrPtr);
+    public:
+        void nextTick(Instructions::Instruction* instrPtr);
+        void reset() { busy = false; };
 };
 
 class ODecodeUnit: public DecodeUnit

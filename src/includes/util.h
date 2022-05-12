@@ -6,6 +6,7 @@
 #include <sstream> 
 #include <fstream>
 #include "isa.h"
+#include "config.h"
 
 #ifndef _UTILS_INCLUDED_
 #define _UTILS_INCLUDED_

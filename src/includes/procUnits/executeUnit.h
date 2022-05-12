@@ -19,19 +19,43 @@ class ExecuteUnit: public ProcUnit
         int result;
         int num_cycles;
 
-        virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
-        virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
-        virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
-        virtual void executeInstrType(Instructions::Instruction *instrPtr);
+        virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr) {};
+        virtual void executeITypeInstruction(Instructions::Instruction *instrPtr) {};
+        virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr) {};
+        virtual void executeInstrType(Instructions::Instruction *instrPtr) {};
         virtual void execute(Instructions::Instruction *instrPtr) {};
+        virtual void pre(Instructions::Instruction *instrPtr) {};
+        virtual void post(Instructions::Instruction *instrPtr) {};
+
         virtual void execute() {};
         virtual void pre() {};
         virtual void post() {};
     public:
         ExecuteUnit();
         virtual void nextTick() {};
+        virtual void nextTick(Instructions::Instruction *instrPtr) {};
         void attachToProcessor(Processor *proc);
         virtual void run() {};
+};
+
+class ScalarExecuteUnit: public ExecuteUnit
+{
+
+    private:
+        bool executable;
+        bool busy;
+        void executeRTypeInstruction(Instructions::Instruction *instrPtr);
+        void executeITypeInstruction(Instructions::Instruction *instrPtr);
+        void executeJTypeInstruction(Instructions::Instruction *instrPtr);
+        void executeInstrType(Instructions::Instruction *instrPtr);
+        void populateInstrSources(Instructions::Instruction *instrPtr);
+        void pre(Instructions::Instruction *instrPtr);
+        void post(Instructions::Instruction *instrPtr);
+        void execute(Instructions::Instruction *instrPtr);
+    public:
+        ScalarExecuteUnit() { executable = false; };
+        void reset() { busy = false; };
+        void nextTick(Instructions::Instruction *instrPtr);
 };
 
 class OExecuteUnit: public ExecuteUnit
@@ -55,22 +79,3 @@ class OExecuteUnit: public ExecuteUnit
 };
 
 #endif
-
-// class ScalarExecuteUnit: public ProcUnit
-// {
-//     protected:
-//         virtual void executeRTypeInstruction(Instructions::Instruction *instrPtr);
-//         virtual void executeITypeInstruction(Instructions::Instruction *instrPtr);
-//         virtual void executeJTypeInstruction(Instructions::Instruction *instrPtr);
-//         virtual void executeInstrType(Instructions::Instruction *instrPtr);
-//         virtual void execute(Instructions::Instruction *instrPtr) {};
-//         virtual void pre(Instructions::Instruction *instr);
-//         virtual void post(Instructions::Instruction *instr);
-//     private:
-//         void executeInScalarPipeline(Instructions::Instruction *instrPtr);
-//         void populateInstrSources(Instructions::Instruction *instrPtr);
-//         void populateResultForwarder(Instructions::Instruction *instrPtr);
-//     public:
-//         ScalarExecuteUnit(Pipeline *pl, int units);
-//         virtual void run(Instructions::Instruction * instr);
-// };

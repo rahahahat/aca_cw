@@ -20,7 +20,7 @@ class LSQueue
 {
     private:
         Processor *processor;
-        int capacity;
+        int max_size;
         LinkedList<LSQNode> *queue;
         int storeEntry(int addr);
         int loadEntry(int addr);

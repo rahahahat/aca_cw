@@ -11,6 +11,7 @@ class ProcUnit
 {
     protected:
         Processor *processor;
+        conf* config;
         virtual void populateResultForwarder(Instructions::Instruction *instrPtr) {};
         virtual void validateDestReg(Instructions::Instruction *instrPtr) {};
         virtual void invalidateDestReg(Instructions::Instruction *instrPtr) {};
@@ -23,6 +24,7 @@ class ProcUnit
         virtual void post(Instructions::Instruction *instrPtr) {};
         virtual void post() {};
         virtual void nextTick() {};
+        virtual void nextTick(Instructions::Instruction* instrPtr) {};
         virtual void flush() {};
         ProcUnit();
 };

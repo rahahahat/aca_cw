@@ -12,6 +12,8 @@ struct conf
 {
     std::string program;
     int stop_time;
+    std::string mode;
+
     struct debug_conf
     {
         bool enabled;
@@ -20,6 +22,7 @@ struct conf
     } *debug;
     struct unit_conf
     {
+        int commit;
         int decode;
         int execute;
         int memory;
@@ -33,11 +36,12 @@ struct conf
         bool all;
         int num_bytes;
     } *print;
-    // struct 
-    // {
-    //     bool enabled;
-    //     std::string predictor;
-    // } branch;
+    struct capacity_conf {
+        int rsv;
+        int lsq;
+        int rob;
+        int instrQ;
+    } *capacity;
 };
 
 inline conf* getConfig()
@@ -55,9 +59,12 @@ inline conf* getConfig()
         config->units = new conf::unit_conf();
         config->speculate = new conf::speculate_conf();
         config->print = new conf::print_conf();
+        config->capacity = new conf::capacity_conf();
 
         config->program = jconf["program"].get<std::string>();
         config->stop_time = jconf["stop_time"].get<int>();
+        config->mode = jconf["mode"].get<std::string>();
+
         config->debug->enabled = jconf["debug"]["enabled"].get<bool>();
         config->debug->till = jconf["debug"]["till"].get<int>();
         config->debug->printSb = jconf["debug"]["printSb"].get<bool>();
@@ -65,11 +72,17 @@ inline conf* getConfig()
         config->units->decode = jconf["units"]["decode"].get<int>();
         config->units->execute = jconf["units"]["execute"].get<int>();
         config->units->memory = jconf["units"]["memory"].get<int>();
+        config->units->commit = jconf["units"]["commit"].get<int>();
 
         config->speculate->take_branch = jconf["speculate"]["take_branch"].get<bool>();
 
         config->print->all = jconf["print"]["all"].get<bool>();
         config->print->num_bytes = jconf["print"]["num_bytes"].get<int>();
+
+        config->capacity->lsq = jconf["capacity"]["lsq"].get<int>();
+        config->capacity->rob = jconf["capacity"]["rob"].get<int>();
+        config->capacity->rsv = jconf["capacity"]["rsv"].get<int>();
+        config->capacity->instrQ = jconf["capacity"]["instrQ"].get<int>();
 
     }
     return config;

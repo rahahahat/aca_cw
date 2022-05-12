@@ -1,4 +1,6 @@
-addi r0 r1 0xff
+.n 0xfffff
+
+lw r0 r1 n
 addi r0 r2 0x1
 beq r0 r0 and_add
 h_w:
@@ -9,3 +11,4 @@ and r3 r1 r2
 add r4 r4 r3
 bne r0 r1 h_w
 halt
+

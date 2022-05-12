@@ -308,14 +308,14 @@ void rs::ReservationStationEntry::populateSources(std::string tag, int value)
 
 rs::ReservationStation::ReservationStation(Scoreboard* sb, bool force_null): ProcHelper(force_null)
 {
+    conf* config = getConfig();
     scoreboard = sb;
-    size = 128;
+    max_size = config->capacity->rsv;
     entries = new LinkedList<ReservationStationEntry>();
 };
 
 rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_name)
 {
-    // if (tag_name.at(0) > 112 || tag_name.at(0) < 97) return NULL;
     LLNode<ReservationStationEntry> *curr = entries->head;
     while(curr != NULL)
     {
@@ -327,23 +327,20 @@ rs::ReservationStationEntry* rs::ReservationStation::getEntry(std::string tag_na
 
 rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 {
-    if (entries->size < 64)
+    if (entries->size < max_size)
     {
+        std::cout << "HEARRRRR: " << max_size << std::endl;
         ReservationStationEntry *entry = new ReservationStationEntry(randomId(5));
         entries->add(entry);
         return entry;
-    };;
+    };
     return NULL;
 };
 
 std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
+    std::cout << "Happens" << std::endl;
     rs::ReservationStationEntry* entry = hasEmptyEntries();
-    if (entry == NULL && !processor->getPipeline()->stalled())
-    {
-        processor->getPipeline()->stallPipeline(RS);
-        return "Stall";
-    }
     entry->setInstruction(instrPtr);
     entry->instrStr = instrPtr->instrString;
     instrPtr->tag = entry->getTag();

@@ -49,7 +49,8 @@ void LSQNode::populateSources(std::string tag, int value)
 
 LSQueue::LSQueue()
 {
-    capacity = 32;
+    conf* config = getConfig();
+    max_size = config->capacity->lsq;
     queue = new LinkedList<LSQNode>();
     processor = Processor::getProcessorInstance();
     return;
@@ -91,7 +92,7 @@ void LSQueue::removeFromQueue(std::string tag)
 
 bool LSQueue::hasCapacity()
 {
-    return queue->size < capacity;
+    return queue->size < max_size;
 }
 
 int LSQueue::getNumEntries()

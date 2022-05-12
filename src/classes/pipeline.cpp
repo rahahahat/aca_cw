@@ -22,13 +22,8 @@
 Pipeline::Pipeline()
 {
     processor = Processor::getProcessorInstance();
-    stall = 0;
+    stall = false;
     stalled_by = NoSrc;
-}
-
-pipelineType Pipeline::getType()
-{
-    return None; 
 }
 
 void Pipeline::resumePipeline(StallSource from)
@@ -81,7 +76,83 @@ void Pipeline::stallPipeline(StallSource by)
     throw std::runtime_error(ss.str());
 }
 
-void Pipeline::pipeInstructionsToProcessor() {};
+// #################################################################################################
+// ScalarPipeline
+// #################################################################################################
+ScalarPipeline::ScalarPipeline() {
+    instructions = new PipelineLL();
+    fn = new FetchUnit();
+    dn = new ScalarDecodeUnit();
+    en = new ScalarExecuteUnit();
+    mn = new ScalarMemoryUnit();
+    return;
+};
+
+void ScalarPipeline::removeCompletedInstructions() {
+    instructions->flushCompletedInstructions();
+    return;
+}
+void ScalarPipeline::addInstructionToPipeline(int id) {
+    if (!processor->getSB()->isPCValid()) return;
+    std::cout
+    << termcolor::bold
+    << termcolor::yellow
+    << "Placing new instruction in pipeline"
+    << termcolor::reset
+    << std::endl;
+    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
+    return;
+};
+
+void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) 
+{
+    instructions->add(instrPtr);
+    return;
+};
+
+void ScalarPipeline::nextTick(int cycle) {
+
+    PipelineLLNode *curr = instructions->head;
+    dn->reset();
+    en->reset();
+    mn->reset();
+    while(curr != NULL)
+    {
+        Instructions::Instruction *instr = curr->payload;
+        
+        switch(instr->stage)
+        {
+            case DECODE:
+                dn->nextTick(instr);
+                break;
+            case EXECUTE:
+                en->nextTick(instr);
+                break;
+            default:
+                mn->nextTick(instr);
+                break;
+        }
+        curr = curr->next;
+    };
+    Instructions::Instruction* instr = new Instructions::Instruction();
+    if (fn->scalarFetch(instr))
+    {
+        addInstructionToPipeline(instr);
+    }
+    std::cout << termcolor::red  << "Instructions in pipeline: " << instructions->size << std::endl;
+};
+
+void ScalarPipeline::flushPipelineOnBranchOrJump()
+{
+    std::cout << termcolor::bold << termcolor::red << "FLUSHING ON BRANCH" << termcolor::reset << std::endl;
+    instructions->flushAfterNode(flushNode);
+    return;
+}
+
+int ScalarPipeline::pipelineSize()
+{
+    return instructions->size;
+}
 
 // #################################################################################################
 // OoOPipeline
@@ -113,14 +184,11 @@ OoOPipeline::OoOPipeline()
     }
     stalled_by = NoSrc;
     stall = false;
+    instrQ = new LinkedList<Instructions::Instruction>();
 }
 
 void OoOPipeline::post()
 {
-    for (auto &unit: dn)
-    {
-        unit->post();
-    }
     for (auto &unit: en)
     {
         unit->post();
@@ -139,6 +207,10 @@ void OoOPipeline::issueTick()
     }
 };
 
+LinkedList<Instructions::Instruction>* OoOPipeline::getInstrQ()
+{
+    return instrQ;
+}
 
 void OoOPipeline::execTick()
 {
@@ -184,21 +256,24 @@ void OoOPipeline::decodeTick()
 
 void OoOPipeline::nextTick(int cycle)
 {
+    if (stalled_by == Capacity)
+    {
+        if (instrQ->size < getConfig()->capacity->instrQ)
+        {
+            resumePipeline(Capacity);
+        }
+    }
     lsqTick();
     robuffTick();
-    // printSB();
-    // if (stalled_by == Flush) return;
+    if (stalled_by == Flush) return;
 
-    decodeTick();
     execTick();
     memTick();
 
-    // issueTick();
-    
     post();
-    
-    fetchTick();
 
+    decodeTick();
+    fetchTick();
 };
 
 
@@ -233,6 +308,10 @@ void OoOPipeline::flush()
 {
     resumePipelineByForce();
     stallPipeline(Flush);
+    instrQ->flushAfterNode(instrQ->head);
+    instrQ->removeAndDestroy(instrQ->head);
+    assert(instrQ->size == 0);
+
     for (auto &unit: dn)
     {
         unit->flush();
