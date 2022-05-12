@@ -1,0 +1,32 @@
+{
+  "mode": "SS",
+  "debug": {
+    "enabled": false,
+    "till": 12,
+    "cycle": true,
+    "instruction": true,
+    "printSb": false
+  },
+  "program": "matmul.asm",
+  "units": {
+    "commit": 2,
+    "decode": 2,
+    "execute":2,
+    "memory": 2
+  },
+  "speculate":
+  {
+    "take_branch": true
+  },
+  "print": {
+    "all" : false,
+    "num_bytes": 1000
+  },
+  "capacity": {
+    "rsv": 64,
+    "rob" : 64,
+    "lsq": 64,
+    "instrQ": 2
+  },
+  "stop_time": 0
+}
