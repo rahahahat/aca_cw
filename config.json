@@ -1,18 +1,18 @@
 {
   "mode": "SS",
   "debug": {
-    "enabled": false,
-    "till": 12,
+    "enabled": true,
+    "till": 250000,
     "cycle": true,
     "instruction": true,
     "printSb": false
   },
-  "program": "matmul.asm",
+  "program": "conv.asm",
   "units": {
-    "commit": 2,
-    "decode": 2,
-    "execute":2,
-    "memory": 2
+    "commit": 1,
+    "decode": 1,
+    "execute":1,
+    "memory": 1
   },
   "speculate":
   {
@@ -20,13 +20,14 @@
   },
   "print": {
     "all" : false,
-    "num_bytes": 1000
+    "num_bytes": 4000
   },
   "capacity": {
-    "rsv": 64,
-    "rob" : 64,
-    "lsq": 64,
-    "instrQ": 2
+    "rsv": 128,
+    "rob" : 128,
+    "lsq": 128,
+    "instrQ": 16
   },
+  "predictor": 0,
   "stop_time": 0
 }

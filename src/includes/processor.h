@@ -45,7 +45,6 @@ class Processor
         Scoreboard *scoreboard;
         CommonDataBus *cdb;
         ReorderBuffer *robuff;
-        BranchTargetBuffer* btb;
         BranchPredictor* predictor;
 
         bool progEnded;
@@ -103,7 +102,7 @@ class Processor
         void attachCDB(CommonDataBus *bus);
         void attachReorderBuffer(ReorderBuffer *rb);
         void attachBranchPredictor(BranchPredictor* bpr);
-        void attachBTB(BranchTargetBuffer* bt);
+        // void attachBTB(BranchTargetBuffer* bt);
 
         Pipeline* getPipeline();
         LSQueue* getLsq();
@@ -111,7 +110,7 @@ class Processor
         Scoreboard* getSB();
         CommonDataBus* getCDB();
         ReorderBuffer* getRB();
-        BranchTargetBuffer* getBTB();
+        // BranchTargetBuffer* getBTB();
         BranchPredictor* getPredictor();
 };
 

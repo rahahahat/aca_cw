@@ -21,7 +21,7 @@ Processor::Processor() {
     Parser *pn = new Parser(this);
     this->parser = pn;
     this->clock = 0;
-    this->btb = new BranchTargetBuffer();
+    // this->btb = new BranchTargetBuffer();
 };
 
 void Processor::loadProgram(std::string fn) {
@@ -120,8 +120,24 @@ Processor* Processor::fabricate() {
         LSQueue *queue = new LSQueue();
         Parser *parser = new Parser(this);
         ReorderBuffer *robuff = new ReorderBuffer(64);
-        BranchTargetBuffer* btb = new BranchTargetBuffer();
-        BranchPredictor* brp = new Speculate(btb);
+        // BranchTargetBuffer* btb = new BranchTargetBuffer(); 
+        BranchPredictor* brp;
+        
+        if (config->predictor == SPECULATE)
+        {
+            std::cout << "SPECULATE" << std::endl;
+            brp = new Speculate();
+        }
+        if (config->predictor == ONEBIT)
+        {
+            std::cout << "ONEBIT" << std::endl;
+            brp = new OneBit();
+        }
+        if (config->predictor == TWOBIT)
+        {
+            std::cout << "TWOBIT" << std::endl;
+            brp = new TwoBit();
+        }
 
         // TODO: Validate attach order for ROB
         attachProcHelper(scoreboard);
@@ -130,7 +146,7 @@ Processor* Processor::fabricate() {
         attachPipeline(pipeline);
         attachLSQ(queue);
         attachReorderBuffer(robuff);
-        attachBTB(btb);
+        // attachBTB(btb);
         attachBranchPredictor(brp);
 
         CommonDataBus *bus = new CommonDataBus();
@@ -188,10 +204,10 @@ ReorderBuffer* Processor::getRB()
     return robuff;
 };
 
-BranchTargetBuffer* Processor::getBTB()
-{
-    return btb;
-};
+// BranchTargetBuffer* Processor::getBTB()
+// {
+//     return btb;
+// };
 
 BranchPredictor* Processor::getPredictor()
 {
@@ -219,11 +235,17 @@ void Processor::dumpDataMemory()
     output.open("sim.out");
     for (int i = 0; i < max_iter; i++)
     {
-        output << i << ": " << DataMemory[i] << "\t\t\t\t\t\t\t";
-        if ((i+1) % 5 == 0 && i != 0)
+        // output << i << ": " << DataMemory[i] << "\t\t\t\t\t\t\t";
+        if (i == 1610)
+        {
+            output << "\n\n\n" << DataMemory[i] << " ";
+        }
+        output << DataMemory[i] << " ";
+        if ((i+1) % 50 == 0 && i != 0)
         {
             output << std::endl;
         }
+
     }
 };
 
@@ -271,11 +293,11 @@ void Processor::attachBranchPredictor(BranchPredictor* bpr)
     return;
 }
 
-void Processor::attachBTB(BranchTargetBuffer* bt)
-{
-    btb = bt;
-    return;
-}
+// void Processor::attachBTB(BranchTargetBuffer* bt)
+// {
+//     btb = bt;
+//     return;
+// }
 
 void Processor::runProgram() {
     conf* config = getConfig();
@@ -328,6 +350,8 @@ void Processor::runSScalar()
         std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
     }
     regDump();
+    predictor->printPredictions();
+    pipeline->printStalls();
     printProgramEnd(this->clock);
     return;
 }
@@ -402,7 +426,7 @@ void Processor::printLabelMap()
 void Processor::stepMode()
 {
     if (!getConfig()->debug->enabled) return;
-
+    if (this->clock < getConfig()->debug->till) return;
 	std::string ss;
 	while(1)
 	{

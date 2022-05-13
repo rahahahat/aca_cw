@@ -54,6 +54,12 @@ void Pipeline::stallPipeline(StallSource by)
     if (by == stalled_by) return;
     if (stalled_by == NoSrc) 
     {
+        auto itr = stallMap.find(by);
+        if (itr == stallMap.end())
+        {
+            stallMap.insert(std::pair<StallSource, int>(by, 1));
+        }
+        itr->second = itr->second + 1;
         std::cout << termcolor::bold << termcolor::on_red
         << "Pipeline has been stalled by: "
         << by 
@@ -76,6 +82,33 @@ void Pipeline::stallPipeline(StallSource by)
     throw std::runtime_error(ss.str());
 }
 
+void Pipeline::printStalls()
+{
+    int total_stalls = 0;
+    std::map<StallSource, std::string> wordmap = {
+        {Halt, "HALT"},
+        {Branch, "Branch"},
+        {Capacity, "Capacity"},
+        {Flush, "Flush"},
+    };
+    for (auto itr = stallMap.begin(); itr != stallMap.end(); itr++)
+    {
+        total_stalls += itr->second;
+        std::cout <<
+        termcolor::bold <<
+        termcolor:: red <<
+        "Stall Source: " <<
+        wordmap.at(itr->first)
+        << termcolor::blue
+        << " - Stalls: "
+        << termcolor::bold
+        << itr->second
+        << std::endl;
+    }
+    std::cout << termcolor::bright_cyan << "Total Stall: " << total_stalls << std::endl;
+    return;
+}
+
 // #################################################################################################
 // ScalarPipeline
 // #################################################################################################
@@ -85,8 +118,22 @@ ScalarPipeline::ScalarPipeline() {
     dn = new ScalarDecodeUnit();
     en = new ScalarExecuteUnit();
     mn = new ScalarMemoryUnit();
+    stallNode == NULL;
     return;
 };
+
+void ScalarPipeline::resumePipeline(StallSource from)
+{
+    if (stalled_by == NoSrc) return;
+    if (from == stalled_by)
+    {
+        stallNode = NULL;
+        stall = false;
+        stalled_by = NoSrc;
+        return;
+    }
+    return;
+}
 
 void ScalarPipeline::removeCompletedInstructions() {
     instructions->flushCompletedInstructions();
@@ -131,6 +178,15 @@ void ScalarPipeline::nextTick(int cycle) {
             default:
                 mn->nextTick(instr);
                 break;
+        }
+        if (stalled() && curr == stallNode)
+        {
+            if (stallNode == NULL)
+            {
+                stallNode = curr;
+            }
+            removeCompletedInstructions();
+            return;
         }
         curr = curr->next;
     };

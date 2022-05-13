@@ -1,6 +1,0 @@
-addi r0 r1 0x1
-bl r1 r0 test
-halt
-test:
-addi r1 r1 0x1
-halt

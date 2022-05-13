@@ -31,6 +31,7 @@ class ROBEntry
         Register getDestination();
         int getValue();
         bool isValid();
+        Instructions::Instruction* getInsruction();
 };
 
 class ReorderBuffer

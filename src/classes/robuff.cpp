@@ -2,6 +2,7 @@
 #include "cdb.h"
 #include "util.h"
 #include "termcolor.h"
+#include "branch.h"
 
 // #################################################################################################
 // ROBEntry
@@ -82,6 +83,12 @@ void ReorderBuffer::addEntry(std::string tag_name, Instructions::Instruction *in
     buffer->add(entry);
     return;
 };
+
+Instructions::Instruction* ROBEntry::getInsruction()
+{
+    return instr;
+}
+
 ROBEntry* ReorderBuffer::pop()
 {
     if (buffer->head == NULL) return NULL;
@@ -89,11 +96,16 @@ ROBEntry* ReorderBuffer::pop()
 
     if (entry->isValid()) 
     {
-        if (entry->isBranch && entry->brpred != entry->getValue())
+        if (entry->isBranch)
         {
-            std::cout << "FLUSHING" << std::endl;
-            flush(buffer->head);
-            return NULL;
+            // processor->getPredictor()->incrementCount();
+            processor->getPredictor()->update(entry->getInstrStr(), entry->getInsruction()->fetched_at_pc, entry->brpred == entry->getValue());
+            if (entry->brpred != entry->getValue())
+            {
+                std::cout << "FLUSHING" << std::endl;
+                flush(buffer->head);
+                return NULL;
+            }
         }
         return buffer->pop();
     }

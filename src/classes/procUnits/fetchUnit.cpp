@@ -23,6 +23,7 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
     if (!processor->getSB()->isPCValid()) return NULL;
     if (processor->PC >= processor->instrMemSize) return NULL;
 
+    std::cout << "PC Value: " << processor->PC << std::endl;
     std::string instr = processor->instructionMemory[processor->PC];
     std::cout << termcolor::bold << termcolor::green
     << "Fetching Instruction: " << instr << " (" << processor->PC << ")"<< termcolor::reset
@@ -35,7 +36,7 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
     instrPtr->pred = processor->PC;
 
     std::string btb_str = instr + "-" + std::to_string((processor->PC - 1));
-    if (processor->getBTB()->hit(btb_str) != -1)
+    if (processor->getPredictor()->hit(btb_str) != -1)
     {
         int prediction = processor->getPredictor()->predict(btb_str);
         std::cout << "Prediction: " << prediction << std::endl;
@@ -43,7 +44,6 @@ Instructions::Instruction* FetchUnit::fetch(Instructions::Instruction *instrPtr)
         {
             instrPtr->pred = prediction;
             processor->PC = prediction;
-
         }
     }
 

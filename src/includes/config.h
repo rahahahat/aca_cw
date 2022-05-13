@@ -8,11 +8,16 @@
 #define _CONFIG_DEFINED_
 
 
+enum BranchPredictorType {
+    SPECULATE, ONEBIT, TWOBIT
+};
+
 struct conf
 {
     std::string program;
     int stop_time;
     std::string mode;
+    BranchPredictorType predictor;
 
     struct debug_conf
     {
@@ -84,6 +89,12 @@ inline conf* getConfig()
         config->capacity->rsv = jconf["capacity"]["rsv"].get<int>();
         config->capacity->instrQ = jconf["capacity"]["instrQ"].get<int>();
 
+        int pred = jconf["predictor"].get<int>();
+        if (pred > 2)
+        {
+            pred = 0;
+        }
+        config->predictor = (BranchPredictorType) pred;
     }
     return config;
 }

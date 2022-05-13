@@ -87,7 +87,7 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             return;
         default:
             // Instruction format: opcode rs rt immediate
-            if (splitInstr.back().substr(0,2).compare("0x") != 0)
+            if (splitInstr.back().substr(0,2).compare("0x") != 0 && splitInstr.back().substr(0,2).compare("-0") != 0)
             {
                 std::cout << "VAR OR DATA_VAR: " << splitInstr.back() << std::endl;
                 instrPtr->immediateOrAddress = processor->var_map.at(splitInstr.back());
@@ -226,7 +226,8 @@ void ODecodeUnit::decodeTick()
     instr->stage = ISSUE;
     if (isOpBranch(instr->opcode))
     {
-        processor->getBTB()->insert(instr->instrString, instr->fetched_at_pc, instr->immediateOrAddress);
+        processor->getPredictor()->incrementCount();
+        processor->getPredictor()->insert(instr->instrString, instr->fetched_at_pc, instr->immediateOrAddress);
     }
     post();
 };

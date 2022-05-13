@@ -6,6 +6,7 @@
 #include "prochelpers.h"
 #include "cdb.h"
 #include "util.h"
+#include "branch.h"
 
 #include <cassert>
 
@@ -290,6 +291,7 @@ void OExecuteUnit::post()
     int broadcast_val = result;
     if (isOpBranch(opcode))
     {
+        std::cout << "Result: " << result << std::endl;
         broadcast_val = (result) ? immediate : instr->fetched_at_pc + 1;
         broadcast_destination = $pc;
     }

@@ -69,12 +69,14 @@ enum StallSource {
 
 class Pipeline 
 {
+    std::map<StallSource, int> stallMap;
     protected:
         Processor *processor;
         StallSource stalled_by;
         bool stall;
     public:
         Pipeline();
+        virtual void printStalls();
         virtual void removeCompletedInstructions() { return; };
         virtual void pipeInstructionsToProcessor() { return; };
         virtual void nextTick(int cycle) { return; };
@@ -86,6 +88,7 @@ class Pipeline
         virtual void resumePipelineByForce();
         virtual int stalled();
         virtual int pipelineSize() { return 0; };
+
         virtual LinkedList<Instructions::Instruction>* getInstrQ() { return NULL; };
 };
 
@@ -98,12 +101,15 @@ class ScalarPipeline: public Pipeline {
 
         PipelineLL* instructions;
         PipelineLLNode *flushNode;
+
+        PipelineLLNode* stallNode;
         void addInstructionToPipeline(Instructions::Instruction *instr);
         void addInstructionToPipeline(int id);
         void removeCompletedInstructions();
     public:
         ScalarPipeline();
         void flushPipelineOnBranchOrJump();
+        void resumePipeline(StallSource);
         int pipelineSize();
         void nextTick(int cycle);
 };
