@@ -329,7 +329,6 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 {
     if (entries->size < max_size)
     {
-        std::cout << "HEARRRRR: " << max_size << std::endl;
         ReservationStationEntry *entry = new ReservationStationEntry(randomId(5));
         entries->add(entry);
         return entry;
@@ -339,7 +338,6 @@ rs::ReservationStationEntry* rs::ReservationStation::hasEmptyEntries()
 
 std::string rs::ReservationStation::reserve(Instructions::Instruction *instrPtr)
 {
-    std::cout << "Happens" << std::endl;
     rs::ReservationStationEntry* entry = hasEmptyEntries();
     entry->setInstruction(instrPtr);
     entry->instrStr = instrPtr->instrString;

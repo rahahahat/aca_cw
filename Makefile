@@ -21,10 +21,10 @@ CPPFLAGS ?= $(INC_FLAGS) -Wall -std=c++11 -g
 CXX=g++
 
 $(TARGET_EXEC): $(OBJS)
-	$(CXX)  $(CPPFLAGS) $(FLAGS) -o build/$@ $^ -ldl -lbfd
+	$(CXX)  $(CPPFLAGS) $(FLAGS) -o build/$@ $^
 
 build/%.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(FLAGS) -c $< -o $@ -ldl -lbfd
+	$(CXX) $(CPPFLAGS) $(FLAGS) -c $< -o $@
 
 .PHONY: clean
 

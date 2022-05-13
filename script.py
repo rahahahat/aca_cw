@@ -85,7 +85,16 @@
 
 
 
-f = open("test.txt")
+print("Input Filename: ")
+fname = input()
+
+print("Dimensions: ")
+dim = int(input())
+
+print("Output Name: ")
+otpn = input()
+
+f = open(fname)
 
 all = []
 for line in f:
@@ -102,18 +111,17 @@ for i in range(len(all)):
         ints.append(255)
     else:
         ints.append(num)
+        
+print("Len: ", len(ints))
 
-print(len(ints))
-print(ints)
-
-f = open("mountain.pgm", "w")
+f = open(otpn, "w")
 f.write("P2\n")
-f.write("40 40\n")
+f.write("%d %d\n" % (dim, dim))
 f.write("255\n")
-for i in range(40):
+for i in range(dim):
     strn = ""
-    for j in range(40):
-        index = (i * 40) + j
+    for j in range(dim):
+        index = (i * dim) + j
         strn += str(ints[index])
         strn += " "
     strn += "\n"

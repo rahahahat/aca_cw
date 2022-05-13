@@ -16,14 +16,14 @@ struct conf
 {
     std::string program;
     int stop_time;
-    std::string mode;
     BranchPredictorType predictor;
 
     struct debug_conf
     {
         bool enabled;
         int till;
-        bool printSb;
+        bool print;
+
     } *debug;
     struct unit_conf
     {
@@ -36,11 +36,13 @@ struct conf
     {
         bool take_branch;
     } *speculate;
-    struct print_conf
+    struct output_conf
     {
         bool all;
         int num_bytes;
-    } *print;
+        std::string filename;
+
+    } *output;
     struct capacity_conf {
         int rsv;
         int lsq;
@@ -63,16 +65,15 @@ inline conf* getConfig()
         config->debug = new conf::debug_conf();
         config->units = new conf::unit_conf();
         config->speculate = new conf::speculate_conf();
-        config->print = new conf::print_conf();
+        config->output = new conf::output_conf();
         config->capacity = new conf::capacity_conf();
 
         config->program = jconf["program"].get<std::string>();
         config->stop_time = jconf["stop_time"].get<int>();
-        config->mode = jconf["mode"].get<std::string>();
 
         config->debug->enabled = jconf["debug"]["enabled"].get<bool>();
         config->debug->till = jconf["debug"]["till"].get<int>();
-        config->debug->printSb = jconf["debug"]["printSb"].get<bool>();
+        config->debug->print = jconf["debug"]["print"].get<bool>();
 
         config->units->decode = jconf["units"]["decode"].get<int>();
         config->units->execute = jconf["units"]["execute"].get<int>();
@@ -81,8 +82,9 @@ inline conf* getConfig()
 
         config->speculate->take_branch = jconf["speculate"]["take_branch"].get<bool>();
 
-        config->print->all = jconf["print"]["all"].get<bool>();
-        config->print->num_bytes = jconf["print"]["num_bytes"].get<int>();
+        config->output->all = jconf["output"]["all"].get<bool>();
+        config->output->num_bytes = jconf["output"]["num_bytes"].get<int>();
+        config->output->filename = jconf["output"]["filename"].get<std::string>();
 
         config->capacity->lsq = jconf["capacity"]["lsq"].get<int>();
         config->capacity->rob = jconf["capacity"]["rob"].get<int>();

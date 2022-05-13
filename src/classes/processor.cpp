@@ -81,6 +81,19 @@ void Processor::loadProgram(std::string fn) {
     return;
 };
 
+void Processor::dumpConvImage()
+{
+    int imageSize = DataMemory[var_map.at("m")] * DataMemory[var_map.at("n")];
+    int start = 11 + imageSize;
+    std::cout << start << std::endl;
+    std::ofstream output;
+    output.open("conv_res.txt");
+    for (int i = 0; i < imageSize; i++)
+    {
+        int index = start + i;
+        output << DataMemory[index] << " ";
+    };
+}
 void Processor::attachLSQ(LSQueue *queue)
 {
     lsq = queue;
@@ -112,56 +125,39 @@ bool Processor::canIssue()
 Processor* Processor::fabricate() {
     
     conf* config = getConfig();
-    if (config->mode.compare("SS") == 0)
+    Scoreboard *scoreboard = new Scoreboard(false);
+    rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
+    Pipeline *pipeline = new OoOPipeline();
+    LSQueue *queue = new LSQueue();
+    Parser *parser = new Parser(this);
+    ReorderBuffer *robuff = new ReorderBuffer(64);
+    BranchPredictor* brp;
+    
+    if (config->predictor == SPECULATE)
     {
-        Scoreboard *scoreboard = new Scoreboard(false);
-        rs::ReservationStation* rs = new rs::ReservationStation(scoreboard, false);
-        Pipeline *pipeline = new OoOPipeline();
-        LSQueue *queue = new LSQueue();
-        Parser *parser = new Parser(this);
-        ReorderBuffer *robuff = new ReorderBuffer(64);
-        // BranchTargetBuffer* btb = new BranchTargetBuffer(); 
-        BranchPredictor* brp;
-        
-        if (config->predictor == SPECULATE)
-        {
-            std::cout << "SPECULATE" << std::endl;
-            brp = new Speculate();
-        }
-        if (config->predictor == ONEBIT)
-        {
-            std::cout << "ONEBIT" << std::endl;
-            brp = new OneBit();
-        }
-        if (config->predictor == TWOBIT)
-        {
-            std::cout << "TWOBIT" << std::endl;
-            brp = new TwoBit();
-        }
-
-        // TODO: Validate attach order for ROB
-        attachProcHelper(scoreboard);
-        attachProcHelper(rs);
-        attachParser(parser);
-        attachPipeline(pipeline);
-        attachLSQ(queue);
-        attachReorderBuffer(robuff);
-        // attachBTB(btb);
-        attachBranchPredictor(brp);
-
-        CommonDataBus *bus = new CommonDataBus();
-        attachCDB(bus);
+        brp = new Speculate();
     }
-    else
+    if (config->predictor == ONEBIT)
     {
-        Scoreboard *scoreboard = new Scoreboard(false);
-        Pipeline *pipeline = new ScalarPipeline();
-        Parser *parser = new Parser(this);
-
-        attachProcHelper(scoreboard);
-        attachParser(parser);
-        attachPipeline(pipeline);
+        brp = new OneBit();
     }
+    if (config->predictor == TWOBIT)
+    {
+        brp = new TwoBit();
+    }
+
+    // TODO: Validate attach order for ROB
+    attachProcHelper(scoreboard);
+    attachProcHelper(rs);
+    attachParser(parser);
+    attachPipeline(pipeline);
+    attachLSQ(queue);
+    attachReorderBuffer(robuff);
+    // attachBTB(btb);
+    attachBranchPredictor(brp);
+
+    CommonDataBus *bus = new CommonDataBus();
+    attachCDB(bus);
     return this;
 };
 
@@ -230,22 +226,16 @@ void Processor::loadDataMemory()
 void Processor::dumpDataMemory()
 {
     conf* config = getConfig();
-    int max_iter = config->print->all ? 1024 : config->print->num_bytes;
+    int max_iter = config->output->all ? instrMemSize : config->output->num_bytes;
     std::ofstream output;
-    output.open("sim.out");
+    output.open(config->output->filename);
     for (int i = 0; i < max_iter; i++)
     {
-        // output << i << ": " << DataMemory[i] << "\t\t\t\t\t\t\t";
-        if (i == 1610)
-        {
-            output << "\n\n\n" << DataMemory[i] << " ";
-        }
         output << DataMemory[i] << " ";
         if ((i+1) % 50 == 0 && i != 0)
         {
             output << std::endl;
         }
-
     }
 };
 
@@ -293,43 +283,11 @@ void Processor::attachBranchPredictor(BranchPredictor* bpr)
     return;
 }
 
-// void Processor::attachBTB(BranchTargetBuffer* bt)
-// {
-//     btb = bt;
-//     return;
-// }
 
 void Processor::runProgram() {
-    conf* config = getConfig();
-    if (config->mode.compare("SS") == 0)
-    {
-        runSScalar();
-        return;
-    }
-    runScalar();
-    return;
+    runSScalar();
 };
 
-void Processor::runScalar()
-{
-    conf* config = getConfig();
-    this->clock = 0;
-    int stopTime = config->stop_time;
-    bool loop = true;
-    while(loop)
-    {
-        this->clock++;
-        printCycleStart(this->clock);
-        stepMode();
-        pipeline->nextTick(this->clock);
-        loop = pipeline->pipelineSize() > 0;
-        std::this_thread::sleep_for(std::chrono::milliseconds(stopTime));
-
-    }
-    regDump();
-    printProgramEnd(this->clock);
-    return;
-}
 
 void Processor::runSScalar()
 {
@@ -353,6 +311,11 @@ void Processor::runSScalar()
     predictor->printPredictions();
     pipeline->printStalls();
     printProgramEnd(this->clock);
+    if (config->program.compare("conv.asm") == 0)
+    {
+        dumpConvImage();
+    };
+    std::cout << "IPC: " << (float)total_commits/(float) clock << std::endl;
     return;
 }
 

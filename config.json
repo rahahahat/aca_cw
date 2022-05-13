@@ -1,33 +1,31 @@
 {
-  "mode": "SS",
   "debug": {
-    "enabled": true,
-    "till": 250000,
-    "cycle": true,
-    "instruction": true,
-    "printSb": false
+    "print": false,
+    "enabled": false,
+    "till": 0
   },
-  "program": "conv.asm",
+  "program": "matmul.asm",
   "units": {
-    "commit": 1,
-    "decode": 1,
-    "execute":1,
-    "memory": 1
+    "commit": 8,
+    "decode": 8,
+    "execute":8,
+    "memory": 8
   },
   "speculate":
   {
     "take_branch": true
   },
-  "print": {
+  "output": {
     "all" : false,
-    "num_bytes": 4000
+    "num_bytes": 21000,
+    "filename": "sim.out"
   },
   "capacity": {
-    "rsv": 128,
-    "rob" : 128,
-    "lsq": 128,
-    "instrQ": 16
+    "rsv": 64,
+    "rob": 64,
+    "lsq": 64,
+    "instrQ": 8
   },
-  "predictor": 0,
+  "predictor": 1,
   "stop_time": 0
 }

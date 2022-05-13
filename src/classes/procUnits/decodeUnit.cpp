@@ -89,7 +89,6 @@ void DecodeUnit::decodeITypeInstruction(Instructions::Instruction *instrPtr, std
             // Instruction format: opcode rs rt immediate
             if (splitInstr.back().substr(0,2).compare("0x") != 0 && splitInstr.back().substr(0,2).compare("-0") != 0)
             {
-                std::cout << "VAR OR DATA_VAR: " << splitInstr.back() << std::endl;
                 instrPtr->immediateOrAddress = processor->var_map.at(splitInstr.back());
             }
             else 
@@ -114,46 +113,6 @@ void DecodeUnit::decodeJTypeInstruction(Instructions::Instruction *instrPtr, std
     splitInstr.pop_back();
     return;
 };
-
-// #################################################################################################
-// ScalarDecodeUnit
-// #################################################################################################
-
-void ScalarDecodeUnit::invalidateDestReg(Instructions::Instruction *instrPtr)
-{   
-    Opcodes opcode = instrPtr->opcode;
-    if (instrPtr->type == RType) {
-        processor->getSB()->inValidate(instrPtr->rd, "~");
-        return;
-    }
-    if (instrPtr->type == IType) {
-        processor->getSB()->inValidate(instrPtr->rt, "~");
-        return;
-    }
-    return;
-}
-
-void ScalarDecodeUnit::nextTick(Instructions::Instruction* instrPtr)
-{
-    if (busy) return;
-    busy = true;
-    std::cout << termcolor::bold << termcolor::green << "Decoding Instruction: " << instrPtr->instrString << termcolor::reset << std::endl;
-    decode(instrPtr);
-    post(instrPtr);
-};
-
-void ScalarDecodeUnit::post(Instructions::Instruction *instrPtr)
-{
-    instrPtr->stage = EXECUTE;
-    if (isOpBranch(instrPtr->opcode))
-    {
-        processor->getPipeline()->stallPipeline(Branch);
-        return;
-    }
-    invalidateDestReg(instrPtr);
-    return;
-}
-
 // #################################################################################################
 // ODecodeUnit
 // #################################################################################################
@@ -206,6 +165,7 @@ void ODecodeUnit::fetchTick()
 
 void ODecodeUnit::decodeTick()
 {
+    bool print = config->debug->print;
     if (processor->getPipeline()->stalled())
     {
         busy = false;
@@ -220,7 +180,10 @@ void ODecodeUnit::decodeTick()
     instr = processor->getPipeline()->getInstrQ()->pop();
     if (instr == NULL || instr->stage != DECODE) return;
 
-    std::cout << "Decoding instruction: " << instr->instrString << std::endl;
+    IF_PRINT(
+        std::cout << termcolor::bright_blue << termcolor::bold << "Decoding instruction: " << termcolor::white << instr->instrString << termcolor::reset << std::endl;
+    );
+
     decode(instr);
 
     instr->stage = ISSUE;

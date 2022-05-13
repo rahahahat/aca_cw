@@ -51,6 +51,8 @@ int Pipeline::stalled()
 
 void Pipeline::stallPipeline(StallSource by)
 {
+    bool print = getConfig()->debug->print;
+
     if (by == stalled_by) return;
     if (stalled_by == NoSrc) 
     {
@@ -60,11 +62,12 @@ void Pipeline::stallPipeline(StallSource by)
             stallMap.insert(std::pair<StallSource, int>(by, 1));
         }
         itr->second = itr->second + 1;
+
+        IF_PRINT(
         std::cout << termcolor::bold << termcolor::on_red
         << "Pipeline has been stalled by: "
         << by 
-        << termcolor::reset << std::endl;
-
+        << termcolor::reset << std::endl;)
         stalled_by = by;
         stall = true;
         return;
@@ -107,108 +110,6 @@ void Pipeline::printStalls()
     }
     std::cout << termcolor::bright_cyan << "Total Stall: " << total_stalls << std::endl;
     return;
-}
-
-// #################################################################################################
-// ScalarPipeline
-// #################################################################################################
-ScalarPipeline::ScalarPipeline() {
-    instructions = new PipelineLL();
-    fn = new FetchUnit();
-    dn = new ScalarDecodeUnit();
-    en = new ScalarExecuteUnit();
-    mn = new ScalarMemoryUnit();
-    stallNode == NULL;
-    return;
-};
-
-void ScalarPipeline::resumePipeline(StallSource from)
-{
-    if (stalled_by == NoSrc) return;
-    if (from == stalled_by)
-    {
-        stallNode = NULL;
-        stall = false;
-        stalled_by = NoSrc;
-        return;
-    }
-    return;
-}
-
-void ScalarPipeline::removeCompletedInstructions() {
-    instructions->flushCompletedInstructions();
-    return;
-}
-void ScalarPipeline::addInstructionToPipeline(int id) {
-    if (!processor->getSB()->isPCValid()) return;
-    std::cout
-    << termcolor::bold
-    << termcolor::yellow
-    << "Placing new instruction in pipeline"
-    << termcolor::reset
-    << std::endl;
-    Instructions::Instruction *new_inst = instructions->addInstructionForFetch();
-    return;
-};
-
-void ScalarPipeline::addInstructionToPipeline(Instructions::Instruction *instrPtr) 
-{
-    instructions->add(instrPtr);
-    return;
-};
-
-void ScalarPipeline::nextTick(int cycle) {
-
-    PipelineLLNode *curr = instructions->head;
-    dn->reset();
-    en->reset();
-    mn->reset();
-    while(curr != NULL)
-    {
-        Instructions::Instruction *instr = curr->payload;
-        
-        switch(instr->stage)
-        {
-            case DECODE:
-                dn->nextTick(instr);
-                break;
-            case EXECUTE:
-                en->nextTick(instr);
-                break;
-            default:
-                mn->nextTick(instr);
-                break;
-        }
-        if (stalled() && curr == stallNode)
-        {
-            if (stallNode == NULL)
-            {
-                stallNode = curr;
-            }
-            removeCompletedInstructions();
-            return;
-        }
-        curr = curr->next;
-    };
-    removeCompletedInstructions();
-    Instructions::Instruction* instr = new Instructions::Instruction();
-    if (instructions->size < 5)
-    {
-        if (fn->scalarFetch(instr) != NULL) addInstructionToPipeline(instr);
-    }
-    std::cout << termcolor::red  << "Instructions in pipeline: " << instructions->size << std::endl;
-};
-
-void ScalarPipeline::flushPipelineOnBranchOrJump()
-{
-    std::cout << termcolor::bold << termcolor::red << "FLUSHING ON BRANCH" << termcolor::reset << std::endl;
-    instructions->flushAfterNode(flushNode);
-    return;
-}
-
-int ScalarPipeline::pipelineSize()
-{
-    return instructions->size;
 }
 
 // #################################################################################################
@@ -313,6 +214,7 @@ void OoOPipeline::decodeTick()
 
 void OoOPipeline::nextTick(int cycle)
 {
+    bool print = getConfig()->debug->print;
     if (stalled_by == Capacity)
     {
         if (instrQ->size < getConfig()->capacity->instrQ)
@@ -321,16 +223,23 @@ void OoOPipeline::nextTick(int cycle)
         }
     }
     lsqTick();
+    IF_PRINT(std::cout << std::endl;)
     robuffTick();
+    IF_PRINT(std::cout << std::endl;)
+
     if (stalled_by == Flush) return;
 
     execTick();
+    IF_PRINT(std::cout << std::endl;)
     memTick();
+    IF_PRINT(std::cout << std::endl;)
 
     post();
 
     decodeTick();
+    IF_PRINT(std::cout << std::endl;)
     fetchTick();
+    IF_PRINT(std::cout << std::endl;)
 };
 
 
@@ -338,13 +247,7 @@ void OoOPipeline::pipeInstructionsToProcessor() {};
 
 void OoOPipeline::printSB()
 {
-    conf* config = getConfig();
-    if (!config->debug->printSb) return;
-    std::string ss;
-    std::cout << "Print SB (y/n): ";
-    std::cin >> ss;
-    if (!ss.compare("y")) processor->getSB()->memDump();
-    return;
+
 };
 
 bool OoOPipeline::areAllProcUnitsFree()

@@ -7,128 +7,6 @@
 #include "util.h"
 
 // #################################################################################################
-// ScalarMemoryUnit
-// #################################################################################################
-
-void ScalarMemoryUnit::load(Instructions::Instruction *instrPtr)
-{
-    instrPtr->temp = processor->DataMemory[instrPtr->temp];
-
-    std::cout << "hahahahahahpppppssss" << std::endl;
-    processor->getSB()->validate(instrPtr->rt, instrPtr->temp, "~");
-    instrPtr->stage = WRITEBACK;
-};
-void ScalarMemoryUnit::store(Instructions::Instruction *instrPtr)
-{
-    processor->DataMemory[instrPtr->temp] = processor->registers[instrPtr->rt];
-    instrPtr->stage = DONE;
-};
-
-void ScalarMemoryUnit::post(Instructions::Instruction *instrPtr)
-{
-    if (instrPtr->stage != WRITEBACK) return;
-    instrPtr->stage = DONE;
-    if (isOpBranch(instrPtr->opcode))
-    {
-        processor->getPipeline()->resumePipeline(Branch);
-    }
-};
-
-void ScalarMemoryUnit::writeback(Instructions::Instruction* instrPtr)
-{
-    switch (instrPtr->opcode)
-    {
-    case ADD:
-    case ADDU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case ADDI:
-    case ADDIU:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case SUB:
-    case SUBU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case MULT:
-    case MULTU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case DIV:
-    case DIVU:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case AND:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case ANDI:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case OR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case ORI:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case NOR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case XOR:
-        processor->registers[instrPtr->rd] = instrPtr->temp;
-        break;
-    case LW:
-        std::cout << "Happens LOAD" << std::endl;
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case LSR:
-        processor->registers[instrPtr->rt] = instrPtr->temp;
-        break;
-    case BEQ:
-    case BNE:
-    case BL:
-    case BGTE:
-        if (instrPtr->temp) // if we are branching
-        {
-            processor->PC = instrPtr->immediateOrAddress;
-        }
-        break;
-    case HALT:
-        // pipeline->flush = 0;
-        return;
-    case J:
-        processor->PC = instrPtr->temp;
-        // pipeline->flush = 0;
-        // processor->scoreboard->validate($pc);
-        break;
-    default:
-        break;
-    }
-};
-
-void ScalarMemoryUnit::nextTick(Instructions::Instruction* instrPtr)
-{
-    if (busy) return;
-    busy = true;
-    if (instrPtr->opcode == LW && instrPtr->stage == MEMORYACCESS)
-    {
-        load(instrPtr);
-        return;
-    } 
-    else if (instrPtr->opcode == SW && instrPtr->stage == WRITEBACK)
-    {
-        store(instrPtr);
-    } 
-    else 
-    {
-        std::cout << termcolor::bold << termcolor::cyan << "WritingBack Instruction: " << instrPtr->instrString << termcolor::reset << std::endl;
-        writeback(instrPtr);
-    }
-    post(instrPtr);
-
-}
-
-
-// #################################################################################################
 // OMemoryUnit
 // #################################################################################################
 
@@ -142,6 +20,7 @@ OMemoryUnit::OMemoryUnit()
     lsqTag = "~";
     cycle = 0;
     result = 0;
+    instrStr = "";
 }
 
 void OMemoryUnit::pre()
@@ -156,6 +35,7 @@ bool OMemoryUnit::seekInstruction()
     LSQNode *node = processor->getLsq()->getValidInstruction();
     if (node == NULL) return false;
     node->busy = true;
+    instrStr = node->instrStr;
     if (node->opcode == LW)
     {
         opcode = LW;
@@ -187,6 +67,10 @@ void OMemoryUnit::run()
 
 void OMemoryUnit::load()
 {
+    bool print = config->debug->print;
+    IF_PRINT(
+        std::cout << termcolor::bold << termcolor::green << "Executing Load: " << termcolor::white << instrStr << std::endl;
+    );
     if (!busy) return;
     result = processor->DataMemory[address];
     cycle--;
@@ -195,6 +79,10 @@ void OMemoryUnit::load()
 
 void OMemoryUnit::store()
 {
+    bool print = config->debug->print;
+    IF_PRINT(
+        std::cout << termcolor::bold << termcolor::green << "Executing Store: " << termcolor::white << instrStr << std::endl;
+    );
     if (!busy) return;
     return;
 };
@@ -203,6 +91,7 @@ void OMemoryUnit::post()
 {
     if (!busy) return;
     busy = false;
+    instrStr = "";
     if (opcode == LW)
     {
         processor->getCDB()->broadcast(destination, lsqTag, result);

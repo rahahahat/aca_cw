@@ -38,26 +38,6 @@ class ExecuteUnit: public ProcUnit
         virtual void run() {};
 };
 
-class ScalarExecuteUnit: public ExecuteUnit
-{
-
-    private:
-        bool executable;
-        bool busy;
-        void executeRTypeInstruction(Instructions::Instruction *instrPtr);
-        void executeITypeInstruction(Instructions::Instruction *instrPtr);
-        void executeJTypeInstruction(Instructions::Instruction *instrPtr);
-        void executeInstrType(Instructions::Instruction *instrPtr);
-        void populateInstrSources(Instructions::Instruction *instrPtr);
-        void pre(Instructions::Instruction *instrPtr);
-        void post(Instructions::Instruction *instrPtr);
-        void execute(Instructions::Instruction *instrPtr);
-    public:
-        ScalarExecuteUnit() { executable = false; };
-        void reset() { busy = false; };
-        void nextTick(Instructions::Instruction *instrPtr);
-};
-
 class OExecuteUnit: public ExecuteUnit
 {
 

@@ -71,7 +71,7 @@ LSQNode* LSQueue::addToQueue(Instructions::Instruction *instrPtr)
         queue->add(node);
         return node;
     }
-
+    return NULL;
 }
 
 void LSQueue::removeFromQueue(std::string tag)
@@ -201,7 +201,6 @@ void LSQueue::calculateAddrs()
             l_node->address = l_node->value_pair.first + l_node->addr;
             if (l_node->valid_pair.second)
             {
-                std::cout << "Calculating Addrs: " << l_node->instrStr << std::endl;
                 l_node->isReady = true;
             }
         }
@@ -219,7 +218,6 @@ LSQNode* LSQueue::getValidInstruction()
         LSQNode *l_node = head->payload;
         if (!l_node->busy && l_node->isReady && isOpValid(l_node))
         {
-            std::cout << termcolor::bold << termcolor::blue << "Valid Instruction: " << l_node->instrStr << termcolor::reset << std::endl;
             l_node->busy = true;
             return l_node;
         }
@@ -239,7 +237,6 @@ void LSQueue::flush()
     LLNode<LSQNode> *curr = queue->head;
     while(curr != NULL)
     {
-        LSQNode* node = curr->payload;
         LLNode<LSQNode>* next = curr->next;
         queue->removeAndDestroy(curr);
         curr = next;

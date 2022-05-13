@@ -19,4 +19,12 @@ void stepMode();
 bool isOpBranch(Opcodes opcode);
 std::string randomId(const int len);
 
+#define IF_PRINT(args)\
+{\
+    if (print)\
+    {\
+        args\
+    }\
+}\
+
 #endif

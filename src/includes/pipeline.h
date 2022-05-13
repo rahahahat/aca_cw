@@ -23,37 +23,6 @@ class ScalarMemoryUnit;
 class OExecuteUnit;
 class FetchUnit;
 
-class PipelineLL {
-    public:
-        PipelineLL();
-        PipelineLLNode* head;
-        PipelineLLNode* tail;
-        int size;
-        Instructions::Instruction* pop();
-        void add(Instructions::Instruction *instrPtr);
-        Instructions::Instruction* remove(int i);
-        Instructions::Instruction* remove(PipelineLLNode* pl_node);
-        void removeAndDestroy(int i);
-        void removeAndDestroy(PipelineLLNode* pl_node);
-        Instructions::Instruction* addInstructionForFetch();
-        Instructions::Instruction* addInstructionForFetch(int id);
-        void flushCompletedInstructions();
-        void flushAfterNode(PipelineLLNode *node);
-};
-
-class PipelineLLNode {
-    public:
-        PipelineLLNode();
-        PipelineLLNode(int id);
-        PipelineLLNode(Instructions::Instruction *instrPtr);
-        Instructions::Instruction* payload;
-        PipelineLLNode* next;
-        PipelineLLNode* prev;
-        int isTail();
-        int isHead();
-        Instructions::Instruction* get();
-};
-
 enum ProcUnitTypes
 {
     FETCHUNIT, DECODEUNIT, EXECUTEUNIT, MEMORYUNIT
@@ -90,28 +59,6 @@ class Pipeline
         virtual int pipelineSize() { return 0; };
 
         virtual LinkedList<Instructions::Instruction>* getInstrQ() { return NULL; };
-};
-
-class ScalarPipeline: public Pipeline {
-    private:
-        FetchUnit* fn;
-        ScalarDecodeUnit* dn;
-        ScalarExecuteUnit* en;
-        ScalarMemoryUnit* mn;
-
-        PipelineLL* instructions;
-        PipelineLLNode *flushNode;
-
-        PipelineLLNode* stallNode;
-        void addInstructionToPipeline(Instructions::Instruction *instr);
-        void addInstructionToPipeline(int id);
-        void removeCompletedInstructions();
-    public:
-        ScalarPipeline();
-        void flushPipelineOnBranchOrJump();
-        void resumePipeline(StallSource);
-        int pipelineSize();
-        void nextTick(int cycle);
 };
 
 

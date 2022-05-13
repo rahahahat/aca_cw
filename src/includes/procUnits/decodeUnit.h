@@ -26,18 +26,6 @@ class DecodeUnit: public ProcUnit
         virtual void nextTick(Instructions::Instruction* instrPtr) {};
 };
 
-class ScalarDecodeUnit: public DecodeUnit
-{
-    private:
-        bool busy;
-    protected:
-        void invalidateDestReg(Instructions::Instruction *instrPtr);
-        void post(Instructions::Instruction *instrPtr);
-    public:
-        void nextTick(Instructions::Instruction* instrPtr);
-        void reset() { busy = false; };
-};
-
 class ODecodeUnit: public DecodeUnit
 { 
     private:

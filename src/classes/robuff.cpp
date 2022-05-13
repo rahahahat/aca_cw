@@ -91,6 +91,7 @@ Instructions::Instruction* ROBEntry::getInsruction()
 
 ROBEntry* ReorderBuffer::pop()
 {
+    bool print = getConfig()->debug->print;
     if (buffer->head == NULL) return NULL;
     ROBEntry *entry = buffer->head->payload;
 
@@ -102,7 +103,10 @@ ROBEntry* ReorderBuffer::pop()
             processor->getPredictor()->update(entry->getInstrStr(), entry->getInsruction()->fetched_at_pc, entry->brpred == entry->getValue());
             if (entry->brpred != entry->getValue())
             {
-                std::cout << "FLUSHING" << std::endl;
+                IF_PRINT(
+                    std::cout << termcolor::on_bright_red << termcolor::bold
+                    << "Branch Misprediction: " << entry->getInstrStr() << " - Flushing Pipeline." << termcolor::reset << std::endl;
+                );
                 flush(buffer->head);
                 return NULL;
             }
@@ -124,15 +128,15 @@ void ReorderBuffer::commitHead()
         if (entry == NULL) return;
         if (isOpBranch(entry->opcode))
         {
-            processor->getCDB()->commit($noreg, entry->getTag(), entry->getValue());
+            processor->getCDB()->commit($noreg, entry->getTag(), entry->getValue(), entry->getInstrStr());
         }
         else if (entry->opcode == SW)
         {
-            processor->getCDB()->commitToMemory(entry->sw_addr, entry->getTag(), entry->getValue());
+            processor->getCDB()->commitToMemory(entry->sw_addr, entry->getTag(), entry->getValue(), entry->getInstrStr());
         }
         else
         {
-            processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue());
+            processor->getCDB()->commit(entry->getDestination(), entry->getTag(), entry->getValue(), entry->getInstrStr());
         }
     }
 };

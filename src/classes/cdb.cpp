@@ -2,6 +2,7 @@
 #include "processor.h"
 #include "util.h"
 #include "pipeline.h"
+#include "termcolor.h"
 
 // #################################################################################################
 // CommonDataBus
@@ -34,18 +35,35 @@ void CommonDataBus::broadcast(int mem_addr, std::string tag, int value)
     return;
 }
 
-void CommonDataBus::commitToMemory(int mem_addr, std::string tag, int value)
+void CommonDataBus::commitToMemory(int mem_addr, std::string tag, int value, std::string instrStr)
 {
     broadcast($noreg, tag, value);
+    bool print = getConfig()->debug->print;
+    IF_PRINT(
+        std::cout << termcolor::bright_green
+        << termcolor::bold 
+        << "Writing store to memory: " 
+        << termcolor::white << instrStr << termcolor::reset << std::endl;
+    );
     processor->DataMemory[mem_addr] = value;
     lsq->removeFromQueue(tag);
 }
 // Write values to the register file. Invoked only by the reorder buffer.
-void CommonDataBus::commit(Register destination, std::string tag, int value)
+void CommonDataBus::commit(Register destination, std::string tag, int value, std::string instrStr)
 {
-
+    bool print = getConfig()->debug->print;
     // Second broadcast to make sure no tags remain after removal.
     broadcast(destination, tag, value);
+
+    processor->total_commits++;
+    
+    IF_PRINT(
+        std::cout << termcolor::bright_green
+        << termcolor::bold 
+        << "Comitting instruction: " 
+        << termcolor::white << instrStr << termcolor::reset << std::endl;
+    );
+
     if (destination == $noreg) 
     {
         rsv->remove(tag);
@@ -59,12 +77,8 @@ void CommonDataBus::commit(Register destination, std::string tag, int value)
         processor->PC = value;
         return;
     }
-    
-    std::cout << "Destination: " << "$r" << destination << std::endl;
-    std::cout << "Tag: " << tag << std::endl;
-    std::cout << "Value: " << value << std::endl;
 
-    if (sb->validate(destination, value, tag)) std::cout << "Validated" << std::endl;
+    sb->validate(destination, value, tag);
     processor->registers[destination] = value;
     
     rsv->remove(tag);
@@ -78,5 +92,5 @@ void CommonDataBus::flushAll(int pc_value)
     lsq->flush();
     sb->flush();
     processor->getPipeline()->flush();
-    commit($pc, "~", pc_value);
+    commit($pc, "~", pc_value, "Commiting PC on Flush");
 }

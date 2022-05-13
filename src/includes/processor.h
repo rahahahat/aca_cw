@@ -66,6 +66,8 @@ class Processor
         std::map<std::string, int> var_map;
         int32_t registers[32];
         int32_t PC = 0;
+
+        int total_commits = 0;
         
         #ifndef DMSIZE
         int32_t DataMemory[4000];
@@ -83,7 +85,6 @@ class Processor
         void loadInstructionIntoMemory(std::string instruction);
         void runProgram();
         void runSScalar();
-        void runScalar();
         void loadProgram(std::string fn);
         void loadDataMemory();
         void dumpDataMemory();
@@ -102,7 +103,8 @@ class Processor
         void attachCDB(CommonDataBus *bus);
         void attachReorderBuffer(ReorderBuffer *rb);
         void attachBranchPredictor(BranchPredictor* bpr);
-        // void attachBTB(BranchTargetBuffer* bt);
+
+        void dumpConvImage();
 
         Pipeline* getPipeline();
         LSQueue* getLsq();
@@ -110,7 +112,6 @@ class Processor
         Scoreboard* getSB();
         CommonDataBus* getCDB();
         ReorderBuffer* getRB();
-        // BranchTargetBuffer* getBTB();
         BranchPredictor* getPredictor();
 };
 
