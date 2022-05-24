@@ -1,0 +1,126 @@
+lw r0 r1 m
+lw r0 r2 n
+
+beq r0 r0 top_left
+# outer index r3
+outer_loop:
+addi r3 r3 0x1
+addi r0 r4 0x0
+bgte r3 r1 end
+beq r0 r0 top_left
+#inner index r4
+inner_loop:
+addi r4 r4 0x1
+bgte r4 r2 outer_loop
+
+top_left:
+beq r0 r3 top_mid
+beq r0 r4 top_mid
+addi r3 r5 -0x1
+addi r4 r6 -0x1
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 tl
+mult r5 r5 r6
+add r7 r7 r5
+
+top_mid:
+beq r0 r3 top_right
+addi r3 r5 -0x1
+addi r4 r6 0x0
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 tm
+mult r5 r5 r6
+add r7 r7 r5
+
+top_right:
+addi r4 r6 0x1
+beq r0 r3 mid_left
+bgte r6 r2 mid_left
+addi r3 r5 -0x1
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 tr
+mult r5 r5 r6
+add r7 r7 r5
+
+mid_left:
+beq r0 r4 mid
+addi r3 r5 0x0
+addi r4 r6 -0x1
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 ml
+mult r5 r5 r6
+add r7 r7 r5
+
+mid:
+addi r3 r5 0x0
+addi r4 r6 0x0
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 md
+mult r5 r5 r6
+add r7 r7 r5
+
+mid_right:
+addi r4 r6 0x1
+bgte r6 r2 bottom_left
+addi r6 r5 0x0
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 mr
+mult r5 r5 r6
+add r7 r7 r5
+
+bottom_left:
+addi r3 r5 0x1
+bgte r5 r1 bottom_mid
+beq r0 r4 bottom_mid
+addi r4 r6 -0x1
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 bl
+mult r5 r5 r6
+add r7 r7 r5
+
+bottom_mid:
+addi r3 r5 0x1
+bgte r5 r1 bottom_right
+addi r4 r6 0x0
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 bm
+mult r5 r5 r6
+add r7 r7 r5
+
+bottom_right:
+addi r3 r5 0x1
+addi r4 r6 0x1
+bgte r5 r1 store_val
+bgte r6 r2 store_val
+mult r5 r5 r1
+add r5 r5 r6
+lw r5 r6 img
+lw r0 r5 br
+mult r5 r5 r6
+add r7 r7 r5
+
+# index calculation and store
+store_val:
+sw r8 r7 d
+addi r8 r8 0x1
+add r7 r0 r0
+beq r0 r0 inner_loop
+
+end:
+halt

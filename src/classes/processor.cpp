@@ -27,8 +27,14 @@ Processor::Processor() {
 void Processor::loadProgram(std::string fn) {
 
     // std::cout << "TESTING CONFIG: " << configs->debug->enabled << std::endl;
+    for (int x = 0; x < dataMemSize; x++)
+    {
+        DataMemory[x] = 0;
+    }
     std::vector<std::string> program = parser->parseProgram(fn);
     bool data = false;
+    conf* config = getConfig();
+    bool print = config->debug->print;
     for (auto it = std::begin(program); it != std::end(program); ++it) {
         if ((*it).empty() || (*it).front() == '#') continue;
 
@@ -41,7 +47,9 @@ void Processor::loadProgram(std::string fn) {
                 {
                     (*dtr).erase(0,1);
                     var_map.insert(std::pair<std::string, int>((*dtr), dataMemoryIndex));
-                    std::cout << "DataVar: " << (*dtr) << " MemoryIndex: " << dataMemoryIndex << std::endl;
+                    IF_PRINT(
+                        std::cout << "DataVar: " << (*dtr) << " MemoryIndex: " << dataMemoryIndex << std::endl;
+                    );
                 }
                 else 
                 {
@@ -65,7 +73,9 @@ void Processor::loadProgram(std::string fn) {
             splitInstr.pop_back();
             p.first = splitInstr.back();
 
-            std::cout << "Variable: " << p.first << " Data: " << DataMemory[dataMemoryIndex] << " MemoryIndex: " << dataMemoryIndex << std::endl;
+            IF_PRINT(
+                std::cout << "Variable: " << p.first << " Data: " << DataMemory[dataMemoryIndex] << " MemoryIndex: " << dataMemoryIndex << std::endl;
+            );
             var_map.insert(p);
             
             dataMemoryIndex++;
@@ -76,15 +86,17 @@ void Processor::loadProgram(std::string fn) {
         }
     };
     dumpDataMemory();
-    printInstructionMemory(this);
-    printLabelMap();
+    IF_PRINT(
+        printInstructionMemory(this);
+        printLabelMap();
+    );
     return;
 };
 
 void Processor::dumpConvImage()
 {
     int imageSize = DataMemory[var_map.at("m")] * DataMemory[var_map.at("n")];
-    int start = 11 + imageSize;
+    int start = 11 + imageSize - 1;
     std::cout << start << std::endl;
     std::ofstream output;
     output.open("conv_res.txt");
@@ -226,7 +238,7 @@ void Processor::loadDataMemory()
 void Processor::dumpDataMemory()
 {
     conf* config = getConfig();
-    int max_iter = config->output->all ? instrMemSize : config->output->num_bytes;
+    int max_iter = config->output->all ? dataMemSize : config->output->num_bytes;
     std::ofstream output;
     output.open(config->output->filename);
     for (int i = 0; i < max_iter; i++)
@@ -294,11 +306,18 @@ void Processor::runSScalar()
     conf* config = getConfig();
     this->clock = 0;
     int stopTime = config->stop_time;
+    int print = config->debug->print;
     while(!progEnded)
     {
         this->clock++;
-        printCycleStart(this->clock);
+        IF_PRINT(
+            printCycleStart(this->clock);
+        );
 
+        IF_NO_PRINT(
+            printCycleNoDebug(this->clock);
+        );
+        
         stepMode();
         
         if (pipeline->stalledBy() == Flush) pipeline->resumePipeline(Flush);        
@@ -309,9 +328,11 @@ void Processor::runSScalar()
     }
     regDump();
     predictor->printPredictions();
-    pipeline->printStalls();
+    IF_PRINT(
+        pipeline->printStalls();
+    );
     printProgramEnd(this->clock);
-    if (config->program.compare("conv.asm") == 0)
+    if (config->program.compare("_conv.asm") == 0)
     {
         dumpConvImage();
     };

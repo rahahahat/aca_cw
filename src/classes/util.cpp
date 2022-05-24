@@ -19,6 +19,16 @@ void printCycleStart(int cycle)
 	<< termcolor::reset << std::endl << std::endl;
 }
 
+void printCycleNoDebug(int cycle)
+{
+	std::cout << termcolor::bold
+	<< "\r"
+	<< "Clock cycle: "
+	<< termcolor::green
+	<< cycle
+	<< termcolor::reset;
+}
+
 void printCycleEnd(int cycle)
 {
 	std::cout << termcolor::bold 

@@ -4,7 +4,7 @@
     "enabled": false,
     "till": 0
   },
-  "program": "matmul.asm",
+  "program": "_conv.asm",
   "units": {
     "commit": 8,
     "decode": 8,
@@ -16,15 +16,15 @@
     "take_branch": true
   },
   "output": {
-    "all" : false,
-    "num_bytes": 21000,
+    "all" : true,
+    "num_bytes": 4000,
     "filename": "sim.out"
   },
   "capacity": {
-    "rsv": 64,
-    "rob": 64,
-    "lsq": 64,
-    "instrQ": 8
+    "rsv": 128,
+    "rob": 128,
+    "lsq": 128,
+    "instrQ": 32
   },
   "predictor": 1,
   "stop_time": 0

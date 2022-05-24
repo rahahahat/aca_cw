@@ -16,7 +16,7 @@
 int main(int argc, char* argv[]) {
 
     Processor *processor = Processor::getProcessorInstance()->fabricate();
-    std::cout << "DATA MEMORY SIZE: " << processor->dataMemSize << std::endl;
+    // std::cout << "DATA MEMORY SIZE: " << processor->dataMemSize << std::endl;
     std::string program = getConfig()->program;
     processor->loadProgram(program);
     processor->runProgram();

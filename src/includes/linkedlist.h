@@ -141,7 +141,6 @@ class LinkedList {
         {
             if (node == NULL)
             {
-                std::cout << "LLNode<T> is NULL" << std::endl;
                 return NULL;
             }
             LLNode<T>* prev = node->prev;

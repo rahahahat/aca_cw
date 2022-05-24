@@ -17,11 +17,20 @@ void printCycleEnd(int cycle);
 void printProgramEnd(int cycle);
 void stepMode();
 bool isOpBranch(Opcodes opcode);
+void printCycleNoDebug(int cycle);
 std::string randomId(const int len);
 
 #define IF_PRINT(args)\
 {\
     if (print)\
+    {\
+        args\
+    }\
+}\
+
+#define IF_NO_PRINT(args)\
+{\
+    if (!print)\
     {\
         args\
     }\
