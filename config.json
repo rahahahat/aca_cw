@@ -21,10 +21,10 @@
     "filename": "sim.out"
   },
   "capacity": {
-    "rsv": 128,
-    "rob": 128,
-    "lsq": 128,
-    "instrQ": 32
+    "rsv": 64,
+    "rob": 64,
+    "lsq": 64,
+    "instrQ": 16
   },
   "predictor": 1,
   "stop_time": 0
